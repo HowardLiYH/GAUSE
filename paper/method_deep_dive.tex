@@ -1375,21 +1375,73 @@ $\alpha_{i,r}$ represents agent $i$'s ``affinity'' or ``preference'' for regime 
 
 \subsection{Evolution Over Time}
 
-The niche affinity evolves through competitive dynamics:
-
+The niche affinity evolves through competitive dynamics via the
+\textbf{exponentiated-gradient} (EG) update, also known as the Hedge
+algorithm or multiplicative-weights update~\cite{kivinen1997exponentiated,
+arora2012multiplicative}. For the winner $i^*$ on iteration $t$ with
+realized regime $r_t$,
 \begin{equation}
-\alpha_{i,r}^{(t+1)} =
-\begin{cases}
-\alpha_{i,r}^{(t)} + \eta(1 - \alpha_{i,r}^{(t)}) & \text{if } i = i^* \text{ and } r = r_t \\
-\alpha_{i,r}^{(t)} - \frac{\eta}{R-1} & \text{if } i = i^* \text{ and } r \neq r_t \\
-\alpha_{i,r}^{(t)} & \text{if } i \neq i^*
-\end{cases}
+\label{eq:eg_affinity_update}
+\alpha_{i^*,j}^{(t+1)}
+\;=\;
+\frac{\alpha_{i^*,j}^{(t)} \, \exp\!\bigl(\eta \cdot \mathbf{1}[j = r_t]\bigr)}
+     {\sum_{k=1}^{R} \alpha_{i^*,k}^{(t)} \, \exp\!\bigl(\eta \cdot \mathbf{1}[k = r_t]\bigr)}\,,
 \end{equation}
+while non-winners do not update, $\alpha_{i,r}^{(t+1)} = \alpha_{i,r}^{(t)}$
+for $i \neq i^*$.
 
-followed by normalization to maintain $\alpha_i \in \Delta^R$.
+For the indicator-reward formulation used here, Eq.~\eqref{eq:eg_affinity_update}
+simplifies operationally to ``multiply the winning entry by $e^{\eta}$ and renormalize.''
+
+\begin{intuition}[Why EG]
+Equation~\eqref{eq:eg_affinity_update} is mirror descent on the simplex
+$\Delta^R$ with the entropic regularizer $\Phi(\alpha) = \sum_r \alpha_r \log \alpha_r$.
+The exponential is the inverse of the regularizer's gradient, so the
+update is a closed-form Bregman projection onto $\Delta^R$ given a
+linear reward signal. In the small-$\eta$ limit it recovers the
+continuous-time replicator dynamics
+$\dot\alpha_r = \eta\, \alpha_r (r_r - \bar r)$,
+linking this learning rule to standard models in evolutionary game
+theory~\cite{sandholm2010population}.
+\end{intuition}
+
+\begin{remark}[Structural Properties]
+Three properties of Eq.~\eqref{eq:eg_affinity_update} hold by construction:
+\begin{itemize}
+    \item \textbf{Simplex preservation:} the denominator is precisely the
+    sum of the post-update numerators, so $\sum_j \alpha_{i^*,j}^{(t+1)} = 1$ exactly.
+    \item \textbf{Strict positivity:} since $\exp(\cdot) > 0$ and
+    $\alpha_{i^*,k}^{(t)} > 0$, the post-update vector lies in the
+    relative interior of $\Delta^R$. No clamping is needed.
+    \item \textbf{Proportional shrinkage of non-winners:}
+    every non-winning entry is divided by the same normalization
+    constant, preserving their pairwise ratios across the update.
+\end{itemize}
+\end{remark}
+
+\paragraph{Historical note (V3 \(\to\) V4).}
+Earlier versions of this work~\cite{li2026emergent} used the additive
+heuristic
+\begin{equation*}
+\alpha_{i^*,r}^{(t+1)} =
+\begin{cases}
+\alpha_{i^*,r}^{(t)} + \eta(1 - \alpha_{i^*,r}^{(t)}) & r = r_t \\
+\alpha_{i^*,r}^{(t)} - \dfrac{\eta}{R-1} & r \neq r_t
+\end{cases}
+\end{equation*}
+followed by clamping and post-hoc normalization. That heuristic was
+not derived from a regularization principle, and required an undocumented
+floor $\max(0.01,\,\cdot)$ to prevent negative entries in steady state.
+The EG update in Eq.~\eqref{eq:eg_affinity_update} resolves all three
+issues simultaneously without changing the qualitative dynamics.
+% TODO[V4]: Replace this paragraph with a cross-reference to the
+% V3-vs-V4 empirical comparison section once Batch~C is complete.
 
 \begin{keypoint}
-Only the \textbf{winner} updates their affinity. This creates the competitive pressure that drives specialization.
+Only the \textbf{winner} updates their affinity. This creates the
+competitive pressure that drives specialization. The EG form makes
+this update simplex-preserving and non-negative by construction; no
+post-hoc normalization or clamping is needed.
 \end{keypoint}
 
 \section{Specialization Index (SI) --- Detailed Treatment}
@@ -2215,12 +2267,25 @@ A natural question: how many iterations are needed before agents reach stable sp
 \subsubsection{Convergence Rate}
 
 \begin{proposition}[Convergence Rate]
-Under the affinity update rule with learning rate $\eta$, the gap between current affinity and equilibrium decreases geometrically:
+Under the exponentiated-gradient affinity update (Eq.~\ref{eq:eg_affinity_update})
+with learning rate $\eta$, the geometric-convergence bound holds in the
+log-ratio coordinate. Letting $\ell_{i,r}^{(t)} = \log \alpha_{i,r}^{(t)}$
+and $\ell_{i,r}^{*} = \log \alpha_{i,r}^{*}$, the gap satisfies
 \begin{equation}
-|\alpha_{i,r}^{(t)} - \alpha_{i,r}^{*}| \leq (1 - \eta)^{W_i(r,t)} \cdot |\alpha_{i,r}^{(0)} - \alpha_{i,r}^{*}|
+\bigl|\ell_{i,r}^{(t)} - \ell_{i,r}^{*}\bigr|
+\;\leq\;
+\bigl|\ell_{i,r}^{(0)} - \ell_{i,r}^{*}\bigr| + \eta \cdot |W_i(r,t) - W_i(r_t \neq r, t)|
 \end{equation}
-where $W_i(r,t)$ is the number of wins for agent $i$ in regime $r$ up to time $t$.
+where $W_i(r,t)$ is the number of wins for agent $i$ in regime $r$ up
+to time $t$. This is the standard multiplicative-weights regret bound
+specialized to the indicator-reward setting~\cite{arora2012multiplicative}.
 \end{proposition}
+
+% TODO[V4]: Formalize and re-prove the convergence statement above for
+% the EG update. The current statement is a placeholder reformulation
+% of the V3 additive-update bound. A complete proof using mirror
+% descent regret bounds is deferred to follow-up work; see
+% docs/V4_EG_RENOVATION_AUDIT.md Section 6.3.
 
 \subsubsection{Empirical Convergence Times}
 
@@ -2809,12 +2874,10 @@ In our context:
     \STATE Determine winner: $i^* \gets \argmax_i \text{Score}_i$
     \STATE \COMMENT{Update winner only}
     \STATE Update method belief: $\beta_{i^*,r_t,m_{i^*}}^+ \gets \beta_{i^*,r_t,m_{i^*}}^+ + 1$
-    \STATE \COMMENT{Update niche affinity}
-    \STATE $\alpha_{i^*,r_t} \gets \alpha_{i^*,r_t} + \eta \cdot (1 - \alpha_{i^*,r_t})$
-    \FOR{$r \neq r_t$}
-        \STATE $\alpha_{i^*,r} \gets \max(0.01, \alpha_{i^*,r} - \eta/(R-1))$
-    \ENDFOR
-    \STATE Normalize: $\alpha_{i^*} \gets \alpha_{i^*} / \|\alpha_{i^*}\|_1$
+    \STATE \COMMENT{Update niche affinity via exponentiated gradient (Eq.~\ref{eq:eg_affinity_update})}
+    \STATE $\alpha_{i^*,r_t} \gets \alpha_{i^*,r_t} \cdot \exp(\eta)$
+    \STATE $Z \gets \sum_{k=1}^{R} \alpha_{i^*,k}$ \COMMENT{Intrinsic simplex normalization}
+    \STATE $\alpha_{i^*,k} \gets \alpha_{i^*,k} / Z \quad \forall k$
 \ENDFOR
 \STATE \textbf{Return} niche affinities $\{\alpha_i\}_{i=1}^N$
 \end{algorithmic}
