@@ -15,15 +15,37 @@ This is inspired by ecological niche theory:
 
 UPDATED: Now uses proper Beta distribution for Thompson Sampling
 and winner-only updates as described in the paper.
+
+V4 NOTE: This module now supports two affinity update rules selectable
+via the `update_rule` parameter:
+
+    - "eg" (default, V4 canonical): exponentiated gradient / mirror descent
+      on the simplex. The update is
+          alpha_j <- alpha_j * exp(eta * 1[j == r_t]) / Z
+      which is simplex-preserving by construction and never produces
+      negative entries (no clamping needed). This is the principled
+      replacement for the V3 additive heuristic.
+
+    - "v3_additive" (legacy): the additive update from the v3.x paper,
+      preserved for V3-vs-V4 comparison. Includes the undocumented
+      max(0.01, ...) clamp and post-hoc normalization. Use only for
+      reproduction of v3.x results.
+
+See docs/V4_EG_RENOVATION_AUDIT.md for the analysis motivating the
+V4 change.
 """
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
+import math
 import numpy as np
 from collections import defaultdict
 
 from .inventory_v2 import METHOD_INVENTORY_V2, get_method_names_v2
 from .method_selector import MethodBelief  # Proper Beta distribution!
+
+
+VALID_UPDATE_RULES = ("eg", "v3_additive")
 
 
 class NicheAgent:
@@ -45,12 +67,18 @@ class NicheAgent:
         methods: Optional[List[str]] = None,
         min_exploration: float = 0.05,
         learning_rate: float = 0.1,  # η in paper
+        update_rule: str = "eg",
     ):
+        if update_rule not in VALID_UPDATE_RULES:
+            raise ValueError(
+                f"update_rule must be one of {VALID_UPDATE_RULES}, got {update_rule!r}"
+            )
         self.agent_id = agent_id
         self.regimes = regimes
         self.method_names = methods or list(METHOD_INVENTORY_V2.keys())
         self.rng = np.random.default_rng(seed)
         self.learning_rate = learning_rate  # η = 0.1 as in paper
+        self.update_rule = update_rule
 
         # Beliefs per regime per method - using proper Beta distribution!
         self.beliefs: Dict[str, Dict[str, MethodBelief]] = {
@@ -72,6 +100,11 @@ class NicheAgent:
         self.exploration_rate = 0.3
         self.exploration_decay = 0.999
         self.min_exploration = min_exploration
+
+        # Diagnostics for V3 vs V4 comparison. These counters allow us
+        # to quantify the structural issues with the V3 update at runtime.
+        self._diag_clamp_invocations = 0  # times the V3 max(0.01, ...) clamp fired
+        self._diag_premass_sum_history: List[float] = []  # pre-normalization sum each update
 
     def select_method(self, regime: str) -> str:
         """Select a method for the current regime using Thompson Sampling."""
@@ -117,26 +150,72 @@ class NicheAgent:
 
     def _update_niche_affinity(self, regime: str) -> None:
         """
-        Update niche affinity using the paper's formula.
+        Dispatch to the selected affinity update rule.
 
-        Paper formula: α_r ← α_r + η × (1 - α_r)  [for winning regime]
-        Other regimes: α_r' ← α_r' - η/(R-1)
-        Then normalize.
+        See class docstring for the rationale. The default ``"eg"`` is the
+        V4 canonical update; ``"v3_additive"`` reproduces the v3.x behavior
+        for direct comparison.
         """
-        eta = self.learning_rate  # η = 0.1 as in paper
+        if self.update_rule == "eg":
+            self._update_niche_affinity_eg(regime)
+        elif self.update_rule == "v3_additive":
+            self._update_niche_affinity_v3(regime)
+        else:  # pragma: no cover -- validated in __init__
+            raise ValueError(f"Unknown update_rule {self.update_rule!r}")
+
+    def _update_niche_affinity_eg(self, regime: str) -> None:
+        """
+        V4 canonical: Exponentiated-gradient update on the probability simplex.
+
+        For binary win signal r_j = 1[j == regime], this reduces to::
+
+            alpha_j  <-  alpha_j * exp(eta * r_j) / Z
+
+        where Z = sum_k alpha_k * exp(eta * r_k). Because exp is positive
+        and we divide by a positive normalization, the post-update vector
+        is guaranteed to lie in the interior of the simplex. No clamping
+        is needed, no pre-vs-post mass discrepancy exists.
+
+        This is mirror descent on Delta^R with entropic regularizer, and
+        equivalent to discrete-time replicator dynamics in the small-eta
+        limit. See docs/V4_EG_RENOVATION_AUDIT.md Section 4.
+        """
+        eta = self.learning_rate
+        # Multiply winning regime's entry by exp(eta); others are unchanged
+        # (their multiplier exp(0) = 1).
+        self.niche_affinity[regime] *= math.exp(eta)
+        # Normalize. The pre-normalization sum is, by construction,
+        # 1 + alpha_{r_t}^{old} * (exp(eta) - 1), strictly > 0.
+        total = sum(self.niche_affinity.values())
+        self._diag_premass_sum_history.append(total)
+        self.niche_affinity = {r: a / total for r, a in self.niche_affinity.items()}
+
+    def _update_niche_affinity_v3(self, regime: str) -> None:
+        """
+        V3 (legacy) additive update.
+
+        Paper formula: alpha_r <- alpha_r + eta * (1 - alpha_r)   for winning regime
+        Other regimes: alpha_r' <- alpha_r' - eta / (R - 1)
+        followed by max(0.01, ...) clamp and post-hoc normalization.
+
+        Preserved verbatim for v3-vs-v4 comparison. Not the canonical
+        algorithm. See docs/V4_EG_RENOVATION_AUDIT.md for the structural
+        issues with this rule.
+        """
+        eta = self.learning_rate
         n_regimes = len(self.regimes)
 
-        # Paper formula: α += η × (1 - α) for winning regime
         self.niche_affinity[regime] += eta * (1 - self.niche_affinity[regime])
 
-        # Decrease other regimes
         for r in self.regimes:
             if r != regime:
-                self.niche_affinity[r] -= eta / (n_regimes - 1)
-                self.niche_affinity[r] = max(0.01, self.niche_affinity[r])
+                proposed = self.niche_affinity[r] - eta / (n_regimes - 1)
+                if proposed < 0.01:
+                    self._diag_clamp_invocations += 1
+                self.niche_affinity[r] = max(0.01, proposed)
 
-        # Normalize to maintain probability simplex
         total = sum(self.niche_affinity.values())
+        self._diag_premass_sum_history.append(total)
         self.niche_affinity = {r: a / total for r, a in self.niche_affinity.items()}
 
     def get_niche_strength(self, regime: str) -> float:
@@ -187,13 +266,19 @@ class NichePopulation:
         methods: Optional[List[str]] = None,
         min_exploration_rate: float = 0.05,
         learning_rate: float = 0.1,  # η in paper
+        update_rule: str = "eg",
     ):
+        if update_rule not in VALID_UPDATE_RULES:
+            raise ValueError(
+                f"update_rule must be one of {VALID_UPDATE_RULES}, got {update_rule!r}"
+            )
         self.n_agents = n_agents
         self.regimes = regimes or ["trend_up", "trend_down", "mean_revert", "volatile"]
         self.niche_bonus = niche_bonus
         self.methods = methods
         self.min_exploration_rate = min_exploration_rate
         self.learning_rate = learning_rate
+        self.update_rule = update_rule
         self.rng = np.random.default_rng(seed)
 
         self.agents: Dict[str, NicheAgent] = {}
@@ -207,6 +292,7 @@ class NichePopulation:
                 methods=methods,
                 min_exploration=min_exploration_rate,
                 learning_rate=learning_rate,
+                update_rule=update_rule,
             )
 
         self.iteration = 0

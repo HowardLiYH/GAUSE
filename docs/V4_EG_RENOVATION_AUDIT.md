@@ -166,26 +166,38 @@ The proposition at line 2217 of `method_deep_dive.tex` gives a geometric converg
 
 ---
 
-## 7. Open Hyperparameter Questions (Need Howard's Input Before Batch B)
+## 7. Hyperparameter Recommendation (Updated After Batch B Numerical Check)
 
-The V3 codebase uses $\eta = 0.1$ as the learning rate for the additive update. Under EG this $\eta$ value carries a different interpretation:
-- In additive update: $\eta = 0.1$ means "move 10% of the way toward the target each win"
-- In EG: $\eta = 0.1$ means "multiply winner's affinity by $\exp(0.1) \approx 1.105$ each win" before renormalizing
+The V3 codebase uses $\eta = 0.1$ as the learning rate. **Naive reuse of $\eta = 0.1$ in V4 produces materially different dynamics**, because the two update rules have different first-order gains at uniform start.
 
-These are quantitatively different, so direct reuse of $\eta = 0.1$ won't preserve V3's specialization timescale. Three options:
+### Corrected First-Order Analysis
 
-**Option I — Reuse $\eta = 0.1$**
-Pros: Minimal change, fastest comparison.
-Cons: EG dynamics will be ~10% faster per step than V3, so V4 will appear to specialize faster than V3 even though the underlying mechanism is the same. May confuse the "do we match V3 dynamics" comparison.
+Working through the math at $\alpha = 1/R$ with a win on regime $r_0$:
 
-**Option II — Match the per-step effective rate**
-Pick $\eta_{EG}$ such that the first-order behavior at $\alpha = 1/R$ matches V3's. Working through the math: the V3 update at $\alpha = 1/R$ moves the winning entry by $\eta_{V3}(1 - 1/R)$; matching this to EG's $\exp(\eta_{EG})$-induced gain gives $\eta_{EG} \approx \eta_{V3}(1 - 1/R) / (1 - 1/R) = \eta_{V3}$. So this also lands on $\eta_{EG} = 0.1$ but is justified.
+**V3 (after post-hoc normalization):**
+$$\Delta \alpha_{r_0}^{V3} \big|_{\alpha=1/R} = \eta_{V3} \cdot \left(1 - \frac{1}{R} + \frac{1}{R^2}\right) + O(\eta^2)$$
 
-**Option III — Sweep $\eta_{EG} \in \{0.05, 0.1, 0.2, 0.5\}$ and pick the value that best preserves V3's SI trajectory**
-Pros: Empirically grounded.
-Cons: Adds one experimental dimension to the sweep.
+**V4 (EG, intrinsic):**
+$$\Delta \alpha_{r_0}^{V4} \big|_{\alpha=1/R} = \eta_{V4} \cdot \frac{1}{R}\left(1 - \frac{1}{R}\right) + O(\eta^2)$$
 
-**Recommendation: Option II for the headline comparison, plus Option III in an appendix table** to show robustness to learning-rate choice.
+**Ratio (same $\eta$ in both):**
+$$\frac{\Delta \alpha^{V3}}{\Delta \alpha^{V4}} = \frac{R^2 - R + 1}{R - 1}$$
+
+For $R = 4$ this is $13/3 \approx 4.33$. **V3 with $\eta=0.1$ moves the winning entry ~4.33× as much per step as V4 with $\eta=0.1$**. This is a leading-order, not a small-correction, difference. Both numerical tests in `tests/test_eg_update.py::TestEGV3FirstOrderStepSizeGap` confirm this.
+
+### Why the original Section 7 analysis was wrong
+
+The earlier draft of this section claimed first-order equivalence at $\alpha = 1/R$. That was a sign error in the normalization step. The corrected analysis accounts for the fact that V3's post-hoc normalization *amplifies* the winner-side update by a factor of $1/(1 - \eta/R)$, which adds another $\eta/R$ to the first-order gain. V4 has no such amplification because the normalization is *intrinsic* (the division happens by definition of EG, not as a post-hoc fix).
+
+### Updated Recommendation
+
+**Headline value: $\eta_{V4} = 0.1$**, the same numerical value as V3. We are *not* attempting to reproduce V3's specialization timescale; we are claiming V4 is the principled algorithm and reporting its own behavior at the same $\eta$. The V4 trajectories will look slightly slower per step but will reach the same equilibrium specialization. This is the cleanest framing for the V4 paper.
+
+**Optional matched-dynamics comparison: $\eta_{V4} = \frac{R^2-R+1}{R-1} \cdot \eta_{V3}$** for the explicit "V4 matches V3 timestep-for-timestep" plot in the diagnostic section. For $R=4$, this gives $\eta_{V4} \approx 0.43$.
+
+**Appendix robustness sweep: $\eta_{V4} \in \{0.05, 0.1, 0.2, 0.5\}$** to show the specialization equilibrium is not sensitive to $\eta_{V4}$ choice within an order of magnitude.
+
+This three-tier approach gives reviewers (1) a single headline number to compare V4 vs V3, (2) the per-step matching for the "are these really the same dynamics" question, and (3) the sensitivity sweep for robustness.
 
 ---
 
