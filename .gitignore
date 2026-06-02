@@ -49,6 +49,16 @@ htmlcov/
 
 # Logs (never track)
 *.log
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
 *_log.txt
 
 # Large data files
