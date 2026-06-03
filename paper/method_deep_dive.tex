@@ -533,31 +533,37 @@ For $\theta \sim \text{Beta}(\alpha, \beta)$:
     xlabel={$\theta$},
     ylabel={$f(\theta)$},
     title={Beta Distributions with Different Parameters},
-    width=12cm,
-    height=6cm,
+    width=13cm,
+    height=7.5cm,
     xmin=0, xmax=1,
-    ymin=0, ymax=4,
+    ymin=0, ymax=4.5,
     legend pos=north east,
+    legend style={font=\footnotesize, draw=gray!60, fill=white, fill opacity=0.92, text opacity=1, row sep=1pt},
+    legend cell align={left},
     grid=major,
+    grid style={gray!20},
+    no markers,
+    samples=200,
+    smooth,
 ]
 % Beta(1,1) = Uniform
-\addplot[blue, thick, domain=0.01:0.99, samples=100] {1};
-% Beta(2,2)
-\addplot[red, thick, domain=0.01:0.99, samples=100]
-    {x^(2-1)*(1-x)^(2-1) / 0.1667};
-% Beta(5,5)
-\addplot[green, thick, domain=0.01:0.99, samples=100]
-    {x^(5-1)*(1-x)^(5-1) / 0.00397};
-% Beta(10,2)
-\addplot[orange, thick, domain=0.01:0.99, samples=100]
-    {x^(10-1)*(1-x)^(2-1) / 0.0091};
-% Beta(2,10)
-\addplot[purple, thick, domain=0.01:0.99, samples=100]
-    {x^(2-1)*(1-x)^(10-1) / 0.0091};
-\legend{Beta(1,1), Beta(2,2), Beta(5,5), Beta(10,2), Beta(2,10)}
+\addplot[black, very thick, dashed, domain=0.01:0.99] {1};
+% Beta(2,2) -- symmetric, weak; peak 1.5 at theta=0.5
+\addplot[blue!70!black, very thick, domain=0.01:0.99]
+    {x^(2-1)*(1-x)^(2-1) / 0.16667};
+% Beta(5,5) -- symmetric, strong; peak ~2.46 at theta=0.5
+\addplot[teal!80!black, very thick, dotted, domain=0.01:0.99]
+    {x^(5-1)*(1-x)^(5-1) / 0.001587};
+% Beta(10,2) -- skewed right; peak ~4.26 at theta=0.9
+\addplot[red!75!black, very thick, domain=0.01:0.99]
+    {x^(10-1)*(1-x)^(2-1) / 0.009091};
+% Beta(2,10) -- skewed left; peak ~4.26 at theta=0.1
+\addplot[orange!90!black, very thick, dashdotted, domain=0.01:0.99]
+    {x^(2-1)*(1-x)^(10-1) / 0.009091};
+\legend{{Beta(1,1) -- uniform}, {Beta(2,2) -- weak symmetric}, {Beta(5,5) -- strong symmetric}, {Beta(10,2) -- skewed high}, {Beta(2,10) -- skewed low}}
 \end{axis}
 \end{tikzpicture}
-\caption{Various Beta distributions. Beta(1,1) is uniform (no prior information). As parameters increase, distribution concentrates around the mean. Skewed distributions indicate confident beliefs about quality.}
+\caption{Various Beta distributions. \textbf{Beta(1,1)} (dashed black) is uniform --- no prior information. \textbf{Beta(2,2)} and \textbf{Beta(5,5)} (blue solid, teal dotted) are symmetric around $\theta = 0.5$; the higher parameters give tighter concentration. \textbf{Beta(10,2)} (red solid) and \textbf{Beta(2,10)} (orange dash-dotted) are skewed, peaking near $\theta = 0.9$ and $\theta = 0.1$ respectively, encoding confident beliefs about high vs.\ low success rates.}
 \end{figure}
 
 \subsection{Beta-Bernoulli Conjugacy}
@@ -709,28 +715,37 @@ where the probability is over the posterior distribution of $\mu$.
 \begin{tikzpicture}
 \begin{axis}[
     xlabel={$\theta$ (true quality)},
-    ylabel={PDF},
+    ylabel={Posterior density $f(\theta)$},
     title={Thompson Sampling: Why Uncertain Arms Get Explored},
-    width=12cm,
-    height=6cm,
+    width=13cm,
+    height=7cm,
     xmin=0, xmax=1,
-    ymin=0, ymax=5,
-    legend pos=north east,
+    ymin=0, ymax=6,
+    legend pos=north west,
+    legend style={font=\footnotesize, draw=gray!60, fill=white, fill opacity=0.92, text opacity=1, row sep=1pt},
+    legend cell align={left},
+    grid=major,
+    grid style={gray!20},
+    no markers,
+    samples=200,
+    smooth,
 ]
-% Arm A: High mean, low variance (good and confident)
-\addplot[blue, thick, domain=0.01:0.99, samples=100, name path=A]
-    {exp(-50*(x-0.8)^2) * 4};
-% Arm B: Low mean, low variance (bad and confident)
-\addplot[red, thick, domain=0.01:0.99, samples=100, name path=B]
-    {exp(-50*(x-0.3)^2) * 4};
-% Arm C: Medium mean, high variance (uncertain)
-\addplot[green, thick, domain=0.01:0.99, samples=100, name path=C]
-    {exp(-10*(x-0.5)^2) * 1.8};
-\legend{Arm A: Good (exploit), Arm B: Bad (avoid), Arm C: Uncertain (explore!)}
-\addplot[green, fill opacity=0.2] fill between[of=A and C, soft clip={domain=0.7:1}];
+% Arm A: good and confident -- Beta(20, 5), peak ~5.2 at theta ~ 0.83
+\addplot[blue!75!black, very thick, domain=0.001:0.999]
+    {x^(20-1)*(1-x)^(5-1) / 4.706e-6};
+% Arm B: bad and confident -- Beta(5, 20), peak ~5.2 at theta ~ 0.17
+\addplot[red!75!black, very thick, dashed, domain=0.001:0.999]
+    {x^(5-1)*(1-x)^(20-1) / 4.706e-6};
+% Arm C: uncertain -- Beta(3, 3), broad, peak 1.875 at theta = 0.5
+\addplot[teal!80!black, very thick, dash dot, domain=0.001:0.999]
+    {x^(3-1)*(1-x)^(3-1) / 0.0333};
+% Shade Arm C's right tail (theta > 0.7) -- the "exploration mass" that can sometimes beat Arm A
+\addplot[draw=none, fill=teal!40, fill opacity=0.55, domain=0.7:0.999]
+    {x^(3-1)*(1-x)^(3-1) / 0.0333} \closedcycle;
+\legend{{Arm A: Good (exploit)}, {Arm B: Bad (avoid)}, {Arm C: Uncertain (explore!)}, {Arm C's high-$\theta$ tail (exploration mass)}}
 \end{axis}
 \end{tikzpicture}
-\caption{Arm C (uncertain) sometimes samples values higher than Arm A, leading to exploration. Arm B (confidently bad) rarely samples high.}
+\caption{Posterior densities for three Thompson-sampling arms. \textbf{Arm A} (blue solid) is confidently good --- its posterior $\mathrm{Beta}(20,5)$ concentrates near $\theta \approx 0.83$. \textbf{Arm B} (red dashed) is confidently bad --- $\mathrm{Beta}(5,20)$ concentrates near $\theta \approx 0.17$. \textbf{Arm C} (teal dash-dot) is uncertain --- its broad $\mathrm{Beta}(3,3)$ posterior carries non-negligible probability mass in the high-$\theta$ tail (shaded teal). When Thompson Sampling draws from Arm C, that tail occasionally produces a sample exceeding Arm A's likely draw, and Arm C wins the $\argmax$ --- this is exploration. Arm B's mass in the high-$\theta$ region is effectively zero, so it is almost never chosen.}
 \end{figure}
 
 \subsubsection{Thompson Sampling in Contextual Setting}
