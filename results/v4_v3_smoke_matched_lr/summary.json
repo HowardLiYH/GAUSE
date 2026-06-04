@@ -1,0 +1,42 @@
+{
+  "mode": "smoke",
+  "config": {
+    "domains": [
+      "crypto"
+    ],
+    "n_agents": 8,
+    "n_iterations": 200,
+    "n_seeds": 5,
+    "niche_bonus": 0.3,
+    "lr": 0.433
+  },
+  "results": {
+    "crypto": {
+      "v4_eg": {
+        "n_trials": 5,
+        "mean_si": 0.7490454123168855,
+        "std_si": 0.10856088519708039,
+        "min_si": 0.6486797769078176,
+        "max_si": 0.9338812607518745,
+        "total_clamp_invocations": 0,
+        "mean_premass_sum": NaN
+      },
+      "v3_additive": {
+        "n_trials": 5,
+        "mean_si": 0.7238235590478546,
+        "std_si": 0.0646926640436273,
+        "min_si": 0.6668926622428643,
+        "max_si": 0.8037768452772988,
+        "total_clamp_invocations": 2382,
+        "mean_premass_sum": 1.3296408689374168
+      },
+      "paired": {
+        "n_seeds": 5,
+        "mean_diff_v4_minus_v3": 0.025221853269030904,
+        "std_diff": 0.14054604509540214,
+        "ci_95_half_width": 0.12319404023441145
+      }
+    }
+  },
+  "elapsed_seconds": 0.03739166259765625
+}

@@ -199,27 +199,31 @@ class NichePopulation:
         return winner, winning_method, base_score
 
     def update_preferences(self, winner: Agent, regime: str, method: str, score: float):
-        """Update winner's preferences based on outcome."""
-        lr = 0.1
+        """Update winner's preferences via exponentiated-gradient (V4).
 
-        # Increase preference for winning method in this regime
+        For the winning regime, multiply the winning method's preference by
+        exp(eta) and renormalize. This is the canonical Hedge / multiplicative-
+        weights update on the per-regime method simplex, replacing the V3
+        additive + clamp + post-hoc-norm heuristic.
+
+        Methods have R=5 alternatives per regime here (vs R=4 niches in the
+        canonical paper), so we rescale eta the same way the unified pipeline
+        does: eta_V4(R) = eta_V3 * (R^2 - R + 1) / (R - 1).
+        """
+        R = len(self.methods)
+        eta_v3 = 0.1
+        eta_v4 = eta_v3 * (R * R - R + 1) / (R - 1)
+
+        prefs = winner.regime_method_preference[regime]
+        new = {}
         for m in self.methods:
             if m == method:
-                winner.regime_method_preference[regime][m] = min(
-                    0.95, winner.regime_method_preference[regime][m] + lr
-                )
+                new[m] = prefs[m] * np.exp(eta_v4)
             else:
-                winner.regime_method_preference[regime][m] = max(
-                    0.01, winner.regime_method_preference[regime][m] - lr / (len(self.methods) - 1)
-                )
+                new[m] = prefs[m]
+        total = sum(new.values())
+        winner.regime_method_preference[regime] = {m: v / total for m, v in new.items()}
 
-        # Normalize
-        total = sum(winner.regime_method_preference[regime].values())
-        winner.regime_method_preference[regime] = {
-            m: v/total for m, v in winner.regime_method_preference[regime].items()
-        }
-
-        # Update method scores
         winner.method_scores[method] += score
         winner.method_counts[method] += 1
 

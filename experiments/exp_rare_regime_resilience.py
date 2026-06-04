@@ -11,11 +11,15 @@ Hypothesis:
 Author: Yuhao Li
 """
 
+import sys as _sys
 import numpy as np
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
 import json
 from pathlib import Path
+
+_sys.path.insert(0, str(Path(__file__).parent.parent))
+from experiments._affinity_update import apply_affinity_update
 
 # Domain configurations with regime probabilities and affinity matrices
 DOMAIN_CONFIGS = {
@@ -204,16 +208,13 @@ def train_niche_population(
             winner['beliefs'][regime][winner_method]['beta'] += 1
 
         # Update winner's affinity
-        lr = 0.1
-        for r in regimes:
-            if r == regime:
-                winner['affinity'][r] = winner['affinity'][r] + lr * (1 - winner['affinity'][r])
-            else:
-                winner['affinity'][r] = max(0.01, winner['affinity'][r] - lr / (len(regimes) - 1))
-
-        # Normalize affinity
-        total = sum(winner['affinity'].values())
-        winner['affinity'] = {r: v / total for r, v in winner['affinity'].items()}
+        winner['affinity'] = apply_affinity_update(
+            affinity=winner['affinity'],
+            winning_regime=regime,
+            regimes=regimes,
+            eta=0.1,
+            rule="eg",
+        )
 
     return agents
 

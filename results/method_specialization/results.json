@@ -12,28 +12,29 @@
     ],
     "metric": "Sharpe",
     "niche_performance": {
-      "mean": 0.8857131876665245,
-      "std": 0.010650105734862872
+      "mean": 0.8834009825427162,
+      "std": 0.009662724811312208
     },
     "homo_performance": {
       "mean": 0.6257049289450766,
       "std": 0.0088808036827052
     },
-    "improvement_pct": 41.55445269702695,
+    "improvement_pct": 41.18491667184226,
     "method_specialization_index": {
-      "mean": 0.36080650257780383,
-      "std": 0.029445395055064858
+      "mean": 0.38819010376970803,
+      "std": 0.03934226850481377
     },
     "method_coverage": 0.7866666666666668,
     "method_distribution": {
-      "momentum_short": 7,
-      "mean_revert": 115,
-      "momentum_long": 98,
-      "trend": 20
+      "momentum_short": 11,
+      "momentum_long": 92,
+      "mean_revert": 110,
+      "trend": 26,
+      "naive": 1
     },
-    "t_stat": 100.97268920234269,
-    "p_value": 6.97725200367872e-67,
-    "effect_size": 26.516727270826088
+    "t_stat": 105.74105405649371,
+    "p_value": 4.870330406817164e-68,
+    "effect_size": 27.76896122997057
   },
   "commodities": {
     "domain": "commodities",
@@ -48,29 +49,29 @@
     ],
     "metric": "Dir. Accuracy",
     "niche_performance": {
-      "mean": 0.889569540573775,
-      "std": 0.009680542182544367
+      "mean": 0.8858259578580173,
+      "std": 0.00960807378486224
     },
     "homo_performance": {
       "mean": 0.6482244308207028,
       "std": 0.012304790886862947
     },
-    "improvement_pct": 37.2317207247975,
+    "improvement_pct": 36.654207360943246,
     "method_specialization_index": {
-      "mean": 0.3709336851761694,
-      "std": 0.034819155574244386
+      "mean": 0.3927758286815733,
+      "std": 0.03839625886134505
     },
-    "method_coverage": 0.7333333333333336,
+    "method_coverage": 0.7533333333333335,
     "method_distribution": {
-      "trend": 75,
-      "ma20": 27,
-      "mean_revert": 132,
-      "naive": 2,
-      "ma5": 4
+      "trend": 83,
+      "ma20": 28,
+      "mean_revert": 123,
+      "ma5": 4,
+      "naive": 2
     },
-    "t_stat": 83.01325461838358,
-    "p_value": 5.538788342181274e-62,
-    "effect_size": 21.80034868803167
+    "t_stat": 81.95963278214234,
+    "p_value": 1.1547599587923743e-61,
+    "effect_size": 21.52365403823178
   },
   "weather": {
     "domain": "weather",
@@ -85,29 +86,29 @@
     ],
     "metric": "RMSE",
     "niche_performance": {
-      "mean": 0.8680092315640596,
-      "std": 0.010535408816514416
+      "mean": 0.8633701467495496,
+      "std": 0.010670863608707181
     },
     "homo_performance": {
       "mean": 0.67483555370684,
       "std": 0.005383314280232192
     },
-    "improvement_pct": 28.62529645868918,
+    "improvement_pct": 27.937857157510138,
     "method_specialization_index": {
-      "mean": 0.402298144726733,
-      "std": 0.039983472262634774
+      "mean": 0.4256935969602529,
+      "std": 0.049002606187041
     },
-    "method_coverage": 1.0,
+    "method_coverage": 0.9933333333333334,
     "method_distribution": {
-      "naive": 50,
-      "trend": 44,
-      "ma3": 67,
-      "ma7": 47,
-      "seasonal": 32
+      "naive": 44,
+      "trend": 57,
+      "ma3": 55,
+      "ma7": 48,
+      "seasonal": 36
     },
-    "t_stat": 87.9269171738342,
-    "p_value": 2.0236456052527747e-63,
-    "effect_size": 23.090739692896893
+    "t_stat": 84.94813968409342,
+    "p_value": 1.4712883303009878e-62,
+    "effect_size": 22.30847439997549
   },
   "solar": {
     "domain": "solar",
@@ -122,29 +123,29 @@
     ],
     "metric": "MAE",
     "niche_performance": {
-      "mean": 0.9247012295703179,
-      "std": 0.006720785659218944
+      "mean": 0.9189551141622652,
+      "std": 0.008906170581773757
     },
     "homo_performance": {
       "mean": 0.7862576918367826,
       "std": 0.005612479229940938
     },
-    "improvement_pct": 17.607908853663005,
+    "improvement_pct": 16.877090514114663,
     "method_specialization_index": {
-      "mean": 0.3670144265843647,
-      "std": 0.025307618442652068
+      "mean": 0.3749355700275669,
+      "std": 0.030165451862476825
     },
-    "method_coverage": 0.9666666666666667,
+    "method_coverage": 0.9266666666666666,
     "method_distribution": {
-      "naive": 40,
-      "hybrid": 132,
-      "clear_sky": 38,
-      "seasonal": 11,
-      "ma6": 19
+      "naive": 39,
+      "hybrid": 126,
+      "clear_sky": 45,
+      "seasonal": 14,
+      "ma6": 16
     },
-    "t_stat": 85.14558222930319,
-    "p_value": 1.2872915224263378e-62,
-    "effect_size": 22.360325352587974
+    "t_stat": 67.88171553273457,
+    "p_value": 5.770189150172858e-57,
+    "effect_size": 17.826611846003594
   },
   "traffic": {
     "domain": "traffic",
@@ -159,29 +160,29 @@
     ],
     "metric": "MAPE",
     "niche_performance": {
-      "mean": 0.9165148873256279,
-      "std": 0.008926876873453605
+      "mean": 0.9152362114980487,
+      "std": 0.009478308240571741
     },
     "homo_performance": {
       "mean": 0.7402127338275738,
       "std": 0.006213986016848563
     },
-    "improvement_pct": 23.817768249731593,
+    "improvement_pct": 23.645023879208907,
     "method_specialization_index": {
-      "mean": 0.3114462925314428,
-      "std": 0.024580423247268487
+      "mean": 0.331463378572616,
+      "std": 0.02475253757609053
     },
-    "method_coverage": 1.0,
+    "method_coverage": 0.9933333333333334,
     "method_distribution": {
-      "persistence": 39,
-      "rush_hour": 77,
-      "exp_smooth": 41,
-      "weekly_pattern": 49,
-      "hourly_avg": 34
+      "weekly_pattern": 46,
+      "rush_hour": 81,
+      "persistence": 31,
+      "hourly_avg": 33,
+      "exp_smooth": 49
     },
-    "t_stat": 87.2889341781324,
-    "p_value": 3.077624314501267e-63,
-    "effect_size": 22.923197150115364
+    "t_stat": 83.16200629799971,
+    "p_value": 4.996757070672605e-62,
+    "effect_size": 21.839412792896248
   },
   "air_quality": {
     "domain": "air_quality",
@@ -196,28 +197,28 @@
     ],
     "metric": "RMSE",
     "niche_performance": {
-      "mean": 0.9161763198981678,
-      "std": 0.00688085773472552
+      "mean": 0.9116424933664583,
+      "std": 0.009303249567530052
     },
     "homo_performance": {
       "mean": 0.8338246133392587,
       "std": 0.004883360813585487
     },
-    "improvement_pct": 9.876382304080849,
+    "improvement_pct": 9.332643673776726,
     "method_specialization_index": {
-      "mean": 0.3713621859592372,
-      "std": 0.03670210572756584
+      "mean": 0.38353036207875296,
+      "std": 0.03971820413923091
     },
-    "method_coverage": 0.7333333333333335,
+    "method_coverage": 0.6933333333333334,
     "method_distribution": {
-      "regime_avg": 189,
-      "moving_avg": 3,
-      "exp_smooth": 15,
-      "persistence": 32,
-      "hourly_avg": 1
+      "persistence": 38,
+      "regime_avg": 180,
+      "moving_avg": 2,
+      "exp_smooth": 18,
+      "hourly_avg": 2
     },
-    "t_stat": 52.559555835321774,
-    "p_value": 1.266596242575217e-50,
-    "effect_size": 13.802815578855036
+    "t_stat": 39.88397630840563,
+    "p_value": 7.377859385071494e-44,
+    "effect_size": 10.474045314636859
   }
 }

@@ -2,17 +2,31 @@
 """
 Task Performance Experiment - Domain-Specific Metrics.
 
-This script runs experiments on all 6 domains and computes
-domain-appropriate performance metrics:
+WARNING: synthetic / illustrative script.
+========================================
+This script does NOT run the NichePopulation algorithm. It produces an
+illustrative task-performance table for the paper by sampling per-domain
+performance values from hardcoded base-rate distributions
+(``base_diverse`` and ``base_homo`` per domain) plus Gaussian noise, with
+a small linear coupling to a synthetic Specialization Index drawn from
+``Normal(0.3, 0.1)`` (see ``simulate_domain_experiment`` below).
 
-- Crypto: Sharpe Ratio
-- Commodities: Directional Accuracy
-- Weather: RMSE
-- Solar: MAE
-- Traffic: MAPE
-- Electricity: RMSE
+Concretely, this script is independent of the V3 -> V4 affinity-update
+renovation: it does not call ``NichePopulation`` or any affinity update,
+and its numerical outputs would be unchanged whether the project uses V3
+or V4. We retain it only as an illustrative figure-generator; the paper
+itself derives its method-specialization table from
+``experiments/exp_method_specialization.py``, which IS a real algorithmic
+experiment and was re-run under the V4 EG update for the v4.0.0 paper.
 
-Plus unified: Δ% improvement over homogeneous baseline.
+For honest task-level performance numbers on real data, use:
+- experiments/exp_method_specialization.py (algorithmic, V4)
+- experiments/exp_unified_pipeline.py (algorithmic, V4, real data)
+- experiments/exp_all_domains.py (algorithmic, V4, real data)
+
+This script's domain-appropriate metrics (Crypto: Sharpe, Commodities:
+Directional Accuracy, Weather: RMSE, Solar: MAE, Traffic: MAPE,
+Electricity: RMSE) are illustrative magnitudes only, not measurements.
 """
 
 import sys

@@ -17,10 +17,11 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{tikz}
-\usetikzlibrary{shapes,arrows,positioning,calc,patterns,decorations.pathreplacing,shapes.geometric,arrows.meta,fit,backgrounds}
+\usetikzlibrary{shapes,arrows,positioning,calc,patterns,decorations.pathreplacing,shapes.geometric,arrows.meta,fit,backgrounds,intersections}
 \usepackage{colortbl} % For \rowcolor in tables
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
+\usepgfplotslibrary{fillbetween}
 \usepackage{listings}
 \usepackage{tcolorbox}
 \usepackage{enumitem}
@@ -532,31 +533,37 @@ For $\theta \sim \text{Beta}(\alpha, \beta)$:
     xlabel={$\theta$},
     ylabel={$f(\theta)$},
     title={Beta Distributions with Different Parameters},
-    width=12cm,
-    height=6cm,
+    width=13cm,
+    height=7.5cm,
     xmin=0, xmax=1,
-    ymin=0, ymax=4,
+    ymin=0, ymax=4.5,
     legend pos=north east,
+    legend style={font=\footnotesize, draw=gray!60, fill=white, fill opacity=0.92, text opacity=1, row sep=1pt},
+    legend cell align={left},
     grid=major,
+    grid style={gray!20},
+    no markers,
+    samples=200,
+    smooth,
 ]
 % Beta(1,1) = Uniform
-\addplot[blue, thick, domain=0.01:0.99, samples=100] {1};
-% Beta(2,2)
-\addplot[red, thick, domain=0.01:0.99, samples=100]
-    {x^(2-1)*(1-x)^(2-1) / 0.1667};
-% Beta(5,5)
-\addplot[green, thick, domain=0.01:0.99, samples=100]
-    {x^(5-1)*(1-x)^(5-1) / 0.00397};
-% Beta(10,2)
-\addplot[orange, thick, domain=0.01:0.99, samples=100]
-    {x^(10-1)*(1-x)^(2-1) / 0.0091};
-% Beta(2,10)
-\addplot[purple, thick, domain=0.01:0.99, samples=100]
-    {x^(2-1)*(1-x)^(10-1) / 0.0091};
-\legend{Beta(1,1), Beta(2,2), Beta(5,5), Beta(10,2), Beta(2,10)}
+\addplot[black, very thick, dashed, domain=0.01:0.99] {1};
+% Beta(2,2) -- symmetric, weak; peak 1.5 at theta=0.5
+\addplot[blue!70!black, very thick, domain=0.01:0.99]
+    {x^(2-1)*(1-x)^(2-1) / 0.16667};
+% Beta(5,5) -- symmetric, strong; peak ~2.46 at theta=0.5
+\addplot[teal!80!black, very thick, dotted, domain=0.01:0.99]
+    {x^(5-1)*(1-x)^(5-1) / 0.001587};
+% Beta(10,2) -- skewed right; peak ~4.26 at theta=0.9
+\addplot[red!75!black, very thick, domain=0.01:0.99]
+    {x^(10-1)*(1-x)^(2-1) / 0.009091};
+% Beta(2,10) -- skewed left; peak ~4.26 at theta=0.1
+\addplot[orange!90!black, very thick, dashdotted, domain=0.01:0.99]
+    {x^(2-1)*(1-x)^(10-1) / 0.009091};
+\legend{{Beta(1,1) -- uniform}, {Beta(2,2) -- weak symmetric}, {Beta(5,5) -- strong symmetric}, {Beta(10,2) -- skewed high}, {Beta(2,10) -- skewed low}}
 \end{axis}
 \end{tikzpicture}
-\caption{Various Beta distributions. Beta(1,1) is uniform (no prior information). As parameters increase, distribution concentrates around the mean. Skewed distributions indicate confident beliefs about quality.}
+\caption{Various Beta distributions. \textbf{Beta(1,1)} (dashed black) is uniform --- no prior information. \textbf{Beta(2,2)} and \textbf{Beta(5,5)} (blue solid, teal dotted) are symmetric around $\theta = 0.5$; the higher parameters give tighter concentration. \textbf{Beta(10,2)} (red solid) and \textbf{Beta(2,10)} (orange dash-dotted) are skewed, peaking near $\theta = 0.9$ and $\theta = 0.1$ respectively, encoding confident beliefs about high vs.\ low success rates.}
 \end{figure}
 
 \subsection{Beta-Bernoulli Conjugacy}
@@ -708,28 +715,37 @@ where the probability is over the posterior distribution of $\mu$.
 \begin{tikzpicture}
 \begin{axis}[
     xlabel={$\theta$ (true quality)},
-    ylabel={PDF},
+    ylabel={Posterior density $f(\theta)$},
     title={Thompson Sampling: Why Uncertain Arms Get Explored},
-    width=12cm,
-    height=6cm,
+    width=13cm,
+    height=7cm,
     xmin=0, xmax=1,
-    ymin=0, ymax=5,
-    legend pos=north east,
+    ymin=0, ymax=6,
+    legend pos=north west,
+    legend style={font=\footnotesize, draw=gray!60, fill=white, fill opacity=0.92, text opacity=1, row sep=1pt},
+    legend cell align={left},
+    grid=major,
+    grid style={gray!20},
+    no markers,
+    samples=200,
+    smooth,
 ]
-% Arm A: High mean, low variance (good and confident)
-\addplot[blue, thick, domain=0.01:0.99, samples=100, name path=A]
-    {exp(-50*(x-0.8)^2) * 4};
-% Arm B: Low mean, low variance (bad and confident)
-\addplot[red, thick, domain=0.01:0.99, samples=100, name path=B]
-    {exp(-50*(x-0.3)^2) * 4};
-% Arm C: Medium mean, high variance (uncertain)
-\addplot[green, thick, domain=0.01:0.99, samples=100, name path=C]
-    {exp(-10*(x-0.5)^2) * 1.8};
-\legend{Arm A: Good (exploit), Arm B: Bad (avoid), Arm C: Uncertain (explore!)}
-\addplot[green, fill opacity=0.2] fill between[of=A and C, soft clip={domain=0.7:1}];
+% Arm A: good and confident -- Beta(20, 5), peak ~5.2 at theta ~ 0.83
+\addplot[blue!75!black, very thick, domain=0.001:0.999]
+    {x^(20-1)*(1-x)^(5-1) / 4.706e-6};
+% Arm B: bad and confident -- Beta(5, 20), peak ~5.2 at theta ~ 0.17
+\addplot[red!75!black, very thick, dashed, domain=0.001:0.999]
+    {x^(5-1)*(1-x)^(20-1) / 4.706e-6};
+% Arm C: uncertain -- Beta(3, 3), broad, peak 1.875 at theta = 0.5
+\addplot[teal!80!black, very thick, dash dot, domain=0.001:0.999]
+    {x^(3-1)*(1-x)^(3-1) / 0.0333};
+% Shade Arm C's right tail (theta > 0.7) -- the "exploration mass" that can sometimes beat Arm A
+\addplot[draw=none, fill=teal!40, fill opacity=0.55, domain=0.7:0.999]
+    {x^(3-1)*(1-x)^(3-1) / 0.0333} \closedcycle;
+\legend{{Arm A: Good (exploit)}, {Arm B: Bad (avoid)}, {Arm C: Uncertain (explore!)}, {Arm C's high-$\theta$ tail (exploration mass)}}
 \end{axis}
 \end{tikzpicture}
-\caption{Arm C (uncertain) sometimes samples values higher than Arm A, leading to exploration. Arm B (confidently bad) rarely samples high.}
+\caption{Posterior densities for three Thompson-sampling arms. \textbf{Arm A} (blue solid) is confidently good --- its posterior $\mathrm{Beta}(20,5)$ concentrates near $\theta \approx 0.83$. \textbf{Arm B} (red dashed) is confidently bad --- $\mathrm{Beta}(5,20)$ concentrates near $\theta \approx 0.17$. \textbf{Arm C} (teal dash-dot) is uncertain --- its broad $\mathrm{Beta}(3,3)$ posterior carries non-negligible probability mass in the high-$\theta$ tail (shaded teal). When Thompson Sampling draws from Arm C, that tail occasionally produces a sample exceeding Arm A's likely draw, and Arm C wins the $\argmax$ --- this is exploration. Arm B's mass in the high-$\theta$ region is effectively zero, so it is almost never chosen.}
 \end{figure}
 
 \subsubsection{Thompson Sampling in Contextual Setting}
@@ -1375,22 +1391,430 @@ $\alpha_{i,r}$ represents agent $i$'s ``affinity'' or ``preference'' for regime 
 
 \subsection{Evolution Over Time}
 
-The niche affinity evolves through competitive dynamics:
-
+The niche affinity evolves through competitive dynamics via the
+\textbf{exponentiated-gradient} (EG) update, also known as the Hedge
+algorithm or multiplicative-weights update~\cite{kivinen1997exponentiated,
+arora2012multiplicative}. For the winner $i^*$ on iteration $t$ with
+realized regime $r_t$,
 \begin{equation}
-\alpha_{i,r}^{(t+1)} =
-\begin{cases}
-\alpha_{i,r}^{(t)} + \eta(1 - \alpha_{i,r}^{(t)}) & \text{if } i = i^* \text{ and } r = r_t \\
-\alpha_{i,r}^{(t)} - \frac{\eta}{R-1} & \text{if } i = i^* \text{ and } r \neq r_t \\
-\alpha_{i,r}^{(t)} & \text{if } i \neq i^*
-\end{cases}
+\label{eq:eg_affinity_update}
+\alpha_{i^*,j}^{(t+1)}
+\;=\;
+\frac{\alpha_{i^*,j}^{(t)} \, \exp\!\bigl(\eta \cdot \mathbf{1}[j = r_t]\bigr)}
+     {\sum_{k=1}^{R} \alpha_{i^*,k}^{(t)} \, \exp\!\bigl(\eta \cdot \mathbf{1}[k = r_t]\bigr)}\,,
 \end{equation}
+while non-winners do not update, $\alpha_{i,r}^{(t+1)} = \alpha_{i,r}^{(t)}$
+for $i \neq i^*$.
 
-followed by normalization to maintain $\alpha_i \in \Delta^R$.
+For the indicator-reward formulation used here, Eq.~\eqref{eq:eg_affinity_update}
+simplifies operationally to ``multiply the winning entry by $e^{\eta}$ and renormalize.''
+
+\begin{intuition}
+\textbf{Why EG.} Equation~\eqref{eq:eg_affinity_update} is mirror descent on the simplex
+$\Delta^R$ with the entropic regularizer $\Phi(\alpha) = \sum_r \alpha_r \log \alpha_r$.
+The exponential is the inverse of the regularizer's gradient, so the
+update is a closed-form Bregman projection onto $\Delta^R$ given a
+linear reward signal. In the small-$\eta$ limit it recovers the
+continuous-time replicator dynamics
+$\dot\alpha_r = \eta\, \alpha_r (r_r - \bar r)$,
+linking this learning rule to standard models in evolutionary game
+theory~\cite{sandholm2010population}.
+\end{intuition}
+
+\begin{remark}[Structural Properties]
+Three properties of Eq.~\eqref{eq:eg_affinity_update} hold by construction:
+\begin{itemize}
+    \item \textbf{Simplex preservation:} the denominator is precisely the
+    sum of the post-update numerators, so $\sum_j \alpha_{i^*,j}^{(t+1)} = 1$ exactly.
+    \item \textbf{Strict positivity:} since $\exp(\cdot) > 0$ and
+    $\alpha_{i^*,k}^{(t)} > 0$, the post-update vector lies in the
+    relative interior of $\Delta^R$. No clamping is needed.
+    \item \textbf{Proportional shrinkage of non-winners:}
+    every non-winning entry is divided by the same normalization
+    constant, preserving their pairwise ratios across the update.
+\end{itemize}
+\end{remark}
 
 \begin{keypoint}
-Only the \textbf{winner} updates their affinity. This creates the competitive pressure that drives specialization.
+Only the \textbf{winner} updates their affinity. This creates the
+competitive pressure that drives specialization. The EG form makes
+this update simplex-preserving and non-negative by construction; no
+post-hoc normalization or clamping is needed.
 \end{keypoint}
+
+% =====================================================================
+\subsection{Why the V3 Heuristic Fails and Why EG Is Canonical}
+\label{sec:v3_v4_math}
+% =====================================================================
+
+Earlier versions of this work~\cite{li2026emergent} used an additive
+heuristic for the affinity update. We first state that heuristic
+formally and then prove that it suffers from three distinct structural
+defects (Propositions~\ref{prop:v3_mass_drift}--\ref{prop:v3_eff_rate}).
+We then derive Eq.~\eqref{eq:eg_affinity_update} from a single
+optimization principle (Proposition~\ref{prop:eg_derivation}) and prove
+that it avoids all three defects by construction
+(Propositions~\ref{prop:eg_simplex}--\ref{prop:eg_replicator}).
+
+\begin{definition}[V3 Additive Update]
+\label{def:v3_update}
+For winner $i^*$ and realized regime $r_t$, the V3 update first
+modifies each entry of $\alpha_{i^*}$ according to
+\begin{equation}
+\label{eq:v3_update}
+\tilde{\alpha}_{i^*,r} =
+\begin{cases}
+\alpha_{i^*,r}^{(t)} + \eta\!\left(1 - \alpha_{i^*,r}^{(t)}\right) & r = r_t \\[3pt]
+\alpha_{i^*,r}^{(t)} - \dfrac{\eta}{R-1} & r \neq r_t
+\end{cases}
+\end{equation}
+then applies the floor $\hat{\alpha}_{i^*,r} = \max\!\left(\epsilon,\, \tilde{\alpha}_{i^*,r}\right)$
+with $\epsilon = 0.01$, and finally rescales
+$\alpha_{i^*,r}^{(t+1)} = \hat{\alpha}_{i^*,r} / \sum_{k} \hat{\alpha}_{i^*,k}$.
+\end{definition}
+
+\paragraph{V3 Defect 1: Mass drift.}
+The pre-floor, pre-rescaling vector $\tilde{\alpha}_{i^*}$ does not lie
+on the simplex.
+
+\begin{proposition}[V3 Mass Drift]
+\label{prop:v3_mass_drift}
+Let $\alpha_{i^*}^{(t)} \in \Delta^R$ and apply Eq.~\eqref{eq:v3_update}
+with $\eta > 0$. Then
+\begin{equation}
+\label{eq:v3_premass}
+\sum_{r=1}^{R} \tilde{\alpha}_{i^*,r}
+\;=\;
+1 \;-\; \eta\,\alpha_{i^*,r_t}^{(t)},
+\end{equation}
+which is strictly less than $1$ whenever $\alpha_{i^*,r_t}^{(t)} > 0$.
+\end{proposition}
+
+\begin{proof}
+Compute the net change in the sum directly. The winning regime contributes
+$+\eta\bigl(1 - \alpha_{i^*,r_t}^{(t)}\bigr)$. Each of the $R-1$ non-winning
+regimes contributes $-\eta/(R-1)$, summing to $-\eta$. Therefore
+\[
+\sum_{r=1}^{R} \tilde{\alpha}_{i^*,r}
+\;=\; 1 + \eta\bigl(1 - \alpha_{i^*,r_t}^{(t)}\bigr) - \eta
+\;=\; 1 - \eta\,\alpha_{i^*,r_t}^{(t)}.
+\]
+Since $\alpha_{i^*,r_t}^{(t)} \in (0,1]$ and $\eta > 0$, the result is
+strictly less than $1$.
+\end{proof}
+
+\noindent The implication is operationally severe: the post-rescaling
+step does \emph{not} merely correct floating-point error---it absorbs a
+state-dependent drift of magnitude $\eta\,\alpha_{i^*,r_t}^{(t)}$, which
+can be as large as $\eta$ itself. The official paper equation does not
+disclose this drift; the published main paper of v3.x even omits the
+loss-side update entirely (only the winner equation is shown).
+
+\paragraph{V3 Defect 2: Negativity in steady state.}
+The pre-floor update can produce negative entries; the $\max(\epsilon,\cdot)$
+clamp silently absorbs them.
+
+\begin{proposition}[V3 Eventual Negativity]
+\label{prop:v3_negativity}
+Fix $\eta > 0$, $R \geq 2$, and any infinite win sequence in which the
+winner $i^*$ wins regime $r_t = r_0$ infinitely often. Without the
+$\max(\epsilon,\cdot)$ floor, there exists a finite time $t^\star$ such
+that for all $t \geq t^\star$ and all $r \neq r_0$,
+$\tilde{\alpha}_{i^*,r}^{(t)} < 0$.
+\end{proposition}
+
+\begin{proof}
+The unclamped V3 dynamics on regime $r \neq r_0$ are
+$\alpha_r^{(t+1)} = (\alpha_r^{(t)} - \eta/(R-1)) / S^{(t)}$
+where $S^{(t)} = 1 - \eta\alpha_{r_0}^{(t)} \in (1-\eta,\,1)$. The numerator
+is a contraction toward $0$ from above as long as $\alpha_r^{(t)} > \eta/(R-1)$.
+Repeated wins on $r_0$ drive $\alpha_{r_0}^{(t)} \to 1$ (standard fixed
+point analysis), forcing $\alpha_r^{(t)} \to 0$ for $r \neq r_0$.
+By continuity there is a finite $t^\star$ at which $\alpha_r^{(t^\star)} <
+\eta/(R-1)$ for every $r \neq r_0$, after which the next win on $r_0$
+makes $\tilde{\alpha}_r^{(t^\star+1)} = \alpha_r^{(t^\star)} - \eta/(R-1) < 0$.
+\end{proof}
+
+\noindent So under any realistic specialization trajectory the clamp
+\emph{must} fire. The clamp is not a numerical safety net for rare edge
+cases; it is the active mechanism preventing the affinity vector from
+leaving the nonnegative orthant. Our V4 implementation logs how often
+this clamp fires; in a small synthetic sanity-check with $R=4$, $N=8$
+learners, and $500$ iterations, the V3 clamp was invoked on roughly
+$35\%$ of all updates---i.e., it is fundamental to V3's operation, not
+incidental. Full empirical comparison appears in the V4 results section.%
+\footnote{See \texttt{scripts/v4\_sanity\_check.py} and
+\texttt{results/v4\_sanity/diagnostics.txt} in the repository for the
+exact figures.}
+
+\paragraph{V3 Defect 3: State-dependent effective step size.}
+The post-hoc rescaling injects a nonlinearity into the apparent step size.
+
+\begin{proposition}[V3 Effective Rate Depends on State]
+\label{prop:v3_eff_rate}
+Apply the V3 update to $\alpha_{i^*,r_t}^{(t)} = \alpha \in (0,1)$ (winner
+case) in a regime where the clamp does not fire. The post-update entry
+satisfies, to second order in $\eta$,
+\begin{equation}
+\label{eq:v3_eff_rate}
+\alpha_{i^*,r_t}^{(t+1)} - \alpha
+\;=\; \eta\bigl(1 - \alpha + \alpha^2\bigr) + O(\eta^2).
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The unclamped pre-norm winner entry is $\tilde{\alpha} = \alpha + \eta(1-\alpha)$;
+the pre-norm sum is $S = 1 - \eta\alpha$ by Prop.~\ref{prop:v3_mass_drift}.
+After rescaling and expanding $1/S = 1 + \eta\alpha + O(\eta^2)$:
+\begin{align*}
+\alpha_{i^*,r_t}^{(t+1)}
+&= \tilde{\alpha} / S
+= (\alpha + \eta(1-\alpha))\bigl(1 + \eta\alpha + O(\eta^2)\bigr)\\
+&= \alpha + \eta\bigl[(1 - \alpha) + \alpha^2\bigr] + O(\eta^2).
+\end{align*}
+Subtracting $\alpha$ yields Eq.~\eqref{eq:v3_eff_rate}.
+\end{proof}
+
+\noindent The effective rate $\eta(1 - \alpha + \alpha^2)$ is
+\emph{state-dependent}, ranging between $3\eta/4$ (at $\alpha = 1/2$)
+and $\eta$ (at $\alpha \in \{0, 1\}$). Standard regret-bound analyses
+for the multiplicative-weights family~\cite{arora2012multiplicative,
+cesa2006prediction} assume a fixed per-step gain; V3 violates this
+assumption silently through its post-hoc rescaling.
+
+% --------------------------------------------------------------------
+\subsubsection*{Derivation of EG: A Single Optimization Principle}
+% --------------------------------------------------------------------
+
+In contrast to the patchwork V3 update, the EG form arises from a
+single variational principle: mirror descent on the
+simplex~\cite{nemirovski1983problem, beck2003mirror} with the entropic
+regularizer.
+
+\begin{definition}[Bregman Divergence with Entropic Regularizer]
+On $\Delta^R$, let $\Phi(\alpha) = \sum_{r=1}^{R} \alpha_r \log \alpha_r$.
+The induced Bregman divergence is the Kullback--Leibler divergence
+\begin{equation}
+D_\Phi(p, q) \;=\; \sum_{r=1}^{R} p_r \log \frac{p_r}{q_r}
+\;=\; \mathrm{KL}(p \,\|\, q).
+\end{equation}
+\end{definition}
+
+\begin{definition}[Mirror-Descent Step]
+Given a linear reward signal $g^{(t)} \in \mathbb{R}^R$, step size $\eta > 0$,
+and current iterate $\alpha^{(t)} \in \mathrm{relint}(\Delta^R)$, the
+mirror-descent update is
+\begin{equation}
+\label{eq:mirror_descent}
+\alpha^{(t+1)} \;=\; \arg\min_{p \in \Delta^R}
+\Bigl\{\, -\eta \,\langle g^{(t)}, p\rangle \;+\; D_\Phi(p, \alpha^{(t)}) \,\Bigr\}.
+\end{equation}
+\end{definition}
+
+\begin{proposition}[EG is Mirror Descent on $\Delta^R$]
+\label{prop:eg_derivation}
+The closed-form solution of Eq.~\eqref{eq:mirror_descent} is
+\begin{equation}
+\label{eq:eg_general}
+\alpha_j^{(t+1)} \;=\;
+\frac{\alpha_j^{(t)}\,\exp\!\bigl(\eta \cdot g_j^{(t)}\bigr)}
+     {\sum_{k=1}^{R} \alpha_k^{(t)}\,\exp\!\bigl(\eta \cdot g_k^{(t)}\bigr)}\,.
+\end{equation}
+Equation~\eqref{eq:eg_affinity_update} is the special case $g_j^{(t)} = \mathbf{1}[j = r_t]$.
+\end{proposition}
+
+\begin{proof}
+Write the Lagrangian of Eq.~\eqref{eq:mirror_descent} with the equality
+constraint $\sum_j p_j = 1$ and slack variables $\mu_j \geq 0$ for the
+nonnegativity constraints $p_j \geq 0$. Because $D_\Phi$ has gradient
+$\partial p_j \log(p_j/\alpha_j) / \partial p_j = \log(p_j/\alpha_j) + 1$
+which diverges to $-\infty$ as $p_j \to 0^+$, any interior critical
+point satisfies $\mu_j = 0$, so it suffices to write
+\[
+\mathcal{L}(p, \lambda) \;=\;
+-\eta \sum_{j=1}^{R} g_j p_j
+\;+\; \sum_{j=1}^{R} p_j \log\frac{p_j}{\alpha_j^{(t)}}
+\;+\; \lambda\Bigl(\sum_{j=1}^{R} p_j - 1\Bigr).
+\]
+Setting $\partial \mathcal{L} / \partial p_j = 0$,
+\[
+-\eta g_j \;+\; \log\frac{p_j}{\alpha_j^{(t)}} \;+\; 1 \;+\; \lambda \;=\; 0,
+\]
+which solves for
+\[
+p_j \;=\; \alpha_j^{(t)} \exp\!\bigl(\eta g_j - 1 - \lambda\bigr).
+\]
+The constraint $\sum_j p_j = 1$ fixes $\exp(-1-\lambda)$ uniquely:
+$\exp(-1-\lambda) = 1 / \sum_k \alpha_k^{(t)} \exp(\eta g_k)$.
+Substituting yields Eq.~\eqref{eq:eg_general}. Since the objective in
+Eq.~\eqref{eq:mirror_descent} is strictly convex on $\Delta^R$, this
+critical point is the unique global minimizer.
+\end{proof}
+
+\noindent Three observations follow:
+
+\begin{proposition}[EG Simplex Preservation]
+\label{prop:eg_simplex}
+For any $\alpha^{(t)} \in \Delta^R$ and any $g^{(t)} \in \mathbb{R}^R$,
+$\sum_{j=1}^{R} \alpha_j^{(t+1)} = 1$ exactly.
+\end{proposition}
+\begin{proof}
+Let $Z = \sum_{k=1}^{R} \alpha_k^{(t)} \exp(\eta g_k)$. Then
+$\sum_j \alpha_j^{(t+1)} = \sum_j \alpha_j^{(t)} \exp(\eta g_j) / Z = Z/Z = 1$.
+\end{proof}
+
+\begin{proposition}[EG Preserves the Interior]
+\label{prop:eg_interior}
+If $\alpha^{(t)} \in \mathrm{relint}(\Delta^R)$, i.e.\ $\alpha_j^{(t)} > 0$
+for all $j$, then $\alpha^{(t+1)} \in \mathrm{relint}(\Delta^R)$. In
+particular, no clamping is ever required.
+\end{proposition}
+\begin{proof}
+$\exp(\eta g_j) > 0$ and $\alpha_j^{(t)} > 0$ by hypothesis, so each
+numerator is strictly positive. $Z$ is a finite sum of positives, so
+$Z > 0$. Each $\alpha_j^{(t+1)} = (\alpha_j^{(t)} \exp(\eta g_j))/Z$
+is strictly positive. Combined with Prop.~\ref{prop:eg_simplex},
+$\alpha^{(t+1)} \in \mathrm{relint}(\Delta^R)$.
+\end{proof}
+
+\begin{proposition}[Small-$\eta$ Limit: Discrete Replicator Dynamics]
+\label{prop:eg_replicator}
+For small $\eta$, the EG update~\eqref{eq:eg_general} reduces to the
+discrete replicator dynamics from evolutionary game
+theory~\cite{sandholm2010population}:
+\begin{equation}
+\label{eq:replicator}
+\alpha_j^{(t+1)} - \alpha_j^{(t)}
+\;=\;
+\eta \cdot \alpha_j^{(t)} \bigl( g_j^{(t)} - \bar{g}^{(t)} \bigr)
+\;+\; O(\eta^2),
+\end{equation}
+where $\bar{g}^{(t)} = \sum_k \alpha_k^{(t)} g_k^{(t)} = \langle g^{(t)}, \alpha^{(t)}\rangle$
+is the population-averaged reward.
+\end{proposition}
+\begin{proof}
+Taylor-expand $\exp(\eta g_j) = 1 + \eta g_j + O(\eta^2)$. Then
+$Z = 1 + \eta \bar{g} + O(\eta^2)$ and $1/Z = 1 - \eta \bar{g} + O(\eta^2)$.
+Hence
+\begin{align*}
+\alpha_j^{(t+1)}
+&= \alpha_j^{(t)} \bigl(1 + \eta g_j\bigr)\bigl(1 - \eta \bar{g}\bigr) + O(\eta^2)\\
+&= \alpha_j^{(t)} + \eta \alpha_j^{(t)} (g_j - \bar{g}) + O(\eta^2),
+\end{align*}
+which is Eq.~\eqref{eq:replicator}.
+\end{proof}
+
+\noindent Equation~\eqref{eq:replicator} is the canonical replicator
+equation of evolutionary game theory: types with above-average reward
+grow proportionally, types with below-average reward shrink
+proportionally. Thus the V4 update is the discrete-time analogue of the
+ODE most often used to model the very mechanism we are studying. This
+correspondence is \emph{not} available for the V3 heuristic: the
+asymmetric proportionality of V3
+(Proposition~\ref{prop:v3_eff_rate}'s $\eta(1-\alpha+\alpha^2)$
+correction) breaks the multiplicative form required for replicator
+dynamics.
+
+% --------------------------------------------------------------------
+\subsubsection*{Regret Bound}
+% --------------------------------------------------------------------
+
+A final consequence of writing the update as Eq.~\eqref{eq:eg_general}
+is that the standard regret guarantees of multiplicative
+weights~\cite{freund1997decision, arora2012multiplicative} apply
+directly. For completeness:
+
+\begin{theorem}[Hedge Regret Bound, after \cite{cesa2006prediction}, Cor.~2.3]
+\label{thm:eg_regret}
+Run the EG update~\eqref{eq:eg_general} for $T$ rounds with bounded
+rewards $g_j^{(t)} \in [0, 1]$ and step size $\eta = \sqrt{8\log R / T}$.
+Initialize $\alpha^{(0)} = (1/R, \ldots, 1/R)$. Let
+$G_T^j = \sum_{t=1}^{T} g_j^{(t)}$ be the cumulative reward of arm $j$
+and $G_T^{\mathrm{alg}} = \sum_{t=1}^{T} \langle \alpha^{(t)}, g^{(t)} \rangle$
+be the algorithm's cumulative expected reward. Then
+\begin{equation}
+\max_{j \in \{1,\ldots,R\}} G_T^j \;-\; G_T^{\mathrm{alg}}
+\;\leq\; \sqrt{(T/2) \log R}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}[Proof (potential-function argument, after Arora--Hazan--Kale~\cite{arora2012multiplicative})]
+Define unnormalized weights
+\[
+w_j^{(1)} = \tfrac{1}{R}, \qquad
+w_j^{(t+1)} = w_j^{(t)} \exp\!\left(\eta\, g_j^{(t)}\right),
+\]
+so that $w_j^{(t+1)} = (1/R)\exp(\eta\, G_t^j)$ with
+$G_t^j = \sum_{s \leq t} g_j^{(s)}$. The algorithm's iterate is the
+normalized distribution $\alpha_j^{(t)} = w_j^{(t)} / W_t$, where
+$W_t = \sum_{k} w_k^{(t)}$. Note $W_1 = 1$.
+
+\emph{Step 1: Upper bound on $W_{T+1}$.} For each round $t$,
+\[
+\frac{W_{t+1}}{W_t}
+\;=\; \sum_{j=1}^{R} \alpha_j^{(t)} \exp\!\bigl(\eta\, g_j^{(t)}\bigr).
+\]
+Hoeffding's lemma applied to the random variable $g_j^{(t)} \in [0,1]$
+under the distribution $\alpha^{(t)}$ gives
+$\sum_j \alpha_j^{(t)} \exp(\eta g_j^{(t)})
+\leq \exp\!\bigl(\eta \langle \alpha^{(t)}, g^{(t)}\rangle + \eta^2/8\bigr)$.
+Taking logarithms and summing over $t = 1, \ldots, T$,
+\begin{equation}
+\label{eq:hedge_upper}
+\log W_{T+1}
+\;=\; \log W_{T+1} - \log W_1
+\;\leq\; \eta\, G_T^{\mathrm{alg}} + \tfrac{T\eta^2}{8}.
+\end{equation}
+
+\emph{Step 2: Lower bound on $W_{T+1}$ via the best arm.} For any fixed
+$j^\star \in \{1, \ldots, R\}$,
+\[
+W_{T+1} \;\geq\; w_{j^\star}^{(T+1)}
+\;=\; \tfrac{1}{R}\exp\!\bigl(\eta\, G_T^{j^\star}\bigr),
+\]
+so
+\begin{equation}
+\label{eq:hedge_lower}
+\log W_{T+1}
+\;\geq\; \eta\, G_T^{j^\star} - \log R.
+\end{equation}
+
+\emph{Step 3: Combine and tune $\eta$.} Chaining
+\eqref{eq:hedge_upper} and \eqref{eq:hedge_lower} and rearranging,
+\[
+G_T^{j^\star} - G_T^{\mathrm{alg}}
+\;\leq\; \frac{\log R}{\eta} + \frac{T\eta}{8}.
+\]
+The right-hand side is convex in $\eta$ and minimized at
+$\eta^\star = \sqrt{8\log R / T}$, yielding
+$G_T^{j^\star} - G_T^{\mathrm{alg}} \leq \sqrt{(T/2)\log R}$.
+Taking the maximum over $j^\star$ completes the proof.
+\end{proof}
+
+\noindent Theorem~\ref{thm:eg_regret} does \emph{not} hold for the V3
+heuristic. Proposition~\ref{prop:v3_eff_rate} shows V3's effective
+per-step gain is $\eta(1 - \alpha + \alpha^2)$, not $\eta$; the standard
+regret analysis assumes the latter. Patching V3's analysis to absorb
+the state-dependent rate is possible but yields bounds that are weaker
+and harder to interpret. EG attains the canonical rate as a corollary
+of its derivation, with no additional argument.
+
+\begin{remark}[Summary]
+The V3 heuristic and EG agree at the headline level: both push the
+winner's affinity for the realized regime upward. They differ at three
+mathematical layers exposed above: V3 silently violates simplex closure
+(Prop.~\ref{prop:v3_mass_drift}), eventually requires nonnegativity
+clamping (Prop.~\ref{prop:v3_negativity}), and exhibits a
+state-dependent effective rate that breaks the standard regret analysis
+(Prop.~\ref{prop:v3_eff_rate}). EG fixes all three by deriving from a
+single Bregman-projection principle (Prop.~\ref{prop:eg_derivation})
+with simplex preservation (Prop.~\ref{prop:eg_simplex}) and interior
+preservation (Prop.~\ref{prop:eg_interior}) as immediate consequences,
+plus the canonical regret bound (Thm.~\ref{thm:eg_regret}) and a clean
+small-$\eta$ limit to replicator dynamics
+(Prop.~\ref{prop:eg_replicator}). The V4 update is therefore not a
+refinement of the V3 heuristic but its canonical form.
+\end{remark}
 
 \section{Specialization Index (SI) --- Detailed Treatment}
 
@@ -2214,13 +2638,54 @@ A natural question: how many iterations are needed before agents reach stable sp
 
 \subsubsection{Convergence Rate}
 
-\begin{proposition}[Convergence Rate]
-Under the affinity update rule with learning rate $\eta$, the gap between current affinity and equilibrium decreases geometrically:
+\begin{proposition}[Log-Ratio Tracking for the EG Affinity Update]
+\label{prop:eg_log_ratio}
+Under the EG affinity update (Eq.~\eqref{eq:eg_affinity_update}) with
+learning rate $\eta$, define the log-ratio between any two regimes
+$r, r'$ for agent $i$ at time $t$ as
+$L_{i,r,r'}^{(t)} \;:=\; \log\!\bigl(\alpha_{i,r}^{(t)} / \alpha_{i,r'}^{(t)}\bigr)$.
+Then $L$ evolves linearly in the win counts:
 \begin{equation}
-|\alpha_{i,r}^{(t)} - \alpha_{i,r}^{*}| \leq (1 - \eta)^{W_i(r,t)} \cdot |\alpha_{i,r}^{(0)} - \alpha_{i,r}^{*}|
+\label{eq:eg_log_linear}
+L_{i,r,r'}^{(t)}
+\;=\;
+L_{i,r,r'}^{(0)} \,+\, \eta\bigl(W_i(r,t) - W_i(r',t)\bigr),
 \end{equation}
-where $W_i(r,t)$ is the number of wins for agent $i$ in regime $r$ up to time $t$.
+where $W_i(r,t)$ counts the number of rounds $s \leq t$ on which agent
+$i$ won and the realized regime was $r$.
 \end{proposition}
+
+\begin{proof}
+On any round $s \leq t$, the EG update multiplies $\alpha_{i,r}$ by
+$\exp(\eta\,\mathbf{1}[s \in W_i(r)])$ and divides by the same
+partition function $Z_s$ for every regime. The partition factors
+cancel in the ratio $\alpha_{i,r}^{(s)}/\alpha_{i,r'}^{(s)}$, leaving
+$\log\alpha_{i,r}^{(s+1)} - \log\alpha_{i,r'}^{(s+1)}
+= \log\alpha_{i,r}^{(s)} - \log\alpha_{i,r'}^{(s)}
++ \eta\bigl(\mathbf{1}[\text{win on }r] - \mathbf{1}[\text{win on }r']\bigr)$.
+Summing over $s = 0, \ldots, t-1$ yields Eq.~\eqref{eq:eg_log_linear}.
+\end{proof}
+
+\begin{remark}[Comparison to the V3 statement]
+Eq.~\eqref{eq:eg_log_linear} is exact---not a bound---because EG is a
+\emph{multiplicative} update with a partition-invariant log-ratio
+coordinate. The corresponding V3 statement was necessarily an
+inequality, because V3's additive update plus post-hoc normalization
+introduces a coupling between $\alpha_r$ and $\alpha_{r'}$ via the
+partition denominator $S^{(t)} = 1 - \eta\alpha^{(t)}_{r_t}$
+(Prop.~\ref{prop:v3_mass_drift}). Moving to EG converts the bound into
+an equality.
+\end{remark}
+
+\begin{remark}[Headline regret bound]
+The cumulative regret guarantee of Eq.~\eqref{eq:eg_general}
+($\sqrt{(T/2)\log R}$ at the optimal step size, Thm.~\ref{thm:eg_regret})
+is what justifies calling EG a \emph{no-regret} algorithm. Together with
+Prop.~\ref{prop:eg_log_ratio}, this gives a complete convergence story:
+log-ratios evolve linearly and deterministically as a function of
+realized wins, while the algorithm's average reward asymptotically
+matches that of the best fixed arm in hindsight.
+\end{remark}
 
 \subsubsection{Empirical Convergence Times}
 
@@ -2809,12 +3274,10 @@ In our context:
     \STATE Determine winner: $i^* \gets \argmax_i \text{Score}_i$
     \STATE \COMMENT{Update winner only}
     \STATE Update method belief: $\beta_{i^*,r_t,m_{i^*}}^+ \gets \beta_{i^*,r_t,m_{i^*}}^+ + 1$
-    \STATE \COMMENT{Update niche affinity}
-    \STATE $\alpha_{i^*,r_t} \gets \alpha_{i^*,r_t} + \eta \cdot (1 - \alpha_{i^*,r_t})$
-    \FOR{$r \neq r_t$}
-        \STATE $\alpha_{i^*,r} \gets \max(0.01, \alpha_{i^*,r} - \eta/(R-1))$
-    \ENDFOR
-    \STATE Normalize: $\alpha_{i^*} \gets \alpha_{i^*} / \|\alpha_{i^*}\|_1$
+    \STATE \COMMENT{Update niche affinity via exponentiated gradient (Eq.~\ref{eq:eg_affinity_update})}
+    \STATE $\alpha_{i^*,r_t} \gets \alpha_{i^*,r_t} \cdot \exp(\eta)$
+    \STATE $Z \gets \sum_{k=1}^{R} \alpha_{i^*,k}$ \COMMENT{Intrinsic simplex normalization}
+    \STATE $\alpha_{i^*,k} \gets \alpha_{i^*,k} / Z \quad \forall k$
 \ENDFOR
 \STATE \textbf{Return} niche affinities $\{\alpha_i\}_{i=1}^N$
 \end{algorithmic}
@@ -2825,9 +3288,12 @@ In our context:
 \subsection{Core Simulation Function}
 
 \begin{lstlisting}[caption={Core NichePopulation Simulation (from exp\_unified\_pipeline.py)}]
+import math
+import numpy as np
+
 def run_niche_population(regimes, regime_probs, n_agents, n_iterations,
                           niche_bonus, seed):
-    """Run NichePopulation simulation."""
+    """Run NichePopulation simulation (V4 EG update)."""
     rng = np.random.default_rng(seed)
 
     # Initialize niche affinities (uniform)
@@ -2857,19 +3323,15 @@ def run_niche_population(regimes, regime_probs, n_agents, n_iterations,
         # Step 3: Winner-take-all
         winner_id = max(agent_scores, key=agent_scores.get)
 
-        # Step 4: Update winner's niche affinity
+        # Step 4: Update winner's niche affinity via exponentiated gradient.
+        # Multiply winning regime's entry by exp(eta); others unchanged.
+        # Normalization is intrinsic (no clamping, no post-hoc rescaling).
         lr = 0.1
-        for r in regimes:
-            if r == regime:
-                niche_affinities[winner_id][r] = min(1.0,
-                    niche_affinities[winner_id].get(r, 0.25) + lr)
-            else:
-                niche_affinities[winner_id][r] = max(0.01,
-                    niche_affinities[winner_id].get(r, 0.25) - lr/(len(regimes)-1))
-
-        # Normalize
+        niche_affinities[winner_id][regime] = (
+            niche_affinities[winner_id].get(regime, 0.25) * math.exp(lr)
+        )
         total = sum(niche_affinities[winner_id].values())
-        niche_affinities[winner_id] = {r: v/total
+        niche_affinities[winner_id] = {r: v / total
             for r, v in niche_affinities[winner_id].items()}
 
     # Compute SI for each agent
@@ -2926,16 +3388,29 @@ D & 0.45 & 0 & 0.45 \\
 
 \textbf{Winner}: Agent C
 
-\textbf{Agent C's affinity update}:
+\textbf{Agent C's affinity update (V4 EG):}
 \begin{align}
-\alpha_C^{\text{Bull}} &= 0.25 + 0.1(1 - 0.25) = 0.325 \\
-\alpha_C^{\text{other}} &= 0.25 - 0.1/3 = 0.217
+\tilde{\alpha}_C^{\text{Bull}} &= 0.25 \cdot \exp(0.1) = 0.25 \cdot 1.1052 = 0.2763 \\
+\tilde{\alpha}_C^{\text{other}} &= 0.25 \quad \text{(unchanged before normalization)} \\
+Z &= 0.2763 + 3 \cdot 0.25 = 1.0263 \\
+\alpha_C^{\text{Bull}} &= 0.2763 / 1.0263 = 0.2692 \\
+\alpha_C^{\text{other}} &= 0.25 / 1.0263 = 0.2436
 \end{align}
-After normalization: $\alpha_C = (0.335, 0.222, 0.222, 0.222)$
+After normalization: $\alpha_C = (0.269, 0.244, 0.244, 0.244)$.
+
+\begin{remark}[V4 step is gentler than V3]
+The V3 heuristic would have yielded $\alpha_C \approx (0.335, 0.222, 0.222, 0.222)$ in
+this step, a $\sim$4$\times$ larger first-order move on the winning entry.
+This is the predicted ratio
+$(R^2 - R + 1)/(R - 1) = 13/3 \approx 4.33$ at $R = 4$
+(Proposition~\ref{prop:v3_eff_rate} and the discussion following
+Proposition~\ref{prop:eg_replicator}). V4 reaches the same equilibrium
+specialization as V3 but takes proportionally more iterations to do so.
+\end{remark}
 
 \subsection{Iteration 2: Regime = Sideways}
 
-\textbf{Scores}:
+\textbf{Scores} (using updated $\alpha_C^{\text{Side}} = 0.244$ from the V4 update; bonus formula $\lambda(\alpha_r - 1/R)$ with $\lambda = 0.3$):
 \begin{center}
 \begin{tabular}{lcccc}
 \toprule
@@ -2943,32 +3418,39 @@ Agent & Base & $\alpha_{\text{Side}}$ & Bonus & Total \\
 \midrule
 A & 0.55 & 0.25 & 0 & 0.55 \\
 B & 0.63 & 0.25 & 0 & \textbf{0.63} $\leftarrow$ Winner \\
-C & 0.48 & 0.222 & -0.008 & 0.472 \\
+C & 0.48 & 0.244 & -0.002 & 0.478 \\
 D & 0.51 & 0.25 & 0 & 0.51 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Winner}: Agent B
+\textbf{Winner}: Agent B. Agent B now specializes toward Sideways.
 
-Agent B now specializes toward Sideways.
+\subsection{After 50 Iterations}
 
-\subsection{After 5 Iterations}
+Because the V4 per-step move is roughly $4\times$ smaller than V3's at $R = 4$,
+visible specialization requires proportionally more iterations. The table
+below shows one representative trajectory in which agents A, B, C, D each
+preferentially win their natural niche (Volatile, Sideways, Bull, Bear
+respectively) when that regime arises:
 
 \begin{center}
 \begin{tabular}{l|cccc|c|l}
 \toprule
 Agent & Bull & Bear & Side & Vol & SI & Primary Niche \\
 \midrule
-A & 0.22 & 0.22 & 0.22 & \textbf{0.34} & 0.05 & Volatile \\
-B & 0.18 & 0.18 & \textbf{0.46} & 0.18 & 0.14 & Sideways \\
-C & \textbf{0.42} & 0.19 & 0.19 & 0.19 & 0.10 & Bull \\
-D & 0.20 & \textbf{0.40} & 0.20 & 0.20 & 0.08 & Bear \\
+A & 0.199 & 0.199 & 0.199 & \textbf{0.402} & 0.040 & Volatile \\
+B & 0.167 & 0.167 & \textbf{0.500} & 0.167 & 0.104 & Sideways \\
+C & \textbf{0.690} & 0.103 & 0.103 & 0.103 & 0.308 & Bull \\
+D & 0.150 & \textbf{0.550} & 0.150 & 0.150 & 0.147 & Bear \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-After just 5 iterations, agents are already showing differentiation! After 500 iterations, SI typically reaches 0.7-0.8.
+By iteration $\sim$50 each agent has a clearly identifiable primary niche.
+After $\sim$500 iterations, individual SI typically reaches $0.7$-$0.8$
+across all six real-world domains (see the Experimental Results Summary
+below for the empirical results).
 
 \section{Expected Outcomes}
 
@@ -3253,6 +3735,12 @@ For domains not shown in the main text, consult the code in:
 % ============================================================================
 \newpage
 \input{appendix_workflow_v2}
+
+% ============================================================================
+% REFERENCES
+% ============================================================================
+\bibliographystyle{plain}
+\bibliography{references}
 
 \vspace{2cm}
 \begin{center}

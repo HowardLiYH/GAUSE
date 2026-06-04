@@ -24,6 +24,8 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from experiments._affinity_update import apply_affinity_update
+
 
 @dataclass
 class AblationResult:
@@ -37,11 +39,14 @@ class AblationResult:
 
 
 def run_single_lambda(lambda_val: float, n_trials: int = 30,
-                       n_iterations: int = 500, seed: int = 42) -> AblationResult:
+                       n_iterations: int = 500, seed: int = 42,
+                       update_rule: str = "eg",
+                       lr: float = 0.1) -> AblationResult:
     """
     Run experiment with a specific λ value.
 
     Simulates the NichePopulation dynamics with varying niche bonus.
+    ``update_rule`` selects between V4 EG (default) and V3 additive.
     """
     rng = np.random.default_rng(seed)
 
@@ -81,20 +86,15 @@ def run_single_lambda(lambda_val: float, n_trials: int = 30,
                 # Niche bonus affects score
                 agent_scores[agent_id] = base_score + lambda_val * (niche_strength - 0.25)
 
-            # Winner
             winner_id = max(agent_scores, key=agent_scores.get)
 
-            # Update niche affinities
-            lr = 0.1
-            for r in regimes:
-                if r == regime:
-                    niche_affinities[winner_id][r] = min(1.0, niche_affinities[winner_id][r] + lr)
-                else:
-                    niche_affinities[winner_id][r] = max(0.01, niche_affinities[winner_id][r] - lr / 3)
-
-            # Normalize
-            total = sum(niche_affinities[winner_id].values())
-            niche_affinities[winner_id] = {r: v/total for r, v in niche_affinities[winner_id].items()}
+            niche_affinities[winner_id] = apply_affinity_update(
+                affinity=niche_affinities[winner_id],
+                winning_regime=regime,
+                regimes=regimes,
+                eta=lr,
+                rule=update_rule,
+            )
 
             # Compute SI
             if step % 50 == 0:

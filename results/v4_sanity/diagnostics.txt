@@ -1,0 +1,22 @@
+V4 EG Sanity Check -- Diagnostics Summary
+============================================================
+
+Config: R=4, N=8, iters=500, seeds=5, eta=0.1, lambda=0.3
+
+## V3 (additive + clamp)
+  final SI:                 mean=0.4397, std=0.0000, range=[0.4397, 0.4397]
+  total clamp invocations:  mean=1404.0, sum=7020
+  mean pre-norm sum:        mean=0.999057, min observed=0.917863
+
+## V4 (EG)
+  final SI:                 mean=0.4999, std=0.0000, range=[0.4999, 0.4999]
+  total clamp invocations:  mean=0.0, sum=0
+  mean pre-norm sum:        mean=1.093190, min observed=1.026293
+
+## Interpretation
+  - V4 pre-norm sum should equal 1 + alpha_winner * (exp(eta)-1) on each update;
+    its mean is bounded above by exp(eta) and below by 1.
+  - V3 pre-norm sum should drift below 1 (by approx -eta * alpha_winner);
+    its mean should be visibly less than 1.
+  - V4 clamp invocations should be exactly 0 (no clamping path in EG).
+  - V3 clamp invocations should be positive after sufficient specialization.

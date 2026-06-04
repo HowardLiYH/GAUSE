@@ -28,6 +28,8 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from experiments._affinity_update import apply_affinity_update
+
 
 @dataclass
 class DomainResult:
@@ -51,8 +53,10 @@ class DomainResult:
 
 def run_niche_population(regimes: List[str], regime_probs: Dict[str, float],
                           n_agents: int = 8, n_iterations: int = 500,
-                          niche_bonus: float = 0.3, seed: int = 42) -> Dict:
-    """Run NichePopulation simulation."""
+                          niche_bonus: float = 0.3, seed: int = 42,
+                          update_rule: str = "eg",
+                          lr: float = 0.1) -> Dict:
+    """Run NichePopulation simulation (V4 EG by default)."""
     rng = np.random.default_rng(seed)
 
     # Initialize niche affinities
@@ -80,17 +84,13 @@ def run_niche_population(regimes: List[str], regime_probs: Dict[str, float],
 
         winner_id = max(agent_scores, key=agent_scores.get)
 
-        # Update winner's niche affinity
-        lr = 0.1
-        for r in regimes:
-            if r == regime:
-                niche_affinities[winner_id][r] = min(1.0, niche_affinities[winner_id].get(r, 0.25) + lr)
-            else:
-                niche_affinities[winner_id][r] = max(0.01, niche_affinities[winner_id].get(r, 0.25) - lr / (len(regimes) - 1))
-
-        # Normalize
-        total = sum(niche_affinities[winner_id].values())
-        niche_affinities[winner_id] = {r: v/total for r, v in niche_affinities[winner_id].items()}
+        niche_affinities[winner_id] = apply_affinity_update(
+            affinity=niche_affinities[winner_id],
+            winning_regime=regime,
+            regimes=regimes,
+            eta=lr,
+            rule=update_rule,
+        )
 
     # Compute SI
     agent_sis = []
