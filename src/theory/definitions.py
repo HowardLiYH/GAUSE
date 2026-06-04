@@ -75,7 +75,7 @@ class RegimeDefinition:
 @dataclass
 class NichePartitioningTheory:
     """
-    Niche Partitioning Theory Applied to Multi-Agent Systems.
+    Niche Partitioning Theory Applied to Learner Populations.
 
     Key Concepts:
 

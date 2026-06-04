@@ -1,7 +1,23 @@
-# Code-Paper Consistency Audit Report
+# Code-Paper Consistency Audit Report (V3-era, superseded)
+
+> **⚠️ Superseded by v4.0.0.** This audit report verified the V3 implementation
+> against the v1.0–v3.x paper. As of v4.0.0 (June 2026), the niche affinity
+> update has been replaced with the canonical exponentiated-gradient (Hedge)
+> update, and all paper claims have been re-derived. For the current,
+> V4-aligned audit, see:
+>
+> - [`docs/V4_EG_RENOVATION_AUDIT.md`](docs/V4_EG_RENOVATION_AUDIT.md) — V3 defects + V4 derivation
+> - [`docs/V4_FINAL_REPORT.md`](docs/V4_FINAL_REPORT.md) — Comprehensive V4 renovation report
+> - [`CHANGELOG.md`](CHANGELOG.md) — v4.0.0 entry
+>
+> This file is retained for historical reference only. The V3 numbers below
+> (mean SI = 0.747, Cohen's d ≈ 23, etc.) have been replaced by V4 numbers
+> (mean SI = 0.992, Cohen's d ≈ 73, etc.) in the canonical paper.
+
+---
 
 **Generated:** 2025-12-23
-**Purpose:** Verify reproducibility and consistency between paper claims and code implementation
+**Purpose:** Verify reproducibility and consistency between paper claims and code implementation (V3 era)
 
 ---
 

@@ -1,9 +1,10 @@
-# arXiv Submission Guide for Paper 1
+# arXiv Submission Guide for Paper 1 (v4.0.0)
 
 ## Paper Title
-**"Emergent Specialization in Multi-Agent Systems: Competition as the Source of Diversity"**
+**"Emergent Specialization in Learner Populations: Competition as the Source of Diversity"**
 
 **Author:** Yuhao Li (University of Pennsylvania)
+**Version:** v4.0.0 (canonical, exponentiated-gradient affinity update)
 
 ---
 
@@ -51,16 +52,16 @@
 - If not, ask a colleague who has published on arXiv
 
 ### Step 3: Prepare Submission Package
-Run this command to create the submission zip:
+Run this command to create the submission zip (from repo root):
 
 ```bash
-cd /Users/yuhaoli/code/MAS_For_Finance/emergent_specialization/paper
+cd paper
 mkdir -p arxiv_submission
 cp main.tex arxiv_submission/
 cp neurips_2024.sty arxiv_submission/
 cp references.bib arxiv_submission/
-cp appendix_workflow_v2.tex arxiv_submission/
-cp -r figures arxiv_submission/
+cp appendix_workflow_v2.tex arxiv_submission/ 2>/dev/null || true
+cp -r figures arxiv_submission/ 2>/dev/null || true
 cd arxiv_submission
 zip -r ../arxiv_submission.zip *
 cd ..
@@ -72,10 +73,10 @@ echo "Created arxiv_submission.zip"
 2. Select category: **cs.LG** (Machine Learning) or **cs.MA** (Multi-Agent Systems)
 3. Upload `arxiv_submission.zip`
 4. Fill in metadata:
-   - **Title:** Emergent Specialization in Multi-Agent Systems: Competition as the Source of Diversity
+   - **Title:** Emergent Specialization in Learner Populations: Competition as the Source of Diversity
    - **Authors:** Yuhao Li
    - **Abstract:** (copy from main.tex)
-   - **Comments:** 10 pages, 5 figures, code available at https://github.com/HowardLiYH/Emergent-Specialization-in-Multi-Agent-Systems
+   - **Comments:** 26 pages (canonical) + 72-page deep-dive companion, 5 figures, code available at https://github.com/HowardLiYH/NichePopulation (release v4.0.0)
 5. Choose license: **CC BY 4.0** (recommended for maximum visibility)
 6. Submit
 
@@ -99,16 +100,17 @@ echo "Created arxiv_submission.zip"
 
 ---
 
-## 📝 Key Claims in Paper
+## 📝 Key Claims in Paper (v4.0.0)
 
 | Claim | Evidence |
 |-------|----------|
-| Competition induces specialization | Mean SI = 0.747, Cohen's d > 20 |
-| Competition alone is sufficient | SI = 0.329 at λ=0 (vs 0.127 random) |
-| Outperforms MARL | 4.3× higher SI than QMIX/MAPPO/IQL |
-| Method division of labor | 87% method coverage, +26.5% performance |
-| Theoretical foundation | 3 propositions with proofs |
+| Competition induces specialization | Mean SI = 0.992, Cohen's d = 73.4 across 6 domains |
+| Competition alone is sufficient | Mean SI = 0.65 at λ = 0; every domain ≥ 0.39 (vs. 0.127 random) |
+| Outperforms MARL | NichePop SI = 1.000 vs. IQL/VDN/QMIX ≤ 0.016, MAPPO = 0.000 (≥100× gap) |
+| Method division of labor | 86% method coverage, +25.9% diverse vs. homogeneous performance |
+| Theoretical foundation | 3 core propositions + canonical Hedge regret bound + replicator-dynamics limit |
 | Real-world validation | 6 domains, 145K+ records |
+| Algorithm rigor | Canonical EG (Hedge / multiplicative-weights) update, simplex-preserving, no clamp, $O(\sqrt{T \log R})$ regret |
 
 ---
 
@@ -124,7 +126,8 @@ echo "Created arxiv_submission.zip"
 
 ## 🔗 Related Links
 
-- **Code repository:** https://github.com/HowardLiYH/Emergent-Specialization-in-Multi-Agent-Systems
+- **Code repository:** https://github.com/HowardLiYH/NichePopulation
+- **v4.0.0 release** (PDFs attached): https://github.com/HowardLiYH/NichePopulation/releases/tag/v4.0.0
 - **arXiv submission portal:** https://arxiv.org/submit
 - **arXiv help:** https://info.arxiv.org/help/submit.html
 
@@ -138,7 +141,7 @@ echo "Created arxiv_submission.zip"
 | Day 1 | Create arXiv account (if needed), upload submission |
 | Day 2-3 | arXiv processing |
 | Day 3-4 | Paper appears on arXiv with ID |
-| After arXiv | Can cite as "Li, 2025, arXiv:2501.xxxxx" |
+| After arXiv | Can cite as "Li, 2026, arXiv:2606.xxxxx" |
 
 ---
 
@@ -152,7 +155,7 @@ echo "Created arxiv_submission.zip"
 
 2. **Update Paper 2** to cite this arXiv version:
    ```latex
-   \cite{li2025emergent}
+   \cite{li2026emergent}
    ```
 
 3. **Submit to conference** (NeurIPS, ICML, ICLR) with arXiv as backup
@@ -160,3 +163,4 @@ echo "Created arxiv_submission.zip"
 ---
 
 *Guide created: January 16, 2026*
+*Updated for v4.0.0: June 4, 2026*
