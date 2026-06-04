@@ -34,7 +34,31 @@ The canonical paper has been updated to reflect V4 as the new headline:
   fifth bullet noting the canonical $O(\sqrt{T\log R})$ Hedge regret bound and the
   small-$\eta$ replicator-dynamics limit.
 - **Explicit V3 $\to$ V4 transition note**: added immediately after Table 1.
-- **Recompiled**: `paper/main.pdf` rebuilt cleanly at 25 pages.
+- **Table 2** (`tab:method`): re-derived under V4. The
+  `exp_method_specialization.py` script's per-regime method-preference update was
+  converted from V3 (additive + clamp + normalize) to V4 (multiplicative
+  exp($\eta_{V4}$) + renormalize) using the same first-order rate rescaling as
+  the unified pipeline. Mean MSI updated from $0.364 \to 0.383$; coverage
+  $87\% \to 86\%$; improvement $+26.5\% \to +25.9\%$. (All metrics within
+  $\pm 2\%$ of the V3 numbers, confirming method specialization is not an
+  artifact of the affinity-update rule.)
+- **Table 3** (`tab:marl`): replaced with a fresh V4 head-to-head MARL re-run
+  via `exp_marl_comparison.py` (4 domains: Crypto / Commodities / Weather /
+  Traffic; 5{,}000 train episodes; 10 trials/domain). NichePopulation reaches
+  $\mathrm{SI} = 1.000$ in every domain; IQL/VDN/QMIX all stay at $\le 0.016$,
+  MAPPO at $0.000$. The Solar column was dropped (not in the MARL-comparison
+  script) and a Traffic column was added. Added a rare-regime task-reward
+  paragraph reporting $+6.7\%$ avg vs.\ IQL, $+11.1\%$ vs.\ QMIX. Replaced
+  the ``4.3$\times$ ratio'' framing with a ``$\geq 100\times$ gap, qualitatively
+  different regime'' framing.
+- **Conclusion + Intro bullet**: MARL ratio updated from ``4.3$\times$ /
+  $\approx 6\times$'' to ``$\geq 100\times$ ($1.000$ vs.\ $\le 0.02$)''.
+- **Related work**: ``MARL SI $< 0.20$'' tightened to ``MARL SI below $0.02$
+  in our setup''.
+- `experiments/exp_task_performance.py`: added a prominent docstring warning
+  that this script is purely synthetic / illustrative and does not exercise
+  the NichePopulation algorithm; the paper does not cite its output.
+- **Recompiled**: `paper/main.pdf` rebuilt cleanly at 26 pages.
 
 ### Motivation
 
