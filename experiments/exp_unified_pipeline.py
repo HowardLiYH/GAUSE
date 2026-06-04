@@ -47,13 +47,33 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # ============================================================================
 
 CONFIG = {
-    'n_trials': 30,           # Number of independent trials
-    'n_iterations': 500,       # Iterations per trial
-    'n_agents': 8,             # Number of agents
-    'default_lambda': 0.3,     # Default niche bonus
-    'lambda_values': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],  # For ablation
-    'seed_base': 42,           # Base random seed
+    'n_trials': 30,
+    'n_iterations': 500,
+    'n_agents': 8,
+    'default_lambda': 0.3,
+    'lambda_values': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+    'seed_base': 42,
+    'lr_base': 0.1,            # Base learning rate (matches published V3 setting)
+    'rescale_eta_for_v4': True, # If True and update_rule == 'eg', use per-domain
+                                # eta = lr_base * (R^2 - R + 1) / (R - 1).
+                                # This matches V4 to V3's first-order step size at
+                                # uniform start. See docs/V4_EG_RENOVATION_AUDIT.md
+                                # Section 7.
+    'update_rule': 'eg',
 }
+
+
+def lr_for_domain(n_regimes: int, base_lr: float = 0.1,
+                  update_rule: str = 'eg', rescale: bool = True) -> float:
+    """Return the per-domain learning rate.
+
+    V4 (EG) at matched first-order rate uses:
+        eta_V4(R) = base_lr * (R^2 - R + 1) / (R - 1)
+    V3 (additive) always uses base_lr (the published configuration).
+    """
+    if update_rule == 'eg' and rescale:
+        return base_lr * (n_regimes ** 2 - n_regimes + 1) / (n_regimes - 1)
+    return base_lr
 
 DOMAINS = ['crypto', 'commodities', 'weather', 'solar', 'traffic', 'air_quality']
 
@@ -104,17 +124,25 @@ DOMAIN_CONFIG = {
 
 def run_niche_population(regimes: List[str], regime_probs: Dict[str, float],
                           n_agents: int, n_iterations: int,
-                          niche_bonus: float, seed: int) -> Dict:
-    """Run NichePopulation simulation."""
+                          niche_bonus: float, seed: int,
+                          update_rule: str = "eg",
+                          lr: float = 0.1) -> Dict:
+    """Run NichePopulation simulation.
+
+    ``update_rule`` selects between the V4 canonical exponentiated-gradient
+    update ("eg", default) and the legacy V3 additive heuristic
+    ("v3_additive"). Passing ``"v3_additive"`` reproduces the published
+    v1.0-v3.x numerics exactly.
+    """
+    from experiments._affinity_update import apply_affinity_update
+
     rng = np.random.default_rng(seed)
 
-    # Initialize niche affinities
     niche_affinities = {
         f"agent_{i}": {r: 1.0/len(regimes) for r in regimes}
         for i in range(n_agents)
     }
 
-    # Normalize regime_probs
     total_prob = sum(regime_probs.values())
     regime_probs = {r: p/total_prob for r, p in regime_probs.items()}
     regime_list = list(regime_probs.keys())
@@ -123,7 +151,6 @@ def run_niche_population(regimes: List[str], regime_probs: Dict[str, float],
     for iteration in range(n_iterations):
         regime = rng.choice(regime_list, p=prob_list)
 
-        # Competition
         agent_scores = {}
         for i in range(n_agents):
             agent_id = f"agent_{i}"
@@ -133,17 +160,13 @@ def run_niche_population(regimes: List[str], regime_probs: Dict[str, float],
 
         winner_id = max(agent_scores, key=agent_scores.get)
 
-        # Update winner's niche affinity
-        lr = 0.1
-        for r in regimes:
-            if r == regime:
-                niche_affinities[winner_id][r] = min(1.0, niche_affinities[winner_id].get(r, 0.25) + lr)
-            else:
-                niche_affinities[winner_id][r] = max(0.01, niche_affinities[winner_id].get(r, 0.25) - lr / (len(regimes) - 1))
-
-        # Normalize
-        total = sum(niche_affinities[winner_id].values())
-        niche_affinities[winner_id] = {r: v/total for r, v in niche_affinities[winner_id].items()}
+        niche_affinities[winner_id] = apply_affinity_update(
+            affinity=niche_affinities[winner_id],
+            winning_regime=regime,
+            regimes=regimes,
+            eta=lr,
+            rule=update_rule,
+        )
 
     # Compute SI for each agent
     agent_sis = []
@@ -278,7 +301,10 @@ def run_all_experiments():
         for trial in range(CONFIG['n_trials']):
             result = run_niche_population(
                 regimes, probs, CONFIG['n_agents'], CONFIG['n_iterations'],
-                CONFIG['default_lambda'], CONFIG['seed_base'] + trial
+                CONFIG['default_lambda'], CONFIG['seed_base'] + trial,
+                update_rule=CONFIG['update_rule'],
+                lr=lr_for_domain(len(regimes), CONFIG['lr_base'],
+                                 CONFIG['update_rule'], CONFIG['rescale_eta_for_v4']),
             )
             niche_sis.append(result['mean_si'])
         domain_results['niche_si'] = {
@@ -322,7 +348,10 @@ def run_all_experiments():
             for trial in range(CONFIG['n_trials']):
                 result = run_niche_population(
                     regimes, probs, CONFIG['n_agents'], CONFIG['n_iterations'],
-                    lam, CONFIG['seed_base'] + trial
+                    lam, CONFIG['seed_base'] + trial,
+                    update_rule=CONFIG['update_rule'],
+                    lr=lr_for_domain(len(regimes), CONFIG['lr_base'],
+                                     CONFIG['update_rule'], CONFIG['rescale_eta_for_v4']),
                 )
                 lam_sis.append(result['mean_si'])
             lambda_results[str(lam)] = {

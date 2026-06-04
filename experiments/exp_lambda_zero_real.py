@@ -19,6 +19,7 @@ Statistical Framework:
 import os
 import sys
 import json
+import math
 from pathlib import Path
 from typing import Dict, List, Tuple
 from datetime import datetime
@@ -96,27 +97,30 @@ class PredictionAgent:
         return max(samples, key=samples.get)
 
     def update(self, regime: str, method: str, won: bool, niche_bonus: float = 0.0):
-        """Update beliefs and affinities based on outcome."""
+        """Update beliefs and affinities based on outcome.
+
+        Niche affinity updates use the V4 exponentiated-gradient form:
+            win:    alpha[regime] *= exp(+lr)     (+ exp(niche_bonus) if primary match)
+            loss:   alpha[regime] *= exp(-lr/2)
+        followed by simplex normalization. This preserves strict positivity and
+        the simplex by construction, replacing the V3 additive + max(0.01, .) clamp.
+        """
         self.total += 1
 
-        # Update method beliefs
         if won:
             self.wins += 1
             self.method_beliefs[regime][method] += 1.0
         else:
             self.method_beliefs[regime][method] = max(0.1, self.method_beliefs[regime][method] - 0.3)
 
-        # Update niche affinities
         primary_niche = max(self.niche_affinities, key=self.niche_affinities.get)
         if won:
-            self.niche_affinities[regime] += 0.1
+            self.niche_affinities[regime] *= math.exp(0.1)
             if regime == primary_niche:
-                # Niche bonus: extra affinity when winning in primary niche
-                self.niche_affinities[regime] += niche_bonus
+                self.niche_affinities[regime] *= math.exp(niche_bonus)
         else:
-            self.niche_affinities[regime] = max(0.01, self.niche_affinities[regime] - 0.05)
+            self.niche_affinities[regime] *= math.exp(-0.05)
 
-        # Normalize affinities
         total_affinity = sum(self.niche_affinities.values())
         self.niche_affinities = {r: a / total_affinity for r, a in self.niche_affinities.items()}
 

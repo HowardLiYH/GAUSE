@@ -465,15 +465,10 @@ class NichePopulationAgents:
         else:
             self.beliefs_beta[winner, state_idx, actions[winner]] += 1
 
-        # Update winner's affinity
-        for s in range(self.n_states):
-            if s == state_idx:
-                self.affinities[winner, s] += self.affinity_lr * (1 - self.affinities[winner, s])
-            else:
-                self.affinities[winner, s] = max(0.01,
-                    self.affinities[winner, s] - self.affinity_lr / (self.n_states - 1))
-
-        # Normalize affinity
+        # V4 EG update on the winner's affinity row: multiply realized-state
+        # entry by exp(eta), then renormalize the row to the simplex.
+        # Replaces the V3 additive + max(0.01, .) clamp + normalize sequence.
+        self.affinities[winner, state_idx] *= np.exp(self.affinity_lr)
         self.affinities[winner] /= self.affinities[winner].sum()
 
 

@@ -17,7 +17,7 @@
     "rescale_eta_for_v4": true,
     "update_rule": "eg"
   },
-  "timestamp": "2026-06-04T15:57:41.633098",
+  "timestamp": "2026-06-04T15:56:14.656132",
   "domains": {
     "crypto": {
       "n_regimes": 4,

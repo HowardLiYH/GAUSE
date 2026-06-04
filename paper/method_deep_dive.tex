@@ -1738,6 +1738,59 @@ be the algorithm's cumulative expected reward. Then
 \end{equation}
 \end{theorem}
 
+\begin{proof}[Proof (potential-function argument, after Arora--Hazan--Kale~\cite{arora2012multiplicative})]
+Define unnormalized weights
+\[
+w_j^{(1)} = \tfrac{1}{R}, \qquad
+w_j^{(t+1)} = w_j^{(t)} \exp\!\left(\eta\, g_j^{(t)}\right),
+\]
+so that $w_j^{(t+1)} = (1/R)\exp(\eta\, G_t^j)$ with
+$G_t^j = \sum_{s \leq t} g_j^{(s)}$. The algorithm's iterate is the
+normalized distribution $\alpha_j^{(t)} = w_j^{(t)} / W_t$, where
+$W_t = \sum_{k} w_k^{(t)}$. Note $W_1 = 1$.
+
+\emph{Step 1: Upper bound on $W_{T+1}$.} For each round $t$,
+\[
+\frac{W_{t+1}}{W_t}
+\;=\; \sum_{j=1}^{R} \alpha_j^{(t)} \exp\!\bigl(\eta\, g_j^{(t)}\bigr).
+\]
+Hoeffding's lemma applied to the random variable $g_j^{(t)} \in [0,1]$
+under the distribution $\alpha^{(t)}$ gives
+$\sum_j \alpha_j^{(t)} \exp(\eta g_j^{(t)})
+\leq \exp\!\bigl(\eta \langle \alpha^{(t)}, g^{(t)}\rangle + \eta^2/8\bigr)$.
+Taking logarithms and summing over $t = 1, \ldots, T$,
+\begin{equation}
+\label{eq:hedge_upper}
+\log W_{T+1}
+\;=\; \log W_{T+1} - \log W_1
+\;\leq\; \eta\, G_T^{\mathrm{alg}} + \tfrac{T\eta^2}{8}.
+\end{equation}
+
+\emph{Step 2: Lower bound on $W_{T+1}$ via the best arm.} For any fixed
+$j^\star \in \{1, \ldots, R\}$,
+\[
+W_{T+1} \;\geq\; w_{j^\star}^{(T+1)}
+\;=\; \tfrac{1}{R}\exp\!\bigl(\eta\, G_T^{j^\star}\bigr),
+\]
+so
+\begin{equation}
+\label{eq:hedge_lower}
+\log W_{T+1}
+\;\geq\; \eta\, G_T^{j^\star} - \log R.
+\end{equation}
+
+\emph{Step 3: Combine and tune $\eta$.} Chaining
+\eqref{eq:hedge_upper} and \eqref{eq:hedge_lower} and rearranging,
+\[
+G_T^{j^\star} - G_T^{\mathrm{alg}}
+\;\leq\; \frac{\log R}{\eta} + \frac{T\eta}{8}.
+\]
+The right-hand side is convex in $\eta$ and minimized at
+$\eta^\star = \sqrt{8\log R / T}$, yielding
+$G_T^{j^\star} - G_T^{\mathrm{alg}} \leq \sqrt{(T/2)\log R}$.
+Taking the maximum over $j^\star$ completes the proof.
+\end{proof}
+
 \noindent Theorem~\ref{thm:eg_regret} does \emph{not} hold for the V3
 heuristic. Proposition~\ref{prop:v3_eff_rate} shows V3's effective
 per-step gain is $\eta(1 - \alpha + \alpha^2)$, not $\eta$; the standard
@@ -2585,26 +2638,54 @@ A natural question: how many iterations are needed before agents reach stable sp
 
 \subsubsection{Convergence Rate}
 
-\begin{proposition}[Convergence Rate]
-Under the exponentiated-gradient affinity update (Eq.~\ref{eq:eg_affinity_update})
-with learning rate $\eta$, the geometric-convergence bound holds in the
-log-ratio coordinate. Letting $\ell_{i,r}^{(t)} = \log \alpha_{i,r}^{(t)}$
-and $\ell_{i,r}^{*} = \log \alpha_{i,r}^{*}$, the gap satisfies
+\begin{proposition}[Log-Ratio Tracking for the EG Affinity Update]
+\label{prop:eg_log_ratio}
+Under the EG affinity update (Eq.~\eqref{eq:eg_affinity_update}) with
+learning rate $\eta$, define the log-ratio between any two regimes
+$r, r'$ for agent $i$ at time $t$ as
+$L_{i,r,r'}^{(t)} \;:=\; \log\!\bigl(\alpha_{i,r}^{(t)} / \alpha_{i,r'}^{(t)}\bigr)$.
+Then $L$ evolves linearly in the win counts:
 \begin{equation}
-\bigl|\ell_{i,r}^{(t)} - \ell_{i,r}^{*}\bigr|
-\;\leq\;
-\bigl|\ell_{i,r}^{(0)} - \ell_{i,r}^{*}\bigr| + \eta \cdot |W_i(r,t) - W_i(r_t \neq r, t)|
+\label{eq:eg_log_linear}
+L_{i,r,r'}^{(t)}
+\;=\;
+L_{i,r,r'}^{(0)} \,+\, \eta\bigl(W_i(r,t) - W_i(r',t)\bigr),
 \end{equation}
-where $W_i(r,t)$ is the number of wins for agent $i$ in regime $r$ up
-to time $t$. This is the standard multiplicative-weights regret bound
-specialized to the indicator-reward setting~\cite{arora2012multiplicative}.
+where $W_i(r,t)$ counts the number of rounds $s \leq t$ on which agent
+$i$ won and the realized regime was $r$.
 \end{proposition}
 
-% TODO[V4]: Formalize and re-prove the convergence statement above for
-% the EG update. The current statement is a placeholder reformulation
-% of the V3 additive-update bound. A complete proof using mirror
-% descent regret bounds is deferred to follow-up work; see
-% docs/V4_EG_RENOVATION_AUDIT.md Section 6.3.
+\begin{proof}
+On any round $s \leq t$, the EG update multiplies $\alpha_{i,r}$ by
+$\exp(\eta\,\mathbf{1}[s \in W_i(r)])$ and divides by the same
+partition function $Z_s$ for every regime. The partition factors
+cancel in the ratio $\alpha_{i,r}^{(s)}/\alpha_{i,r'}^{(s)}$, leaving
+$\log\alpha_{i,r}^{(s+1)} - \log\alpha_{i,r'}^{(s+1)}
+= \log\alpha_{i,r}^{(s)} - \log\alpha_{i,r'}^{(s)}
++ \eta\bigl(\mathbf{1}[\text{win on }r] - \mathbf{1}[\text{win on }r']\bigr)$.
+Summing over $s = 0, \ldots, t-1$ yields Eq.~\eqref{eq:eg_log_linear}.
+\end{proof}
+
+\begin{remark}[Comparison to the V3 statement]
+Eq.~\eqref{eq:eg_log_linear} is exact---not a bound---because EG is a
+\emph{multiplicative} update with a partition-invariant log-ratio
+coordinate. The corresponding V3 statement was necessarily an
+inequality, because V3's additive update plus post-hoc normalization
+introduces a coupling between $\alpha_r$ and $\alpha_{r'}$ via the
+partition denominator $S^{(t)} = 1 - \eta\alpha^{(t)}_{r_t}$
+(Prop.~\ref{prop:v3_mass_drift}). Moving to EG converts the bound into
+an equality.
+\end{remark}
+
+\begin{remark}[Headline regret bound]
+The cumulative regret guarantee of Eq.~\eqref{eq:eg_general}
+($\sqrt{(T/2)\log R}$ at the optimal step size, Thm.~\ref{thm:eg_regret})
+is what justifies calling EG a \emph{no-regret} algorithm. Together with
+Prop.~\ref{prop:eg_log_ratio}, this gives a complete convergence story:
+log-ratios evolve linearly and deterministically as a function of
+realized wins, while the algorithm's average reward asymptotically
+matches that of the best fixed arm in hindsight.
+\end{remark}
 
 \subsubsection{Empirical Convergence Times}
 
@@ -3207,9 +3288,12 @@ In our context:
 \subsection{Core Simulation Function}
 
 \begin{lstlisting}[caption={Core NichePopulation Simulation (from exp\_unified\_pipeline.py)}]
+import math
+import numpy as np
+
 def run_niche_population(regimes, regime_probs, n_agents, n_iterations,
                           niche_bonus, seed):
-    """Run NichePopulation simulation."""
+    """Run NichePopulation simulation (V4 EG update)."""
     rng = np.random.default_rng(seed)
 
     # Initialize niche affinities (uniform)
@@ -3239,19 +3323,15 @@ def run_niche_population(regimes, regime_probs, n_agents, n_iterations,
         # Step 3: Winner-take-all
         winner_id = max(agent_scores, key=agent_scores.get)
 
-        # Step 4: Update winner's niche affinity
+        # Step 4: Update winner's niche affinity via exponentiated gradient.
+        # Multiply winning regime's entry by exp(eta); others unchanged.
+        # Normalization is intrinsic (no clamping, no post-hoc rescaling).
         lr = 0.1
-        for r in regimes:
-            if r == regime:
-                niche_affinities[winner_id][r] = min(1.0,
-                    niche_affinities[winner_id].get(r, 0.25) + lr)
-            else:
-                niche_affinities[winner_id][r] = max(0.01,
-                    niche_affinities[winner_id].get(r, 0.25) - lr/(len(regimes)-1))
-
-        # Normalize
+        niche_affinities[winner_id][regime] = (
+            niche_affinities[winner_id].get(regime, 0.25) * math.exp(lr)
+        )
         total = sum(niche_affinities[winner_id].values())
-        niche_affinities[winner_id] = {r: v/total
+        niche_affinities[winner_id] = {r: v / total
             for r, v in niche_affinities[winner_id].items()}
 
     # Compute SI for each agent
@@ -3308,16 +3388,29 @@ D & 0.45 & 0 & 0.45 \\
 
 \textbf{Winner}: Agent C
 
-\textbf{Agent C's affinity update}:
+\textbf{Agent C's affinity update (V4 EG):}
 \begin{align}
-\alpha_C^{\text{Bull}} &= 0.25 + 0.1(1 - 0.25) = 0.325 \\
-\alpha_C^{\text{other}} &= 0.25 - 0.1/3 = 0.217
+\tilde{\alpha}_C^{\text{Bull}} &= 0.25 \cdot \exp(0.1) = 0.25 \cdot 1.1052 = 0.2763 \\
+\tilde{\alpha}_C^{\text{other}} &= 0.25 \quad \text{(unchanged before normalization)} \\
+Z &= 0.2763 + 3 \cdot 0.25 = 1.0263 \\
+\alpha_C^{\text{Bull}} &= 0.2763 / 1.0263 = 0.2692 \\
+\alpha_C^{\text{other}} &= 0.25 / 1.0263 = 0.2436
 \end{align}
-After normalization: $\alpha_C = (0.335, 0.222, 0.222, 0.222)$
+After normalization: $\alpha_C = (0.269, 0.244, 0.244, 0.244)$.
+
+\begin{remark}[V4 step is gentler than V3]
+The V3 heuristic would have yielded $\alpha_C \approx (0.335, 0.222, 0.222, 0.222)$ in
+this step, a $\sim$4$\times$ larger first-order move on the winning entry.
+This is the predicted ratio
+$(R^2 - R + 1)/(R - 1) = 13/3 \approx 4.33$ at $R = 4$
+(Proposition~\ref{prop:v3_eff_rate} and the discussion following
+Proposition~\ref{prop:eg_replicator}). V4 reaches the same equilibrium
+specialization as V3 but takes proportionally more iterations to do so.
+\end{remark}
 
 \subsection{Iteration 2: Regime = Sideways}
 
-\textbf{Scores}:
+\textbf{Scores} (using updated $\alpha_C^{\text{Side}} = 0.244$ from the V4 update; bonus formula $\lambda(\alpha_r - 1/R)$ with $\lambda = 0.3$):
 \begin{center}
 \begin{tabular}{lcccc}
 \toprule
@@ -3325,32 +3418,39 @@ Agent & Base & $\alpha_{\text{Side}}$ & Bonus & Total \\
 \midrule
 A & 0.55 & 0.25 & 0 & 0.55 \\
 B & 0.63 & 0.25 & 0 & \textbf{0.63} $\leftarrow$ Winner \\
-C & 0.48 & 0.222 & -0.008 & 0.472 \\
+C & 0.48 & 0.244 & -0.002 & 0.478 \\
 D & 0.51 & 0.25 & 0 & 0.51 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Winner}: Agent B
+\textbf{Winner}: Agent B. Agent B now specializes toward Sideways.
 
-Agent B now specializes toward Sideways.
+\subsection{After 50 Iterations}
 
-\subsection{After 5 Iterations}
+Because the V4 per-step move is roughly $4\times$ smaller than V3's at $R = 4$,
+visible specialization requires proportionally more iterations. The table
+below shows one representative trajectory in which agents A, B, C, D each
+preferentially win their natural niche (Volatile, Sideways, Bull, Bear
+respectively) when that regime arises:
 
 \begin{center}
 \begin{tabular}{l|cccc|c|l}
 \toprule
 Agent & Bull & Bear & Side & Vol & SI & Primary Niche \\
 \midrule
-A & 0.22 & 0.22 & 0.22 & \textbf{0.34} & 0.05 & Volatile \\
-B & 0.18 & 0.18 & \textbf{0.46} & 0.18 & 0.14 & Sideways \\
-C & \textbf{0.42} & 0.19 & 0.19 & 0.19 & 0.10 & Bull \\
-D & 0.20 & \textbf{0.40} & 0.20 & 0.20 & 0.08 & Bear \\
+A & 0.199 & 0.199 & 0.199 & \textbf{0.402} & 0.040 & Volatile \\
+B & 0.167 & 0.167 & \textbf{0.500} & 0.167 & 0.104 & Sideways \\
+C & \textbf{0.690} & 0.103 & 0.103 & 0.103 & 0.308 & Bull \\
+D & 0.150 & \textbf{0.550} & 0.150 & 0.150 & 0.147 & Bear \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-After just 5 iterations, agents are already showing differentiation! After 500 iterations, SI typically reaches 0.7-0.8.
+By iteration $\sim$50 each agent has a clearly identifiable primary niche.
+After $\sim$500 iterations, individual SI typically reaches $0.7$-$0.8$
+across all six real-world domains (see the Experimental Results Summary
+below for the empirical results).
 
 \section{Expected Outcomes}
 

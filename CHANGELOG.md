@@ -6,6 +6,147 @@ This document chronicles the complete research journey from initial conception t
 
 ---
 
+## v4.0.0 -- The EG (Exponentiated Gradient) Canonical Renovation
+
+**Date**: 2026-06 (Renovation branch `v4-eg-canonical`)
+**Scope**: Replace the V3 additive heuristic in the niche affinity update with the
+canonical exponentiated-gradient (Hedge / multiplicative-weights) update. Add the
+mathematical derivation, structural proofs, and updated worked example to the
+deep-dive companion. Preserve V3 behind a legacy flag for direct comparison.
+
+### Paper-side renovation (`paper/main.tex`)
+
+The canonical paper has been updated to reflect V4 as the new headline:
+
+- **Abstract**: mean SI updated from $0.75$ to $0.99$; Cohen's $d > 20$ updated to $> 50$;
+  $\lambda = 0$ claim updated from "SI $> 0.30$" to "mean SI $\approx 0.65$, every domain $> 0.39$".
+- **Table 1** (`tab:main_results`): all six per-domain SI / Cohen's $d$ entries replaced
+  with V4 (rescaled-$\eta$) numbers from the unified pipeline. Mean SI $= 0.992$,
+  mean $d = 73.4$.
+- **Table 2** (`tab:lambda` ablation): all 36 entries replaced with V4 numbers; mean
+  $\lambda = 0$ SI updated from $0.329$ to $0.650$.
+- **Table 3** (`tab:marl`): NichePopulation row updated with V4 numbers; MARL methods
+  unchanged. Reported ratio updated from $4.3\times$ to "$\approx 6\times$".
+- **Section 4.4 (Traffic failure analysis)**: rewritten. Traffic is no longer the
+  lowest-SI domain under V4; the section now explains the V3 dilution result as a
+  clamp artifact rather than an inherent property of the SI upper bound.
+- **Conclusion**: bullet-list of headline findings updated with V4 numbers; added a
+  fifth bullet noting the canonical $O(\sqrt{T\log R})$ Hedge regret bound and the
+  small-$\eta$ replicator-dynamics limit.
+- **Explicit V3 $\to$ V4 transition note**: added immediately after Table 1.
+- **Recompiled**: `paper/main.pdf` rebuilt cleanly at 25 pages.
+
+### Motivation
+
+The V3 affinity update used in v1.0--v3.x was an additive heuristic of the form
+$\alpha_r \leftarrow \alpha_r + \eta(1 - \alpha_r)$ for the winning regime and
+$\alpha_r \leftarrow \alpha_r - \eta/(R-1)$ for losers, followed by post-hoc
+normalization. The implementation carried an undocumented `max(0.01, .)` clamp
+to prevent negative entries.
+
+This heuristic has three structural defects, documented in
+`docs/V4_EG_RENOVATION_AUDIT.md`:
+
+1. **Mass drift before normalization** (Prop. 9.1 in the deep-dive): The pre-norm
+   sum drifts to $1 - \eta \alpha_{r_t}$, not $1$, so "normalization" is silently
+   altering the step size.
+2. **Eventual negativity** (Prop. 9.2): Once specialization is high enough, the
+   subtractive penalty drives small entries below zero, requiring the clamp.
+3. **State-dependent effective rate** (Prop. 9.3): The post-normalization
+   effective rate on the winner is $\eta(1 - \alpha + \alpha^2)$, not $\eta$,
+   which breaks the standard Hedge regret bound.
+
+### The V4 fix
+
+The V4 update is the exponentiated-gradient update on the regime simplex:
+$$\alpha_r^{(t+1)} = \frac{\alpha_r^{(t)} \exp\!\bigl(\eta\,\mathbf{1}[r = r_t]\bigr)}{\sum_k \alpha_k^{(t)} \exp\!\bigl(\eta\,\mathbf{1}[k = r_t]\bigr)}.$$
+
+This update is the canonical Hedge / multiplicative-weights update, which:
+
+- **Preserves the simplex by construction** (Prop. 9.4): No post-hoc rescaling needed.
+- **Preserves interior strictly** (Prop. 9.5): No entry can become zero or negative,
+  so no clamp is needed.
+- **Reduces to replicator dynamics** in the small-$\eta$ limit (Prop. 9.6).
+- **Inherits the canonical $O(\sqrt{T \log R})$ regret bound** (Thm. 9.1).
+
+### First-order step-size relationship to V3
+
+At uniform initialization $\alpha = 1/R$, the V3 winner-side gain per step is
+$\eta(1 - 1/R + 1/R^2)$ while the V4 gain is $\eta(1/R)(1 - 1/R)$. The ratio is
+$(R^2 - R + 1)/(R - 1)$, which equals $13/3 \approx 4.33$ at $R = 4$.
+Consequently, **V4 at $\eta = 0.1$ produces a $\sim 4.33\times$ slower per-step
+specialization than V3 at the same $\eta$ for $R = 4$**. To reproduce V3's
+empirical convergence timescale, use $\eta_{V4} \approx 4.33 \eta_{V3}$. See
+`tests/test_eg_update.py::TestEGV3FirstOrderStepSizeGap` for the empirical
+verification and `docs/V4_EG_RENOVATION_AUDIT.md` Section 7 for the closed-form
+derivation.
+
+### Code changes
+
+- `src/agents/niche_population.py`: Refactored `_update_niche_affinity` to dispatch
+  to either `_update_niche_affinity_eg` (default, V4) or `_update_niche_affinity_v3`
+  (legacy V3 preserved verbatim for direct comparison). New `update_rule` parameter
+  on `NicheAgent.__init__` and `NichePopulation.__init__`. Diagnostic counters
+  added: `_diag_clamp_invocations`, `_diag_premass_sum_history`.
+- `src/agents/__init__.py`, `src/agents/inventory.py`: Restored broken module
+  imports (pre-existing bug; created `inventory.py` as a compatibility shim over
+  `inventory_v2.py`).
+- `tests/test_eg_update.py`: New 19-test suite covering simplex preservation,
+  strict positivity, monotonicity, order invariance, V3 regression-style proofs of
+  the clamp and mass-drift defects, and the first-order V3/V4 ratio.
+- `scripts/v4_sanity_check.py`: Small-scale V3-vs-V4 comparison showing V4 reaches
+  higher equilibrium SI (0.500 vs 0.440) with **zero clamp invocations** versus
+  V3's 7020 clamps (5 seeds, 500 iterations, $R = 4$).
+
+### Documentation changes
+
+- `paper/main.tex`: Eq. 4 (formerly the V3 additive update) replaced with the EG
+  update. Algorithm 1 updated. Bibliography style switched to `plainnat` for
+  NeurIPS 2024 / natbib compatibility.
+- `paper/method_deep_dive.tex`: Section 9.3 (pp.29-32) added with full mathematical
+  derivation, V3 defect proofs (mass drift, negativity, state-dependent rate), and
+  V4 correctness proofs (mirror-descent derivation, simplex preservation, interior
+  preservation, replicator-dynamics limit). Hedge regret bound (Thm. 9.1) now
+  includes a full Arora--Hazan--Kale-style proof via the potential-function argument.
+  Worked example "Iteration 1: Bull" recomputed with EG numbers; "After 5 iterations"
+  replaced with "After 50 iterations" (since V4 is ~4x gentler per step at $R=4$).
+  Python listing in the implementation section updated to the EG form. Restored
+  corrected Beta-distribution and Thompson-sampling figures (V3 had a fill-between
+  plotting bug; V4 has the mathematically correct exploration-mass shading).
+- `paper/references.bib`: Added Kivinen \& Warmuth (1997), Arora--Hazan--Kale (2012),
+  Cesa-Bianchi \& Lugosi (2006), Sandholm (2010), Beck \& Teboulle (2003),
+  Nemirovski \& Yudin (1983), Freund \& Schapire (1997), and the self-citation
+  `li2026emergent`.
+- `docs/V4_EG_RENOVATION_AUDIT.md`: New 7-section audit report. Section 7
+  corrected to show the V3/V4 step-size ratio at uniform start is
+  $(R^2 - R + 1)/(R - 1)$, not 1 (as the initial draft incorrectly claimed).
+- `.gitignore`: Added LaTeX build artifacts.
+
+### Breaking / migration notes
+
+- The default `update_rule` is now `"eg"`. Code calling `NichePopulation(...)` or
+  `NicheAgent(...)` without setting `update_rule` will now use V4. To reproduce
+  exact v3.x numerics, pass `update_rule="v3_additive"`.
+- **Recommended hyperparameter rescaling**: At $R = 4$, multiply the v3.x learning
+  rate by ~4.33 to recover the same per-step specialization speed. For other $R$,
+  use the factor $(R^2 - R + 1)/(R - 1)$.
+- All previously published results were generated with V3 and the clamp. Re-running
+  with V4 at matched $\eta$ produces qualitatively identical equilibria but
+  reaches them more slowly. The headline finding (emergent specialization across
+  six domains, Cohen's $d > 20$) is preserved.
+
+### What is *not* changed in v4.0.0
+
+- The `(Score = R_i + \lambda(\alpha_{i,r_t} - 1/R))` competitive selection rule.
+- Thompson Sampling for method belief updates.
+- The Specialization Index definition.
+- All experiment harness, dataset loaders, and statistical tests (only the affinity
+  update inside the population step changes).
+- The pre-existing MARL baseline comparison: V4 affects only the NichePopulation
+  side of the comparison, not QMIX / MAPPO / VDN. MARL numbers carry over.
+
+---
+
 ## Phase 0: Genesis (Initial Conception)
 
 ### Starting Point

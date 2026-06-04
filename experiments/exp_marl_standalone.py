@@ -14,6 +14,7 @@ from typing import Dict, List, Tuple
 from dataclasses import dataclass
 from collections import defaultdict
 
+import math
 import numpy as np
 
 # =============================================================================
@@ -66,30 +67,25 @@ class NicheAgent:
         return self.niche_affinity[regime]
 
     def update(self, regime: str, method: str, won: bool):
-        """Update based on competition outcome."""
+        """Update based on competition outcome.
+
+        V4: niche-affinity update is exponentiated-gradient (EG / Hedge);
+        method-preference update kept identical in form (EG) for consistency.
+        Both updates preserve the simplex by construction; no clamp required.
+        """
         lr = 0.1
 
         if won:
             self.regime_wins[regime] += 1
             self.total_wins += 1
 
-            # Increase affinity for winning regime
-            for r in self.regimes:
-                if r == regime:
-                    self.niche_affinity[r] = min(1.0, self.niche_affinity[r] + lr)
-                else:
-                    self.niche_affinity[r] = max(0.01, self.niche_affinity[r] - lr / (len(self.regimes) - 1))
-
-            # Normalize
+            self.niche_affinity[regime] *= math.exp(lr)
             total = sum(self.niche_affinity.values())
-            self.niche_affinity = {r: v/total for r, v in self.niche_affinity.items()}
+            self.niche_affinity = {r: v / total for r, v in self.niche_affinity.items()}
 
-            # Update method preference
-            for m in self.methods:
-                if m == method:
-                    self.method_prefs[regime][m] = min(1.0, self.method_prefs[regime][m] + lr)
-                else:
-                    self.method_prefs[regime][m] = max(0.01, self.method_prefs[regime][m] - lr / (len(self.methods) - 1))
+            self.method_prefs[regime][method] *= math.exp(lr)
+            total = sum(self.method_prefs[regime].values())
+            self.method_prefs[regime] = {m: v / total for m, v in self.method_prefs[regime].items()}
 
 
 class NichePopulationStandalone:
