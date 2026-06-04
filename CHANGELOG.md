@@ -1,8 +1,11 @@
 # CHANGELOG
 
-## Research Journey: Emergent Specialization in Multi-Agent Systems
+## Research Journey: Emergent Specialization in Learner Populations
 
-This document chronicles the complete research journey from initial conception to NeurIPS-quality paper.
+This document chronicles the complete research journey from initial conception
+through v4.0.0 (the Exponentiated-Gradient canonical renovation). The project
+was originally framed as "Multi-Agent Systems"; this framing was retired in
+v3.0.0 in favor of "Learner Populations" for academic clarity.
 
 ---
 
