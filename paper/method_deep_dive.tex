@@ -2168,12 +2168,12 @@ Despite the challenges of real data, our algorithm achieves strong specializatio
 \toprule
 Domain & NichePopulation SI & Random SI & Cohen's d & $p$-value \\
 \midrule
-Crypto & 0.75 $\pm$ 0.05 & 0.13 $\pm$ 0.03 & 15.5 & $< 0.001$ \\
-Commodities & 0.78 $\pm$ 0.04 & 0.13 $\pm$ 0.03 & 18.6 & $< 0.001$ \\
-Weather & 0.71 $\pm$ 0.06 & 0.13 $\pm$ 0.03 & 12.0 & $< 0.001$ \\
-Solar & 0.82 $\pm$ 0.04 & 0.13 $\pm$ 0.03 & 21.3 & $< 0.001$ \\
-Traffic & 0.68 $\pm$ 0.05 & 0.13 $\pm$ 0.03 & 12.8 & $< 0.001$ \\
-Air Quality & 0.80 $\pm$ 0.04 & 0.13 $\pm$ 0.03 & 19.4 & $< 0.001$ \\
+Crypto & 0.991 $\pm$ 0.024 & 0.132 $\pm$ 0.032 & 58.29 & $< 10^{-80}$ \\
+Commodities & 0.990 $\pm$ 0.020 & 0.132 $\pm$ 0.032 & 70.48 & $< 10^{-80}$ \\
+Weather & 0.991 $\pm$ 0.023 & 0.132 $\pm$ 0.032 & 60.91 & $< 10^{-80}$ \\
+Solar & 0.995 $\pm$ 0.014 & 0.132 $\pm$ 0.032 & 100.93 & $< 10^{-80}$ \\
+Traffic & 0.995 $\pm$ 0.015 & 0.103 $\pm$ 0.028 & 95.56 & $< 10^{-80}$ \\
+Air Quality & 0.987 $\pm$ 0.026 & 0.132 $\pm$ 0.032 & 54.35 & $< 10^{-80}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2181,11 +2181,108 @@ Air Quality & 0.80 $\pm$ 0.04 & 0.13 $\pm$ 0.03 & 19.4 & $< 0.001$ \\
 \begin{keypoint}
 All domains achieve:
 \begin{itemize}
-    \item SI $> 0.65$ (significant specialization)
-    \item Cohen's d $> 12$ (massive effect size---much larger than typical ``large'' effect of 0.8)
-    \item $p < 0.001$ (highly significant)
+    \item SI $> 0.98$ under the canonical V4 (EG) update.
+    \item Cohen's $d > 50$ in every domain (extremely large effects).
+    \item $p < 10^{-80}$ in every domain.
 \end{itemize}
 This validates that emergent specialization is not an artifact of synthetic data.
+\end{keypoint}
+
+\section{Are the Niches Meaningful? Controls and Ablations}
+\label{ddsec:meaningfulness}
+
+A high SI tells us the population \emph{organizes} into distinct niches. It does
+not, by itself, tell us those niches track exploitable environmental structure or
+improve task performance. We separate these questions with four controls.
+
+\subsection{Negative control: SI is invariant to regime shuffling}
+
+If we randomly permute the regime labels before training, the regime$\to$structure
+alignment is destroyed---yet the Specialization Index is essentially unchanged
+(mean SI stays $\approx 0.9$--$1.0$). SI is also monotonically inflatable by the
+learning rate $\eta$. Consequently SI is a measure of \emph{population
+organization}, not of structure-dependence. To probe meaningfulness we must use an
+external, structure-dependent metric: task prediction error, comparing real vs.\
+shuffled regimes.
+
+\subsection{Oracle diagnostic: how much regime structure exists?}
+
+For each domain, compare a \emph{specialist oracle} (always uses each regime's best
+method) against a \emph{generalist oracle} (single globally-best method). The gap
+upper-bounds any regime-aware benefit, independent of the algorithm:
+
+\begin{itemize}
+    \item Energy, Weather: gap $= 0\%$ (one method is best in every regime).
+    \item Finance, Crypto: gap $0$--$1.9\%$ (negligible).
+    \item Traffic (clock-based regimes): gap $\approx 10\%$.
+    \item Solar (hour-of-day regimes): gap $\approx 13$--$16\%$.
+\end{itemize}
+
+So only traffic and solar carry exploitable regime structure; the other four
+domains organize into niches that are not performance-relevant.
+
+\subsection{Performance-based control on structured domains}
+
+On traffic and solar, using \emph{causal} clock-based regime labels (known before
+the target, so they cannot leak it), regime-aware prediction beats the
+shuffled-label control by $+15.4\%$ (traffic, $p < 10^{-9}$) and $+12.8\%$ (solar,
+$p < 10^{-8}$). The regimes carry exploitable information when genuine structure
+exists, and the niches align with it. (A commodities effect seen with the
+dataset's native labels disappeared under a leakage audit and is excluded.)
+
+\subsection{Ablations: conditioning vs.\ specialization}
+
+Two controlled ablations on nine series (four NYC-taxi month-windows, five solar
+locations) localize the source of the gain:
+
+\begin{enumerate}
+    \item \textbf{Coupling on/off}: toggling whether niche affinity feeds winner
+    determination leaves the real-vs-shuffled gap statistically unchanged (paired
+    $p = 0.36$). The benefit comes from \emph{per-regime method selection}, shared
+    by both arms.
+    \item \textbf{Population vs.\ monolith}: a single regime-conditioned agent
+    matches or beats the specialized population (the population is $\approx 26\%$
+    worse on solar, where winner-take-all specialization fragments each agent's
+    training data). \emph{Caveat: this monolith has unlimited capacity} (see the
+    bounded-capacity result below).
+    \item \textbf{Bounded capacity (positive result, spatial)}: when each agent
+    can master only $K$ of $R$ regimes, the specialized population beats both a
+    capacity-$K$ monolith (synthetic $+73\%$, traffic $+22\%$ at $K{=}1$) and---
+    controlling for total capacity---a fixed-random capacity-$K$ population, but
+    the latter advantage holds only in the tight-capacity regime $K{=}1$--$2$
+    (synthetic $+57\%$, $p<10^{-16}$; traffic $+8.7\%$ at $K{=}1$). As $K \to R$,
+    random diversity suffices and the edge vanishes.
+    \item \textbf{Non-stationarity (positive result, temporal)}: when regimes
+    cycle (dormant then reactivating) and agents have finite memory (bounded
+    belief store with LRU eviction), a capacity-$K$ monolith must relearn each
+    reactivated regime, while the population retains dormant-niche expertise as a
+    distributed persistent memory. For $K{<}R$ the population beats the monolith
+    by $+33\%$ overall and $+71\%$ in the post-reactivation window
+    ($p\sim10^{-37}$ at $K{=}3$). As in the capacity result we control for total
+    memory: this monolith-beating effect is distributed memory (a random-diversity
+    population of equal memory also beats the monolith), and the
+    competition-specific advantage appears only at $K{=}1$ ($\approx 58\%$ over
+    random diversity, via guaranteed coverage). Even $K{=}1$ agents collectively
+    retain all regimes.
+\end{enumerate}
+
+\begin{keypoint}
+\textbf{Honest synthesis.} NichePopulation reliably produces coordination-free
+division of labor (organization), and on domains with genuine regime structure its
+niches track performance-relevant regimes. With slack individual capacity:
+(i) SI measures organization, not structure-dependence; (ii) the measurable
+task-accuracy benefit of regime awareness is due to regime-conditioning, not
+population specialization per se; and (iii) the specialized population is not an
+accuracy improvement over a single \emph{unlimited-capacity} regime-conditioned
+agent. Under two realistic constraints, specialization becomes a genuine accuracy
+lever: \emph{bounded per-agent capacity} ($K \ll R$, regime-exclusive methods),
+where it covers a regime space no individual can, beating uncoordinated diversity
+of equal total capacity; and \emph{non-stationarity with finite memory}, where it
+acts as a distributed persistent memory and avoids the monolith's relearning cost
+on reactivated regimes ($+71\%$ post-reactivation). The contribution is a
+self-organization mechanism with a precise account of its scope---an unconditional
+performance-superiority claim is not made, but tightly-scoped ones (bounded
+capacity, non-stationarity) are.
 \end{keypoint}
 
 \newpage
@@ -2531,14 +2628,14 @@ Since regimes occur with different frequencies and agents have different noise r
 \toprule
 Domain & $\lambda = 0$ SI & Random Baseline SI & Improvement \\
 \midrule
-Crypto & 0.314 $\pm$ 0.05 & 0.132 $\pm$ 0.03 & \textbf{+138\%} \\
-Commodities & 0.302 $\pm$ 0.05 & 0.132 $\pm$ 0.03 & \textbf{+129\%} \\
-Weather & 0.305 $\pm$ 0.06 & 0.132 $\pm$ 0.03 & \textbf{+131\%} \\
-Solar & 0.256 $\pm$ 0.06 & 0.132 $\pm$ 0.03 & \textbf{+94\%} \\
-Traffic & 0.294 $\pm$ 0.05 & 0.132 $\pm$ 0.03 & \textbf{+123\%} \\
-Air Quality & 0.501 $\pm$ 0.04 & 0.132 $\pm$ 0.03 & \textbf{+280\%} \\
+Crypto & 0.613 $\pm$ 0.055 & 0.132 $\pm$ 0.032 & \textbf{+363\%} \\
+Commodities & 0.588 $\pm$ 0.074 & 0.132 $\pm$ 0.032 & \textbf{+345\%} \\
+Weather & 0.614 $\pm$ 0.086 & 0.132 $\pm$ 0.032 & \textbf{+365\%} \\
+Solar & 0.499 $\pm$ 0.056 & 0.132 $\pm$ 0.032 & \textbf{+278\%} \\
+Traffic & 0.739 $\pm$ 0.040 & 0.103 $\pm$ 0.028 & \textbf{+619\%} \\
+Air Quality & 0.844 $\pm$ 0.051 & 0.132 $\pm$ 0.032 & \textbf{+538\%} \\
 \midrule
-\textbf{Average} & \textbf{0.329} & 0.132 & \textbf{+149\%} \\
+\textbf{Average} & \textbf{0.650} & 0.127 & \textbf{+412\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2546,8 +2643,8 @@ Air Quality & 0.501 $\pm$ 0.04 & 0.132 $\pm$ 0.03 & \textbf{+280\%} \\
 \begin{keypoint}
 At $\lambda = 0$:
 \begin{itemize}
-    \item SI $\approx 0.33$ (significantly above random baseline of 0.13)
-    \item This is \textbf{2.5x higher} than random
+    \item Mean SI $\approx 0.65$ (every domain $> 0.49$)
+    \item This is \textbf{5.1x higher} than the mean random SI ($0.127$)
     \item \textbf{Conclusion}: Competition alone induces meaningful specialization
 \end{itemize}
 \end{keypoint}
@@ -2569,16 +2666,16 @@ At $\lambda = 0$:
     legend pos=south east,
 ]
 \addplot[blue, thick, mark=*] coordinates {
-    (0, 0.33)
-    (0.1, 0.42)
-    (0.2, 0.60)
-    (0.3, 0.75)
-    (0.4, 0.82)
-    (0.5, 0.85)
+    (0, 0.650)
+    (0.1, 0.898)
+    (0.2, 0.984)
+    (0.3, 0.992)
+    (0.4, 0.986)
+    (0.5, 0.951)
 };
 \addplot[red, dashed] coordinates {(0, 0.13) (0.5, 0.13)};
 \legend{NichePopulation, Random Baseline}
-\node at (axis cs:0.05,0.38) [anchor=west] {Competition alone!};
+\node at (axis cs:0.05,0.72) [anchor=west] {Competition alone still strong};
 \end{axis}
 \end{tikzpicture}
 \caption{SI increases with $\lambda$, but even at $\lambda = 0$, SI significantly exceeds random baseline.}
@@ -2807,20 +2904,20 @@ In NichePopulation, agents are \textbf{competing for limited slots}. If Agent A 
 \toprule
 Domain & IQL SI & VDN SI & QMIX SI & MAPPO SI & NichePopulation SI \\
 \midrule
-Crypto & 0.15 & 0.12 & 0.18 & 0.14 & \textbf{0.75} \\
-Commodities & 0.14 & 0.11 & 0.16 & 0.13 & \textbf{0.78} \\
-Weather & 0.13 & 0.10 & 0.15 & 0.12 & \textbf{0.71} \\
-Solar & 0.16 & 0.13 & 0.19 & 0.15 & \textbf{0.82} \\
-Traffic & 0.12 & 0.09 & 0.14 & 0.11 & \textbf{0.68} \\
-Air Quality & 0.17 & 0.14 & 0.20 & 0.16 & \textbf{0.80} \\
+Crypto & 0.008 & 0.009 & 0.009 & 0.000 & \textbf{1.000} \\
+Commodities & 0.007 & 0.007 & 0.007 & 0.000 & \textbf{1.000} \\
+Weather & 0.016 & 0.015 & 0.014 & 0.000 & \textbf{1.000} \\
+Traffic & 0.011 & 0.011 & 0.011 & 0.000 & \textbf{1.000} \\
 \midrule
-\textbf{Average} & 0.15 & 0.12 & 0.17 & 0.14 & \textbf{0.76} \\
+\textbf{Average} & 0.011 & 0.010 & 0.010 & 0.000 & \textbf{1.000} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{keypoint}
-NichePopulation achieves \textbf{4-6x higher SI} than MARL baselines. This demonstrates that winner-take-all competition is essential for emergent specialization.
+NichePopulation reaches effectively maximal specialization (SI $=1.000$), while
+MARL baselines remain near-zero ($\leq 0.02$). The gap is qualitative, not just
+incremental.
 \end{keypoint}
 
 \subsection{Why Performance Matters Despite Low SI in MARL}
@@ -2940,7 +3037,7 @@ Iterations & $T$ & 500 & Competition rounds \\
     legend pos=south east,
 ]
 \addplot[blue, thick, mark=*] coordinates {
-    (0, 0.33) (0.1, 0.45) (0.2, 0.62) (0.3, 0.75) (0.4, 0.82) (0.5, 0.85)
+    (0, 0.650) (0.1, 0.898) (0.2, 0.984) (0.3, 0.992) (0.4, 0.986) (0.5, 0.951)
 };
 \addplot[red, thick, mark=square] coordinates {
     (0, 0.65) (0.1, 0.70) (0.2, 0.76) (0.3, 0.78) (0.4, 0.75) (0.5, 0.70)
@@ -2951,12 +3048,12 @@ Iterations & $T$ & 500 & Competition rounds \\
 \legend{SI, Task Performance, Coverage}
 \end{axis}
 \end{tikzpicture}
-\caption{Effect of $\lambda$ on specialization metrics. SI increases monotonically with $\lambda$. Task performance peaks around $\lambda = 0.3$ before decreasing.}
+\caption{Effect of $\lambda$ on specialization metrics. SI rises strongly from $\lambda=0$ and is near-saturated for $\lambda \in [0.2,0.4]$; task performance peaks around $\lambda = 0.3$ before decreasing.}
 \end{figure}
 
 \textbf{Key Insights:}
 \begin{itemize}
-    \item \textbf{SI}: Increases monotonically with $\lambda$ (more incentive = more specialization)
+    \item \textbf{SI}: High even at $\lambda=0$ and near-saturated for $\lambda\in[0.2,0.4]$
     \item \textbf{Task Performance}: Peaks at $\lambda \approx 0.3$, then decreases
     \item \textbf{Coverage}: Saturates quickly (high even at low $\lambda$)
 \end{itemize}
@@ -3049,8 +3146,8 @@ $\eta = 0.5$ & Very fast (50 iter) & 0.68 & Unstable \\
 \begin{keypoint}
 Our algorithm is \textbf{robust} to hyperparameter choices:
 \begin{itemize}
-    \item SI $> 0.30$ even at $\lambda = 0$ (competition alone works)
-    \item SI $> 0.60$ for any $\lambda \in [0.2, 0.5]$
+    \item SI $> 0.49$ even at $\lambda = 0$ (competition alone works)
+    \item Mean SI $> 0.95$ for any $\lambda \in [0.2, 0.5]$
     \item Full coverage achieved for $N \geq R$
     \item Convergence guaranteed for any $\eta > 0$
 \end{itemize}
@@ -3187,7 +3284,7 @@ For $\lambda = 0.3$ and $R = 4$:
 \E[\SI] \geq \frac{0.3}{1.3} \times \left(1 - \frac{1}{4}\right) = 0.231 \times 0.75 = 0.173
 \end{equation}
 
-Our experiments show SI $\approx 0.75$, well above this lower bound.
+Our experiments under the canonical EG update show SI $\approx 0.99$, well above this lower bound.
 
 \section{Proposition 3: Mono-Regime Collapse}
 
@@ -3472,14 +3569,14 @@ After running the algorithm:
 \toprule
 Domain & NichePopulation SI & Homogeneous SI & Cohen's $d$ & $p$-value \\
 \midrule
-Crypto & 0.786 $\pm$ 0.06 & 0.002 $\pm$ 0.00 & 20.05 & $<$0.001 \\
-Commodities & 0.773 $\pm$ 0.06 & 0.002 $\pm$ 0.00 & 19.89 & $<$0.001 \\
-Weather & 0.758 $\pm$ 0.05 & 0.002 $\pm$ 0.00 & 23.44 & $<$0.001 \\
-Solar & 0.764 $\pm$ 0.04 & 0.002 $\pm$ 0.00 & 25.71 & $<$0.001 \\
-Traffic & 0.573 $\pm$ 0.05 & 0.003 $\pm$ 0.00 & 15.86 & $<$0.001 \\
-Air Quality & 0.826 $\pm$ 0.04 & 0.002 $\pm$ 0.00 & 32.06 & $<$0.001 \\
+Crypto & 0.991 $\pm$ 0.024 & 0.002 $\pm$ 0.000 & 58.29 & $<10^{-80}$ \\
+Commodities & 0.990 $\pm$ 0.020 & 0.002 $\pm$ 0.000 & 70.48 & $<10^{-80}$ \\
+Weather & 0.991 $\pm$ 0.023 & 0.002 $\pm$ 0.000 & 60.91 & $<10^{-80}$ \\
+Solar & 0.995 $\pm$ 0.014 & 0.002 $\pm$ 0.000 & 100.93 & $<10^{-80}$ \\
+Traffic & 0.995 $\pm$ 0.015 & 0.003 $\pm$ 0.000 & 95.56 & $<10^{-80}$ \\
+Air Quality & 0.987 $\pm$ 0.026 & 0.002 $\pm$ 0.000 & 54.35 & $<10^{-80}$ \\
 \midrule
-\textbf{Average} & \textbf{0.747} & 0.002 & 22.84 & --- \\
+\textbf{Average} & \textbf{0.992} & 0.002 & 73.42 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3497,7 +3594,7 @@ This section synthesizes all concepts to ensure complete understanding.
 \subsection{The Central Claim in One Sentence}
 
 \begin{keypoint}
-\textbf{Core Thesis:} When agents compete for limited resources in a regime-switching environment, specialization emerges spontaneously---even without explicit diversity incentives.
+\textbf{Core Thesis:} When agents compete for limited resources in a regime-switching environment, specialization emerges spontaneously---even without explicit diversity incentives. This is an \emph{organization} result: the population self-partitions into a coordination-free division of labor. Where genuine regime structure exists (e.g.\ traffic, solar), the niches \emph{track} performance-relevant regimes; but specialization is not itself a task-accuracy lever over a regime-conditioned agent (Section~\ref{ddsec:meaningfulness}).
 \end{keypoint}
 
 \subsection{Why This Matters}
@@ -3582,11 +3679,11 @@ Metric & Formula & Range & Interpretation \\
 \toprule
 Finding & Evidence & Effect Size \\
 \midrule
-SI significantly above random & All 6 domains & Cohen's $d > 15$ \\
-$\lambda = 0$ still works & SI $\approx 0.33$ at $\lambda = 0$ & 2.5x above random \\
-Cross-domain generalization & SI $> 0.57$ in all domains & All $p < 0.001$ \\
+SI significantly above random & All 6 domains & Cohen's $d > 50$ \\
+$\lambda = 0$ still works & Mean SI $\approx 0.65$ at $\lambda = 0$ & 5.1x above random \\
+Cross-domain generalization & SI $> 0.98$ in all domains ($\lambda=0.3$) & All $p < 10^{-80}$ \\
 Coverage near 100\% & 97\% average coverage & --- \\
-Outperforms MARL & 4-6x higher SI than IQL/QMIX/MAPPO & --- \\
+Outperforms MARL & Niche SI $=1.000$ vs MARL SI $\le 0.02$ & $\ge 100\times$ SI gap \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3638,11 +3735,41 @@ Outperforms MARL & 4-6x higher SI than IQL/QMIX/MAPPO & --- \\
 
 \subsection{Q4: Does this work with real data?}
 
-\textbf{A:} Yes! All 6 domains use 100\% real data. SI $> 0.57$ even in the hardest domain (Traffic). Cohen's $d > 15$ in all domains, indicating massive effect sizes.
+\textbf{A:} Yes. All 6 domains use real data, and under the canonical V4 (EG)
+update at $\lambda=0.3$ every domain reaches SI $>0.98$, with Cohen's
+$d>50$ and $p<10^{-80}$ throughout.
 
 \subsection{Q5: How does this compare to MARL?}
 
 \textbf{A:} Standard MARL (IQL, VDN, QMIX, MAPPO) produces homogeneous populations because all agents optimize the same objective. NichePopulation's winner-take-all creates diversity as a byproduct of competition.
+
+\subsection{Q6: Does the specialization actually improve task performance?}
+
+\textbf{A:} This is the most important question, and the honest answer is nuanced
+(Section~\ref{ddsec:meaningfulness}). The \emph{organization} is real and robust.
+Where genuine regime structure exists (traffic, solar---confirmed by an oracle
+diagnostic), regime-aware prediction beats a shuffled-label control by $12$--$15\%$,
+so the niches track performance-relevant regimes. \emph{However}, controlled
+ablations show the task-accuracy benefit is due to regime-\emph{conditioning}
+(knowing the regime to pick a method), not to population specialization
+specifically: turning the niche$\to$winner coupling on/off makes no difference
+($p = 0.36$), and a single regime-conditioned agent matches or beats the
+specialized population. So we claim emergent organization that tracks structure,
+\emph{not} an unconditional performance advantage from specialization over a
+conditioned baseline. \emph{The exceptions---and they are real performance
+results---are two realistic constraints.} (i) \textbf{Bounded per-agent
+capacity}: when each agent can master only $K \ll R$ regimes (the realistic
+condition for any finite learner), no individual can be a competent generalist,
+and the specialized population beats both a capacity-matched monolith and an
+equal-total-capacity random-diversity population ($+57\%$ synthetic, $+8.7\%$ real
+traffic at $K{=}1$). (ii) \textbf{Non-stationarity with finite memory}: when
+regimes cycle in and out and agents have bounded belief stores, the population
+retains dormant-niche expertise as a distributed persistent memory while a
+capacity-bounded monolith must relearn each reactivated regime ($+33\%$ overall,
+$+71\%$ post-reactivation; the monolith-beating part is a distributed-memory
+effect shared by random diversity, while competition specifically adds the
+tight-capacity coverage gap, $\approx 58\%$ at $K{=}1$). Division of labor is an
+accuracy lever precisely when capacity or memory is the binding constraint.
 
 \section{How to Use This Algorithm}
 

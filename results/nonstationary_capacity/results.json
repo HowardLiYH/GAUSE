@@ -1,0 +1,73 @@
+{
+  "R": 6,
+  "W": 3,
+  "probe": 15,
+  "rows": [
+    {
+      "K": 1,
+      "monolith_overall": 1.0102765987003317,
+      "monolith_react": 1.015164496271503,
+      "random_overall": 0.5745901072145025,
+      "random_react": 0.6025388368033494,
+      "specialized_overall": 0.2393304604673252,
+      "specialized_react": 0.2832809752259871,
+      "spec_vs_mono_overall_p": 2.283200441038349e-65,
+      "spec_vs_mono_react_p": 6.160264952651e-42
+    },
+    {
+      "K": 2,
+      "monolith_overall": 0.920310382442562,
+      "monolith_react": 0.9535722981117205,
+      "random_overall": 0.3302853747666065,
+      "random_react": 0.33067129293516856,
+      "specialized_overall": 0.2395858211510978,
+      "specialized_react": 0.25965318477184357,
+      "spec_vs_mono_overall_p": 1.4318037198965891e-57,
+      "spec_vs_mono_react_p": 3.703179794745174e-40
+    },
+    {
+      "K": 3,
+      "monolith_overall": 0.35852500251890645,
+      "monolith_react": 0.905795574177036,
+      "random_overall": 0.23931811587227378,
+      "random_react": 0.25225981709595546,
+      "specialized_overall": 0.23975895547741274,
+      "specialized_react": 0.25964661694210955,
+      "spec_vs_mono_overall_p": 4.059194465680158e-37,
+      "spec_vs_mono_react_p": 2.8923003698176696e-39
+    },
+    {
+      "K": 4,
+      "monolith_overall": 0.32418899597012313,
+      "monolith_react": 0.9289580307168533,
+      "random_overall": 0.23912898207701655,
+      "random_react": 0.25285222917677863,
+      "specialized_overall": 0.2396770373643747,
+      "specialized_react": 0.25523290349752675,
+      "spec_vs_mono_overall_p": 4.7674080461892276e-33,
+      "spec_vs_mono_react_p": 1.788260061639948e-36
+    },
+    {
+      "K": 5,
+      "monolith_overall": 0.32418899597012313,
+      "monolith_react": 0.9289580307168533,
+      "random_overall": 0.23946003155210677,
+      "random_react": 0.25437188797800664,
+      "specialized_overall": 0.2397785646264315,
+      "specialized_react": 0.25533866144959144,
+      "spec_vs_mono_overall_p": 4.8875376703304545e-33,
+      "spec_vs_mono_react_p": 1.8114923088566e-36
+    },
+    {
+      "K": 6,
+      "monolith_overall": 0.2391134029555014,
+      "monolith_react": 0.2532204804215083,
+      "random_overall": 0.23910629092882557,
+      "random_react": 0.2520388474798002,
+      "specialized_overall": 0.2397785646264315,
+      "specialized_react": 0.25533866144959144,
+      "spec_vs_mono_overall_p": 0.9961965245652756,
+      "spec_vs_mono_react_p": 0.9035487272187144
+    }
+  ]
+}

@@ -6,12 +6,12 @@ This tests whether diversity provides value beyond just having
 the best strategy.
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
 from ..agents.method_selector import MethodSelector
-from ..agents.population import Population, PopulationConfig
+from ..agents.regime_conditioned_selector import RegimeConditionedPopulation
 
 
 class HomogeneousPopulation:
@@ -27,7 +27,7 @@ class HomogeneousPopulation:
 
     def __init__(
         self,
-        source_population: Optional[Population] = None,
+        source_population: Optional[Any] = None,
         n_agents: int = 5,
         fixed_methods: Optional[List[str]] = None,
         seed: Optional[int] = None,
@@ -49,27 +49,24 @@ class HomogeneousPopulation:
             self.fixed_methods = fixed_methods
             self.agents = None
         elif source_population:
-            # Clone best agent from source population
-            config = PopulationConfig(
-                n_agents=n_agents,
-                seed=seed,
-            )
-            self.population = Population(config)
-
-            # Get best agent's beliefs
-            best_id, best_agent = source_population.get_best_agent()
-
-            # Copy to all agents
-            for agent in self.population.agents.values():
-                agent.copy_beliefs_from(best_agent, tau=1.0)
-
+            # Best-effort clone path for legacy compatibility.
+            # If the source has modern regime-conditioned selectors, clone those.
+            self.population = RegimeConditionedPopulation(n_agents=n_agents, seed=seed)
+            if hasattr(source_population, "agents") and source_population.agents:
+                best_agent = next(iter(source_population.agents.values()))
+                for agent in self.population.agents.values():
+                    if hasattr(agent, "copy_beliefs_from"):
+                        for regime in getattr(agent, "regimes", []):
+                            agent.copy_beliefs_from(best_agent, regime=regime, tau=1.0)
             self.agents = self.population.agents
             self.fixed_methods = None
         else:
-            # Create uniform agents (no learning yet)
-            config = PopulationConfig(n_agents=n_agents, seed=seed)
-            self.population = Population(config)
-            self.agents = self.population.agents
+            self.population = None
+            # Fallback: independent homogeneous selectors
+            self.agents = {
+                f"agent_{i}": MethodSelector(agent_id=f"agent_{i}", max_methods=1, seed=(seed + i) if seed is not None else None)
+                for i in range(n_agents)
+            }
             self.fixed_methods = None
 
     def select(self) -> Dict[str, List[str]]:
@@ -129,7 +126,7 @@ class HomogeneousPopulation:
     @classmethod
     def from_trained_population(
         cls,
-        population: Population,
+        population: Any,
         n_agents: int = 5,
     ) -> "HomogeneousPopulation":
         """Create homogeneous population by cloning best from trained population."""

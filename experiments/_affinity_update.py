@@ -33,6 +33,32 @@ import math
 from typing import Dict, List
 
 
+def eg_eta_for_regimes(n_regimes: int, base_eta: float = 0.1) -> float:
+    """Return the EG learning rate rescaled to match V3's first-order step.
+
+    The exponentiated-gradient (V4) update takes smaller steps than the V3
+    additive update at the same nominal ``base_eta``. At a uniform start with
+    ``R`` regimes, V3 moves the winning affinity ``(R^2 - R + 1) / (R - 1)``
+    times as far per win as V4 (the ``(1 - alpha)`` paper-V3 variant). To make
+    V4 reproduce V3's specialization timescale over the same iteration budget,
+    we scale eta up by that factor::
+
+        eta_V4(R) = base_eta * (R^2 - R + 1) / (R - 1)
+
+    This is exactly the rescale applied by the canonical headline pipeline
+    (``exp_unified_pipeline.lr_for_domain``) and ``exp_method_specialization``.
+    Using it in every EG experiment keeps the auxiliary scripts numerically
+    consistent with the published tables. See
+    ``docs/V4_EG_RENOVATION_AUDIT.md`` Section 7.
+
+    For ``n_regimes < 2`` the rescale is undefined, so ``base_eta`` is returned
+    unchanged.
+    """
+    if n_regimes < 2:
+        return base_eta
+    return base_eta * (n_regimes ** 2 - n_regimes + 1) / (n_regimes - 1)
+
+
 def _apply_v3_additive(
     affinity: Dict[str, float],
     winning_regime: str,
@@ -95,8 +121,14 @@ def apply_affinity_update(
         Canonical regime ordering.
     eta : float, default 0.1
         Learning rate. Note that V3 and V4 have different effective step
-        sizes at a given ``eta``; at uniform start, V3 is roughly
-        ``(R^2 - R + 1) / (R - 1)`` times more aggressive (4.33 at R=4).
+        sizes at a given ``eta``. The ``"v3_additive"`` rule implemented
+        here is the *flat-additive* experiment-script variant
+        (``alpha_winner += eta``), whose per-step winner gain at uniform
+        start is ``eta`` while V4's is ``eta * (R - 1) / R^2``; the ratio
+        is therefore ``R^2 / (R - 1)`` (~5.33 at R=4). This is distinct
+        from the ``(1 - alpha)`` *paper-V3* variant in
+        ``src/agents/niche_population.py::_update_niche_affinity_v3``,
+        whose ratio is ``(R^2 - R + 1) / (R - 1)`` (~4.33 at R=4).
         See ``docs/V4_EG_RENOVATION_AUDIT.md`` Section 7.
     rule : {"eg", "v3_additive"}, default "eg"
         Which update rule to apply.

@@ -1,75 +1,89 @@
 {
-  "experiment": "regime_shuffle_test",
-  "date": "2025-12-22T21:58:03.073203",
+  "experiment": "regime_shuffle_negative_control",
+  "metric": "task_performance",
+  "date": "2026-06-04T18:43:04.788969",
   "config": {
     "n_trials": 30,
     "n_shuffle_seeds": 10
   },
+  "note": "Negative control measures the PERFORMANCE benefit of regime-conditioning (prediction error), not SI. SI is reported only to show it is structurally invariant to shuffling.",
   "results": {
     "energy": {
       "original": {
-        "si_mean": 0.7862253968259074,
-        "si_std": 0.029006309857030586,
-        "si_ci_lower": 0.7759782926816067,
-        "si_ci_upper": 0.7965893286868712
+        "si_mean": 0.7416381305980984,
+        "si_std": 0.05167304164491042,
+        "error_mean": 90.61646763104163,
+        "error_std": 2.874395773934605
       },
       "shuffled": {
-        "si_mean": 0.7990218920288322,
-        "si_std": 0.042987307754873694,
-        "si_ci_lower": 0.7904278833289232,
-        "si_ci_upper": 0.8076927978263687,
+        "si_mean": 0.7757576266426226,
+        "si_std": 0.07646580940778648,
+        "error_mean": 90.77577156857818,
+        "error_std": 2.2788990296819915,
         "n_samples": 100
       },
-      "comparison": {
-        "t_statistic": -1.5175478803807583,
-        "p_value": 0.9342028087929157,
-        "cohens_d": -0.3159027825150523,
+      "performance_test": {
+        "t_statistic": -0.31258303993824593,
+        "p_value_one_sided": 0.37755307199098415,
+        "cohens_d": 0.06506934862492109,
         "significant_001": false,
-        "si_drop_pct": -1.627586091035204
+        "perf_gain_pct": 0.17549169209341312
+      },
+      "si_invariance": {
+        "si_drop_pct": -4.600558498389016,
+        "note": "Near-zero by construction; SI does not test structure."
       }
     },
     "weather": {
       "original": {
-        "si_mean": 0.7176427534572526,
-        "si_std": 0.07441811889041416,
-        "si_ci_lower": 0.6918469953808278,
-        "si_ci_upper": 0.7424316424407652
+        "si_mean": 0.7442264835801836,
+        "si_std": 0.06275440419857592,
+        "error_mean": 3.3993621820105684,
+        "error_std": 0.03203443790333363
       },
       "shuffled": {
-        "si_mean": 0.7766136112359504,
-        "si_std": 0.046104056896778926,
-        "si_ci_lower": 0.7675066150526176,
-        "si_ci_upper": 0.7856768639575042,
+        "si_mean": 0.7646165034336759,
+        "si_std": 0.06235089981669908,
+        "error_mean": 3.3773409253654956,
+        "error_std": 0.03830122515936622,
         "n_samples": 100
       },
-      "comparison": {
-        "t_statistic": -5.208152253791562,
-        "p_value": 0.9999996298421162,
-        "cohens_d": -1.0841633466760805,
+      "performance_test": {
+        "t_statistic": 2.840898832359678,
+        "p_value_one_sided": 0.9973820797000884,
+        "cohens_d": -0.591380250724618,
         "significant_001": false,
-        "si_drop_pct": -8.21729997197143
+        "perf_gain_pct": -0.6520294258622907
+      },
+      "si_invariance": {
+        "si_drop_pct": -2.7397600466196623,
+        "note": "Near-zero by construction; SI does not test structure."
       }
     },
     "finance": {
       "original": {
-        "si_mean": 0.7165139669710705,
-        "si_std": 0.028684165250389075,
-        "si_ci_lower": 0.7060230001445,
-        "si_ci_upper": 0.726420252837692
+        "si_mean": 0.9875017399124624,
+        "si_std": 0.013399226143800503,
+        "error_mean": 1395.0986540280078,
+        "error_std": 29.464343379791778
       },
       "shuffled": {
-        "si_mean": 0.689601982082133,
-        "si_std": 0.03983401922692163,
-        "si_ci_lower": 0.6814910174506699,
-        "si_ci_upper": 0.6982054798703865,
+        "si_mean": 0.982500028270632,
+        "si_std": 0.020741261904435107,
+        "error_mean": 1388.8063524422562,
+        "error_std": 22.554518524278677,
         "n_samples": 100
       },
-      "comparison": {
-        "t_statistic": 3.4157755185864977,
-        "p_value": 0.0004263646671908798,
-        "cohens_d": 0.711050375885031,
-        "significant_001": true,
-        "si_drop_pct": 3.7559609623107484
+      "performance_test": {
+        "t_statistic": 1.2330985418351854,
+        "p_value_one_sided": 0.8901006041146292,
+        "cohens_d": -0.25668993085295727,
+        "significant_001": false,
+        "perf_gain_pct": -0.4530726385781868
+      },
+      "si_invariance": {
+        "si_drop_pct": 0.5065015523186588,
+        "note": "Near-zero by construction; SI does not test structure."
       }
     }
   }

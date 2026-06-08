@@ -41,6 +41,7 @@ from copy import deepcopy
 from src.environment.synthetic_market import SyntheticMarketConfig, SyntheticMarketEnvironment
 from src.agents.niche_population import NichePopulation
 from src.agents.inventory_v2 import METHOD_INVENTORY_V2
+from experiments._affinity_update import eg_eta_for_regimes
 
 
 # Configuration
@@ -210,7 +211,9 @@ def run_condition(
         base_pop = NichePopulation(
             n_agents=N_AGENTS,
             niche_bonus=niche_bonus,
-            seed=trial_id
+            seed=trial_id,
+            # Rescale EG step to the canonical headline timescale (4 default regimes).
+            learning_rate=eg_eta_for_regimes(len(regime_names)),
         )
 
         if not competition:
@@ -354,8 +357,8 @@ def run_experiment():
         },
         "results": [asdict(r) for r in results],
         "conclusions": {
-            "competition_necessary": results[1].si_mean > results[3].si_mean,  # COMPETITION_ONLY > CONTROL
-            "bonus_helpful": results[0].si_mean > results[1].si_mean,  # FULL > COMPETITION_ONLY
+            "competition_necessary": bool(results[1].si_mean > results[3].si_mean),  # COMPETITION_ONLY > CONTROL
+            "bonus_helpful": bool(results[0].si_mean > results[1].si_mean),  # FULL > COMPETITION_ONLY
         }
     }
 

@@ -1,0 +1,63 @@
+{
+  "experiment": "mechanism_ablation",
+  "date": "2026-06-04T18:37:50.462275",
+  "config": {
+    "n_trials": 30,
+    "n_iterations": 2000,
+    "n_agents": 8
+  },
+  "results": [
+    {
+      "condition": "FULL",
+      "niche_bonus": 0.5,
+      "competition": true,
+      "si_mean": 0.9933722254201117,
+      "si_std": 0.015213381763974491,
+      "si_ci_lower": 0.9872894032191407,
+      "si_ci_upper": 0.9981763728004596,
+      "diversity_mean": 0.5552337737754711,
+      "reward_mean": 0.020392080390355567,
+      "n_trials": 30
+    },
+    {
+      "condition": "COMPETITION_ONLY",
+      "niche_bonus": 0.0,
+      "competition": true,
+      "si_mean": 0.7448630763847943,
+      "si_std": 0.0669276276881321,
+      "si_ci_lower": 0.7207160806317701,
+      "si_ci_upper": 0.7692605685599523,
+      "diversity_mean": 0.3438162665835392,
+      "reward_mean": 0.021204133013393123,
+      "n_trials": 30
+    },
+    {
+      "condition": "BONUS_ONLY",
+      "niche_bonus": 0.5,
+      "competition": false,
+      "si_mean": 0.9818293931554316,
+      "si_std": 0.03462846226191476,
+      "si_ci_lower": 0.9690544464382506,
+      "si_ci_upper": 0.9931678823678083,
+      "diversity_mean": 0.04895285551899017,
+      "reward_mean": 0.01898659946193729,
+      "n_trials": 30
+    },
+    {
+      "condition": "CONTROL",
+      "niche_bonus": 0.0,
+      "competition": false,
+      "si_mean": 3.164042505776621e-08,
+      "si_std": 0.0,
+      "si_ci_lower": 3.164042505776621e-08,
+      "si_ci_upper": 3.164042505776621e-08,
+      "diversity_mean": 0.0,
+      "reward_mean": 0.022359615110719135,
+      "n_trials": 30
+    }
+  ],
+  "conclusions": {
+    "competition_necessary": true,
+    "bonus_helpful": true
+  }
+}

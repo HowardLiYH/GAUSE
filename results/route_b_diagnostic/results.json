@@ -1,0 +1,47 @@
+{
+  "experiment": "route_b_oracle_gate",
+  "note": "specialist-vs-generalist oracle gap (energy/weather/finance)",
+  "any_exploitable_structure": true,
+  "domains": [
+    {
+      "domain": "energy",
+      "global_best_method": "RenewableAware",
+      "best_per_regime": {
+        "normal": "RenewableAware",
+        "low_demand": "RenewableAware",
+        "peak_demand": "RenewableAware"
+      },
+      "generalist_err": 45.27242357109109,
+      "specialist_err": 45.27242357109109,
+      "improvement_pct": 0.0,
+      "regimes_disagree_on_best_method": false
+    },
+    {
+      "domain": "weather",
+      "global_best_method": "Seasonal",
+      "best_per_regime": {
+        "stable_cold": "Seasonal",
+        "transition": "Seasonal",
+        "stable_warm": "Seasonal"
+      },
+      "generalist_err": 3.1173786223785296,
+      "specialist_err": 3.1173786223785296,
+      "improvement_pct": 0.0,
+      "regimes_disagree_on_best_method": false
+    },
+    {
+      "domain": "finance",
+      "global_best_method": "Volatility",
+      "best_per_regime": {
+        "trend_down": "Volatility",
+        "trend_up": "Volatility",
+        "volatile": "MeanRevert",
+        "mean_revert": "Volatility"
+      },
+      "generalist_err": 1333.9702976100123,
+      "specialist_err": 1308.7444324155695,
+      "improvement_pct": 1.8910364975620781,
+      "regimes_disagree_on_best_method": true
+    }
+  ]
+}

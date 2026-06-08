@@ -51,7 +51,7 @@ Competition as the Source of Diversity}
 \maketitle
 
 \begin{abstract}
-How can populations of learners develop coordinated, diverse behaviors without explicit communication or diversity incentives? We demonstrate that \textbf{competition alone is sufficient} to induce emergent specialization---learners spontaneously partition into specialists for different environmental regimes through competitive dynamics, consistent with ecological niche theory. We introduce the \textbf{NichePopulation} algorithm, a simple mechanism combining competitive exclusion with niche affinity tracking via the canonical exponentiated-gradient (Hedge / multiplicative-weights) update on the regime simplex. Validated across \textbf{six real-world domains} (cryptocurrency trading, commodity prices, weather forecasting, solar irradiance, urban traffic, and air quality), our approach achieves a mean Specialization Index of \textbf{0.99} with effect sizes of Cohen's $d > 50$. Key findings: (1) At $\lambda=0$ (no niche bonus), learners still achieve mean SI $\approx 0.65$ (and SI $> 0.39$ on every real-data domain), confirming specialization is genuinely emergent; (2) Diverse populations outperform homogeneous baselines by orders of magnitude in SI through method-level division of labor; (3) Our approach inherits the canonical $O(\sqrt{T\log R})$ no-regret guarantee of the Hedge algorithm and outperforms MARL baselines (QMIX, MAPPO, IQL) in specialization while being 4$\times$ faster. Code and data available at: \url{https://github.com/HowardLiYH/NichePopulation}.
+How can populations of learners develop coordinated, diverse behaviors without explicit communication or diversity incentives? We demonstrate that \textbf{competition alone is sufficient} to induce emergent specialization---learners spontaneously partition into specialists for different environmental regimes through competitive dynamics, consistent with ecological niche theory. We introduce the \textbf{NichePopulation} algorithm, a simple mechanism combining competitive exclusion with niche affinity tracking via the canonical exponentiated-gradient (Hedge / multiplicative-weights) update on the regime simplex. Validated across \textbf{six real-world domains} (cryptocurrency trading, commodity prices, weather forecasting, solar irradiance, urban traffic, and air quality), our approach achieves a mean Specialization Index of \textbf{0.99} with effect sizes of Cohen's $d > 50$. Key findings: (1) At $\lambda=0$ (no niche bonus), learners still achieve mean SI $\approx 0.65$ (and SI $> 0.39$ on every real-data domain), confirming specialization is genuinely emergent; (2) Diverse populations outperform homogeneous baselines by orders of magnitude in SI through method-level division of labor; (3) Our approach inherits the canonical $O(\sqrt{T\log R})$ no-regret guarantee of the Hedge algorithm and outperforms MARL baselines (QMIX, MAPPO, IQL) in specialization while being 4$\times$ faster. We further subject the result to a battery of controls (Section~\ref{sec:meaningfulness}): SI is a measure of \emph{organization}---it is invariant to regime-label shuffling and inflatable by the learning rate---so we add an oracle structure-diagnostic and a performance-based negative control. These show the emergent niches \emph{track performance-relevant regimes when genuine regime structure exists} (e.g., traffic, solar), while honest ablations establish that the resulting task-accuracy gain is attributable to regime-conditioning rather than to population specialization per se. We thus frame NichePopulation as a coordination-free self-organization mechanism with a precise account of its scope. Code and data available at: \url{https://github.com/HowardLiYH/NichePopulation}.
 \end{abstract}
 
 %=============================================================================
@@ -368,12 +368,12 @@ Table \ref{tab:main_results} presents our primary findings. Emergent specializat
 \toprule
 \textbf{Domain} & \textbf{SI (Ours)} & \textbf{SI (Homo)} & \textbf{SI (Random)} & \textbf{Cohen's $d$} & \textbf{$p$-value} \\
 \midrule
-Crypto & $0.991 \pm 0.024$ & $0.002$ & $0.132$ & 58.29 & $< 10^{-90}$ \\
-Commodities & $0.990 \pm 0.020$ & $0.002$ & $0.132$ & 70.48 & $< 10^{-95}$ \\
-Weather & $0.991 \pm 0.023$ & $0.002$ & $0.132$ & 60.91 & $< 10^{-92}$ \\
-Solar & $0.995 \pm 0.014$ & $0.002$ & $0.132$ & 100.93 & $< 10^{-99}$ \\
-Traffic & $0.995 \pm 0.015$ & $0.003$ & $0.103$ & 95.56 & $< 10^{-98}$ \\
-Air Quality & $0.987 \pm 0.026$ & $0.002$ & $0.132$ & 54.35 & $< 10^{-88}$ \\
+Crypto & $0.991 \pm 0.024$ & $0.002$ & $0.132$ & 58.29 & $< 10^{-80}$ \\
+Commodities & $0.990 \pm 0.020$ & $0.002$ & $0.132$ & 70.48 & $< 10^{-80}$ \\
+Weather & $0.991 \pm 0.023$ & $0.002$ & $0.132$ & 60.91 & $< 10^{-80}$ \\
+Solar & $0.995 \pm 0.014$ & $0.002$ & $0.132$ & 100.93 & $< 10^{-80}$ \\
+Traffic & $0.995 \pm 0.015$ & $0.003$ & $0.103$ & 95.56 & $< 10^{-80}$ \\
+Air Quality & $0.987 \pm 0.026$ & $0.002$ & $0.132$ & 54.35 & $< 10^{-80}$ \\
 \midrule
 \textbf{Average} & $\mathbf{0.992}$ & $0.002$ & $0.127$ & $\mathbf{73.4}$ & --- \\
 \bottomrule
@@ -472,9 +472,14 @@ Air Quality & 0.384 & 69\% & 0.912 & 0.834 & +9.3\% & $< 10^{-43}$ \\
 
 \textbf{Populations use 86\% of available methods on average.} This indicates genuine division of labor: learners are not converging to a single dominant method but collectively utilizing the population's full repertoire. Weather and Traffic achieve 99\% coverage, with all 5 methods actively used by specialists.
 
-\textbf{Diverse populations outperform homogeneous by +25.9\%.} This performance improvement demonstrates the practical value of emergent specialization. Different methods excel in different regimes; by having specialists for each, the population achieves better aggregate performance than any single method could.
+\textbf{Diverse populations outperform a single-method homogeneous baseline by +25.9\%.} A population that selects methods per regime beats a population locked to one fixed method. We caution, however, that this gain reflects \emph{regime-conditioned method selection} rather than population specialization specifically: a single regime-conditioned agent achieves the same conditioning, and our controlled ablations (Section~\ref{sec:meaningfulness}) find that the specialized population does not reliably beat such a monolith. The comparison here should thus be read as ``conditioning beats no-conditioning,'' not ``specialization beats non-specialization.''
 
-\textbf{Crypto shows highest improvement (+41.2\%).} Cryptocurrency markets exhibit high regime diversity (bull/bear/sideways/volatile), with different strategies optimal in each. Specialization allows the population to exploit this structure.
+\textbf{Per-domain improvements are bounded by exploitable structure.} The
+$\Delta\%$ column reflects the gap over a \emph{single fixed method}; it is large
+wherever the homogeneous baseline is a poor fixed choice. It should not be read
+as evidence of regime-dependent method optimality, which our oracle diagnostic
+(Table~\ref{tab:oracle}) finds is substantial only in traffic and solar and
+near-zero in crypto, commodities, weather, and energy.
 
 \paragraph{Note on V3 vs.\ V4 for method specialization.} Earlier versions of
 the paper reported very similar values for this table (mean MSI $0.364$,
@@ -557,6 +562,132 @@ V4 in this experimental setup.
 with multiple adjacent regimes, creating ambiguous boundaries; this
 issue is independent of the update rule.
 
+\subsection{Are the Niches Meaningful? Negative Control, Structure Diagnostic, and Ablations}
+\label{sec:meaningfulness}
+
+A high Specialization Index certifies that the population \emph{organizes}
+into distinct niches; it does \emph{not}, by itself, certify that those niches
+track exploitable environmental structure. We stress-test the meaningfulness of
+the learned specialization with four controlled experiments. The conclusions
+sharpen---and in one respect correct---the headline reading above.
+
+\paragraph{(1) Negative control: SI is invariant to regime-label shuffling.}
+If we randomly permute the regime labels (destroying any regime$\to$structure
+alignment) and re-run the population, the Specialization Index is essentially
+unchanged (mean SI remains $\approx 0.9$--$1.0$). SI is therefore a measure of
+\emph{population organization}, not of structure-dependence: it is also
+inflatable by the learning rate $\eta$. To test whether specialization is
+\emph{meaningful} we must use an external, structure-dependent metric---task
+prediction error---and ask whether real regimes beat shuffled regimes.
+
+\paragraph{(2) Structure diagnostic (oracle gate).} For each domain we compute
+the gap between a \emph{specialist oracle} (always uses each regime's best
+method) and a \emph{generalist oracle} (single globally-best method). This upper-
+bounds any regime-aware benefit, independent of the algorithm
+(Table~\ref{tab:oracle}).
+
+\begin{table}[t]
+\centering
+\small
+\caption{Oracle structure gap (specialist vs.\ generalist) per domain, with
+causal regime labels. The gap upper-bounds any achievable regime-specialization
+benefit. Four of six domains have a globally dominant method (gap $\approx 0$);
+only traffic and solar carry exploitable regime structure.}
+\label{tab:oracle}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Domain} & \textbf{Specialist-oracle gap} & \textbf{Exploitable structure?} \\
+\midrule
+Energy/Weather & $0.0\%$ & no (one method dominates) \\
+Finance/Crypto & $0\text{--}1.9\%$ & negligible \\
+Traffic (clock regimes) & $\sim 10\%$ & yes \\
+Solar (hour-of-day) & $\sim 13\text{--}16\%$ & yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{(3) Performance-based control on structured domains.} On the two
+domains with genuine structure, using \emph{causal} (clock-based) regime labels
+that cannot leak the target, regime-aware prediction beats the shuffled-label
+control by $+15.4\%$ (traffic, $p<10^{-9}$) and $+12.8\%$ (solar, $p<10^{-8}$).
+So the regimes do carry exploitable information \emph{when such structure
+exists}, and the algorithm tracks it. (An apparent commodities effect vanished
+under a leakage audit and is excluded.)
+
+\paragraph{(4) Ablations: the gain is regime-conditioning, not specialization.}
+Two controlled ablations on nine series (four NYC-taxi month-windows, five solar
+locations) localize the source of the performance gap:
+\begin{itemize}
+    \item \textbf{Coupling on/off.} Whether or not niche affinity feeds winner
+    determination, the real-vs-shuffled gap is statistically identical (paired
+    $p = 0.36$). The performance benefit comes from \emph{per-regime method
+    selection}, which both arms share.
+    \item \textbf{Population vs.\ monolith.} A single regime-conditioned agent
+    matches or beats the specialized population (the population is $\approx 26\%$
+    worse on solar, where winner-take-all specialization fragments each agent's
+    training data). Emergent specialization is therefore \emph{not} a
+    task-accuracy lever relative to an \emph{unlimited-capacity} conditioned
+    monolith.
+\end{itemize}
+
+\paragraph{(5) When specialization \emph{does} win: bounded capacity.} The
+monolith above has unlimited capacity---exactly the regime where a generalist is
+feasible and division of labor is unnecessary. The realistic condition for any
+finite learner is \emph{bounded per-agent capacity}: each agent can master only
+$K$ of the $R$ regimes. We restrict every agent to competence in its top-$K$
+niches and compare three arms at \emph{equal per-agent capacity}: a capacity-$K$
+monolith, a population of $N{=}R$ agents with \emph{fixed random} capacity-$K$
+niches (diversity without competition), and the competitive population. For
+$K{<}R$ the specialized population beats the capacity-matched monolith
+decisively (synthetic $+73\%$ at $K{=}1$; real traffic $+22\%$). Controlling for
+total capacity against the random-diversity population, competition adds accuracy
+specifically in the \emph{tight-capacity} regime---$K{=}1$--$2$ (synthetic
+$+57\%$, $p<10^{-16}$; traffic $+8.7\%$, $p<10^{-3}$ at $K{=}1$)---where random
+niche assignment leaves coverage gaps but competitive exclusion guarantees
+coverage. As $K$ grows toward $R$, random diversity already covers the regime
+space and the advantage vanishes (Figure~\ref{fig:capacity}). Thus emergent
+specialization \emph{is} an accuracy lever, but precisely when per-agent capacity
+is tight relative to environmental complexity and regimes have (near-)exclusive
+optimal methods.
+
+\paragraph{(6) Non-stationarity: distributed persistent memory.} A second,
+temporal mechanism gives specialization an edge. We make regimes \emph{cycle}: a
+sliding window of $W{=}3$ of $R{=}6$ regimes is active each epoch, so every
+regime goes dormant then \emph{reactivates}, and we give each agent a bounded
+belief store of $K$ regimes with least-recently-used eviction (finite memory). A
+capacity-$K$ monolith must evict dormant regimes and \emph{relearn} them on
+reactivation; a population dedicates an agent per niche that idles---and thus
+\emph{retains} its beliefs---while its regime is dormant. For $K{<}R$ the
+specialized population beats the capacity-matched monolith by $+33\%$ overall and
+$+71\%$ in the window right after each reactivation ($p<10^{-36}$ at $K{=}3$),
+exactly where the monolith's relearning penalty concentrates. As in item 5 we
+control for total memory: this monolith-beating effect is a \emph{distributed
+memory} property of the population---a random-diversity population of equal total
+memory also retains and beats the monolith---and is not specific to competition.
+The competition-specific advantage again appears only at tight capacity: at
+$K{=}1$ the specialized population beats the equal-memory random-diversity
+population by $\approx 58\%$ by guaranteeing complete coverage. The population is
+essentially flat in $K$ (even $K{=}1$ agents collectively form a complete
+persistent memory), whereas the monolith matches it only at $K{=}R$
+(Figure~\ref{fig:nonstationary}).
+
+\paragraph{Synthesis.} Taken together: NichePopulation reliably produces
+\emph{coordination-free division of labor} (organization), and on domains with
+genuine regime structure its niches \emph{track performance-relevant regimes}.
+With slack capacity and stationary regimes, the measurable task-accuracy benefit
+of regime awareness is attributable to regime-conditioning rather than to
+population specialization per se. Under bounded per-agent capacity, however,
+competition contributes one genuine, well-controlled accuracy mechanism:
+\emph{guaranteed coverage} of a regime space no individual can hold, which
+manifests \emph{spatially} (item 5, $K\ll R$) and \emph{temporally} (item 6,
+retaining dormant niches across non-stationary cycles). Both monolith comparisons
+also reflect a distributed-capacity advantage that any population---even
+uncoordinated random diversity---shares; the competition-specific contribution is
+the tight-capacity coverage gap. We therefore frame our contribution as a
+self-organization result with an explicit, well-controlled account of \emph{when}
+and \emph{why} specialization is and is not performance-relevant
+(Section~\ref{sec:limitations}).
+
 %=============================================================================
 \section{Discussion}
 %=============================================================================
@@ -572,7 +703,7 @@ Our experiments reveal three necessary conditions for emergent specialization:
 \begin{enumerate}
     \item \textbf{Regime heterogeneity}: The environment must have multiple distinct regimes. Proposition \ref{prop:collapse} establishes that mono-regime environments produce SI $\to 0$. Our empirical validation shows SI $< 0.10$ in single-regime conditions.
 
-    \item \textbf{Strategy differentiation}: Different methods must be optimal in different regimes. If one method dominates all regimes, there is no incentive for learners to specialize in different methods. Our domain-specific method inventories ensure this condition is met.
+    \item \textbf{Strategy differentiation}: Different methods must be optimal in different regimes. If one method dominates all regimes, the population still \emph{organizes} (SI stays high), but the specialization carries no exploitable task structure. Our oracle diagnostic (Table~\ref{tab:oracle}) shows this condition is genuinely met only in a subset of our domains (traffic, solar); in energy, weather, finance, and crypto a single method is near-globally optimal, so the niches there are organizationally real but not performance-relevant. This distinction---organization vs.\ structure-dependence---is central to interpreting our results (Section~\ref{sec:meaningfulness}).
 
     \item \textbf{Limited resources}: Competition must be meaningful, i.e., learners must compete for limited rewards. In our winner-take-all setup, only one learner wins per iteration, creating strong competitive pressure. Softer competition (e.g., top-$k$ winners) would weaken specialization.
 \end{enumerate}
@@ -582,9 +713,38 @@ Our findings suggest a design principle for learner populations: \textbf{competi
 
 %=============================================================================
 \section{Limitations}
+\label{sec:limitations}
 %=============================================================================
 
 \begin{enumerate}
+    \item \textbf{Specialization is a task-accuracy lever only under bounded
+    capacity.} With unlimited individual capacity, our controlled ablations
+    (Section~\ref{sec:meaningfulness}) show that the niche$\to$winner coupling
+    adds no measurable accuracy (paired $p = 0.36$) and that a single
+    regime-conditioned agent matches or beats the specialized population. The
+    accuracy benefit of specialization appears under two realistic constraints:
+    \emph{bounded per-agent capacity} ($K \ll R$, where the population covers a
+    regime space no individual can; Section~\ref{sec:meaningfulness}, item 5) and
+    \emph{non-stationarity with finite memory} (where the population is a
+    distributed persistent memory that avoids the monolith's relearning cost;
+    item 6). Two caveats bound this claim. First, the per-agent capacity limit
+    ($K<R$) is a modeling assumption---in a purely tabular learner a single agent
+    could store all regimes---so the result is conditional on capacity being a
+    binding constraint (as it is for fixed-size parametric models). Second, the
+    advantage over the monolith is largely a \emph{distributed-capacity} effect
+    shared by any equal-capacity population (including uncoordinated random
+    diversity); competition contributes specifically the tight-capacity coverage
+    gap. Outside these regimes our contribution is the \emph{emergence of
+    coordination-free division of labor} and its \emph{alignment with}
+    performance-relevant regimes, not an unconditional accuracy claim over a
+    conditioned baseline.
+
+    \item \textbf{SI measures organization, not structure-dependence.} The
+    Specialization Index is invariant to regime-label shuffling and is inflatable
+    by the learning rate $\eta$. High SI alone does not establish that the
+    learned niches are meaningful; the oracle diagnostic and performance-based
+    control are required for that (Section~\ref{sec:meaningfulness}).
+
     \item \textbf{Regime detection}: We use simple regime classifiers (moving average crossover, volatility thresholds). More sophisticated methods (Hidden Markov Models, changepoint detection) may reveal finer-grained niches or reduce regime ambiguity.
 
     \item \textbf{Stationary environments}: Our theoretical analysis assumes stationary regime distributions. Non-stationary environments with regime drift or concept shift may require adaptive mechanisms that re-partition niches over time.
@@ -595,7 +755,13 @@ Our findings suggest a design principle for learner populations: \textbf{competi
 
     \item \textbf{Hand-defined regimes}: Our regime definitions (bull/bear/sideways, good/moderate/unhealthy) are externally specified based on domain knowledge, not discovered by the algorithm. In novel domains without prior knowledge, regime discovery would require unsupervised methods. Future work could integrate regime detection with specialization learning.
 
-    \item \textbf{Missing oracle baseline}: We compare against Homogeneous (single best method) and Random baselines, but not against an Oracle that perfectly switches methods per regime. Such an oracle would upper-bound achievable performance. Additionally, comparing against ensembles without competitive exclusion would isolate the value of competition vs. simply having multiple learners.
+    \item \textbf{Oracle baseline (now provided, and revealing).} We now report a
+    specialist-vs-generalist oracle (Table~\ref{tab:oracle}). It shows that four
+    of six domains have a near-globally-optimal single method, so the achievable
+    regime-specialization benefit there is $\approx 0$. This is why the
+    domains differ in \emph{meaningfulness} even though they all reach SI
+    $\approx 0.99$. Future work should curate domains with large oracle gaps to
+    study performance-relevant specialization at scale.
 \end{enumerate}
 
 %=============================================================================
@@ -609,9 +775,10 @@ Our key findings, validated across six real-world domains with 145,294 total rec
 \begin{itemize}
     \item \textbf{Emergent specialization}: Mean SI $= 0.992$ with extremely large effect sizes (Cohen's $d > 50$ in every domain, mean $d = 73.4$).
     \item \textbf{Competition is sufficient}: At $\lambda = 0$ (no niche bonus), mean SI $= 0.650$ in the unified pipeline and SI $> 0.39$ on every real-data benchmark, significantly exceeding random baselines.
-    \item \textbf{Division of labor}: Populations use 87\% of available methods.
+    \item \textbf{Division of labor}: Populations use 86\% of available methods.
     \item \textbf{Superiority over MARL}: $\geq 100\times$ higher SI than IQL/VDN/QMIX/MAPPO ($1.000$ vs.\ $\leq 0.02$) while being 4$\times$ faster and using 99\% less memory.
     \item \textbf{Theoretical rigor}: The canonical exponentiated-gradient affinity update inherits the standard $O(\sqrt{T\log R})$ Hedge regret bound, with the small-$\eta$ limit reducing to the replicator dynamics from evolutionary game theory.
+    \item \textbf{Scope, established by controls}: SI measures organization; under a battery of controls (Section~\ref{sec:meaningfulness}) the emergent niches \emph{track} performance-relevant regimes where genuine structure exists (traffic, solar). With slack capacity and stationary regimes, the task-accuracy benefit of regime awareness is attributable to regime-conditioning rather than to population specialization per se. Specialization becomes a genuine---though tightly scoped---accuracy lever only under \emph{bounded per-agent capacity} and \emph{non-stationarity with finite memory}, where a population covers and retains a regime space no capacity-limited individual can. We therefore position NichePopulation primarily as a self-organization mechanism, with a controlled, conditional performance result rather than a blanket superiority claim.
 \end{itemize}
 
 Our theoretical contributions---three propositions establishing conditions for emergent specialization---provide a foundation for understanding when and why diversity emerges from competition. The practical implication is profound: in learner populations requiring coordination without communication, \textbf{competition can serve as a coordination mechanism}.
@@ -665,6 +832,20 @@ All figures referenced in the main text are presented here to maximize space for
     \includegraphics[width=0.9\linewidth]{figures/fig5_summary_heatmap.pdf}
     \caption{Summary heatmap of all metrics across all domains. Darker green indicates stronger results. Air Quality shows highest overall performance; Traffic shows lowest regime SI but high method coverage.}
     \label{fig:heatmap}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.98\linewidth]{figures/fig6_capacity_division.pdf}
+    \caption{Bounded-capacity division of labor (Section~\ref{sec:meaningfulness}, item 5). Each agent masters only $K$ of $R$ regimes. The specialized population (blue) beats the capacity-matched monolith (red) for $K<R$ on the synthetic regime-champion task and on real traffic; controlling for total capacity against a random-diversity population (grey) the advantage is concentrated in the tight-capacity regime ($K{=}1$--$2$). Solar ($R{=}3$, overlapping methods) shows no advantage---an honest null.}
+    \label{fig:capacity}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.98\linewidth]{figures/fig7_nonstationary.pdf}
+    \caption{Non-stationarity with finite memory (Section~\ref{sec:meaningfulness}, item 6). Regimes cycle (dormant then reactivating) and each agent has a bounded belief store with LRU eviction. The capacity-bounded monolith (red) must relearn each reactivated regime---its post-reactivation error stays high until $K{=}R$---while the specialized population (blue) retains dormant-niche expertise as a distributed persistent memory (flat in $K$). The gap is largest in the post-reactivation window ($+71\%$ at $K{=}3$).}
+    \label{fig:nonstationary}
 \end{figure}
 
 \subsection{Domain-Specific Prediction Methods}

@@ -2,6 +2,16 @@
 """
 Run NichePopulation experiments on ALL 6 real data domains.
 
+.. note::
+   **Not the canonical source for the published tables.** The headline SI /
+   Cohen's d / lambda-ablation numbers in ``paper/main.tex`` come from
+   ``exp_unified_pipeline.py`` (30 trials, seed = 42 + trial_idx) ->
+   ``results/unified_pipeline/results.json``. This script is an independent,
+   exploratory full-suite run and its per-domain SI can differ at the third
+   decimal (e.g. traffic 0.991 here vs 0.9946 in the unified pipeline) because
+   it uses a different trial budget / seeding. Cite ``unified_pipeline`` for the
+   paper; treat ``results/all_domains`` as a secondary cross-check only.
+
 This script runs the full experimental suite on:
 1. Crypto (Bybit)
 2. Commodities (FRED)
@@ -28,7 +38,7 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from experiments._affinity_update import apply_affinity_update
+from experiments._affinity_update import apply_affinity_update, eg_eta_for_regimes
 
 
 @dataclass
@@ -71,6 +81,9 @@ def run_niche_population(regimes: List[str], regime_probs: Dict[str, float],
     regime_list = list(regime_probs.keys())
     prob_list = list(regime_probs.values())
 
+    # Match the canonical headline pipeline's EG step rescale (per regime count).
+    eta_eff = eg_eta_for_regimes(len(regimes), lr) if update_rule == "eg" else lr
+
     for iteration in range(n_iterations):
         regime = rng.choice(regime_list, p=prob_list)
 
@@ -88,7 +101,7 @@ def run_niche_population(regimes: List[str], regime_probs: Dict[str, float],
             affinity=niche_affinities[winner_id],
             winning_regime=regime,
             regimes=regimes,
-            eta=lr,
+            eta=eta_eff,
             rule=update_rule,
         )
 

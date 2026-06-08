@@ -1,0 +1,219 @@
+{
+  "experiment": "route_b_validation_ablation_and_baseline",
+  "oracle_gaps_causal_regimes": [
+    {
+      "series": "traffic_w1",
+      "oracle_gap_pct": 9.745072980664132,
+      "n_regimes": 6,
+      "distinct_winners": 2
+    },
+    {
+      "series": "traffic_w2",
+      "oracle_gap_pct": 10.614471728294715,
+      "n_regimes": 6,
+      "distinct_winners": 3
+    },
+    {
+      "series": "traffic_w3",
+      "oracle_gap_pct": 10.73976129096464,
+      "n_regimes": 6,
+      "distinct_winners": 3
+    },
+    {
+      "series": "traffic_w4",
+      "oracle_gap_pct": 9.185460868975674,
+      "n_regimes": 6,
+      "distinct_winners": 3
+    },
+    {
+      "series": "solar_Denver_CO",
+      "oracle_gap_pct": 15.899756529160028,
+      "n_regimes": 3,
+      "distinct_winners": 3
+    },
+    {
+      "series": "solar_Las_Vegas_NV",
+      "oracle_gap_pct": 14.382265604157238,
+      "n_regimes": 3,
+      "distinct_winners": 3
+    },
+    {
+      "series": "solar_Miami_FL",
+      "oracle_gap_pct": 10.291699381119527,
+      "n_regimes": 3,
+      "distinct_winners": 3
+    },
+    {
+      "series": "solar_Phoenix_AZ",
+      "oracle_gap_pct": 12.915383130012042,
+      "n_regimes": 3,
+      "distinct_winners": 3
+    },
+    {
+      "series": "solar_Seattle_WA",
+      "oracle_gap_pct": 4.040556549209074,
+      "n_regimes": 3,
+      "distinct_winners": 2
+    }
+  ],
+  "ablation_coupled_vs_decoupled": {
+    "traffic": [
+      {
+        "name": "traffic_w1",
+        "n": 720.0,
+        "coup_gap": 13.909026886560625,
+        "coup_p": 6.588224807549912e-08,
+        "coup_d": -2.044100068654154,
+        "deco_gap": 8.304371356044477,
+        "deco_p": 0.0010045366016938463
+      },
+      {
+        "name": "traffic_w2",
+        "n": 720.0,
+        "coup_gap": 14.253048945055808,
+        "coup_p": 1.523407312514862e-09,
+        "coup_d": -2.4275111494049177,
+        "deco_gap": 11.982148904484395,
+        "deco_p": 0.0001796020412093023
+      },
+      {
+        "name": "traffic_w3",
+        "n": 720.0,
+        "coup_gap": 17.554159674681674,
+        "coup_p": 2.5384293443601328e-14,
+        "coup_d": -3.659364745197626,
+        "deco_gap": 20.03286269734314,
+        "deco_p": 9.176697390153708e-09
+      },
+      {
+        "name": "traffic_w4",
+        "n": 719.0,
+        "coup_gap": 13.764000765353574,
+        "coup_p": 3.3551212091562105e-10,
+        "coup_d": -2.585366499712814,
+        "deco_gap": 7.540203119142112,
+        "deco_p": 0.0011625932578652012
+      }
+    ],
+    "solar": [
+      {
+        "name": "solar_Denver_CO",
+        "n": 800.0,
+        "coup_gap": 12.786852912395407,
+        "coup_p": 5.232569857108154e-09,
+        "coup_d": -2.3006313572135295,
+        "deco_gap": 11.036252421741661,
+        "deco_p": 1.723943512311005e-14
+      },
+      {
+        "name": "solar_Las_Vegas_NV",
+        "n": 800.0,
+        "coup_gap": 19.876006009521987,
+        "coup_p": 9.612332478865809e-17,
+        "coup_d": -4.3835154882311445,
+        "deco_gap": 10.472940282268569,
+        "deco_p": 8.770432071904064e-15
+      },
+      {
+        "name": "solar_Miami_FL",
+        "n": 800.0,
+        "coup_gap": 6.376060341169761,
+        "coup_p": 4.295183673551173e-05,
+        "coup_d": -1.3899880510298583,
+        "deco_gap": 8.567084617893599,
+        "deco_p": 2.0166656583454668e-11
+      },
+      {
+        "name": "solar_Phoenix_AZ",
+        "n": 800.0,
+        "coup_gap": 5.359134108011229,
+        "coup_p": 0.0014441076677899328,
+        "coup_d": -1.007223090936764,
+        "deco_gap": 8.4547004262518,
+        "deco_p": 7.35405627282356e-11
+      },
+      {
+        "name": "solar_Seattle_WA",
+        "n": 800.0,
+        "coup_gap": 3.8825318895867684,
+        "coup_p": 0.001411232184776124,
+        "coup_d": -1.0098992960785327,
+        "deco_gap": 7.560110770163448,
+        "deco_p": 4.571196269186694e-10
+      }
+    ],
+    "coupled_mean_gap_pct": 11.973424614704093,
+    "decoupled_mean_gap_pct": 10.438963843925912,
+    "paired_p_coupled_gt_decoupled": 0.3597853476329367
+  },
+  "baseline_population_vs_single_agent": {
+    "traffic": [
+      {
+        "name": "traffic_w1",
+        "pop": 715.2396178160919,
+        "single": 778.2101044061303,
+        "gap": 8.09170765497739,
+        "p": 0.00015504286878099846
+      },
+      {
+        "name": "traffic_w2",
+        "pop": 706.7911901474032,
+        "single": 723.5361467911878,
+        "gap": 2.3143220581372232,
+        "p": 0.10269179490164419
+      },
+      {
+        "name": "traffic_w3",
+        "pop": 724.0522211446358,
+        "single": 751.1615612228609,
+        "gap": 3.608989261124082,
+        "p": 0.013586168391353142
+      },
+      {
+        "name": "traffic_w4",
+        "pop": 764.010657874373,
+        "single": 810.7091654658981,
+        "gap": 5.760204717148891,
+        "p": 0.0012051466279447021
+      }
+    ],
+    "solar": [
+      {
+        "name": "solar_Denver_CO",
+        "pop": 139.00191526465252,
+        "single": 103.74841502004581,
+        "gap": -33.97979645066885,
+        "p": 1.0
+      },
+      {
+        "name": "solar_Las_Vegas_NV",
+        "pop": 134.77139584526532,
+        "single": 109.32137958190148,
+        "gap": -23.279999173718046,
+        "p": 1.0
+      },
+      {
+        "name": "solar_Miami_FL",
+        "pop": 146.443472337963,
+        "single": 116.20952405498284,
+        "gap": -26.01675596629705,
+        "p": 1.0
+      },
+      {
+        "name": "solar_Phoenix_AZ",
+        "pop": 157.27695074455897,
+        "single": 127.70324427262312,
+        "gap": -23.158148127232682,
+        "p": 0.9999999999999258
+      },
+      {
+        "name": "solar_Seattle_WA",
+        "pop": 95.34585456400342,
+        "single": 78.3185485395189,
+        "gap": -21.74108987207887,
+        "p": 1.0
+      }
+    ],
+    "mean_population_better_pct": -12.044507322067545
+  }
+}
