@@ -71,9 +71,15 @@ def make_nonstationary_stream(R=6, W=3, n_epochs=24, steps_per_epoch=80,
     return steps, regimes, methods, reactivated
 
 
+# Soft-model knobs (interference account of forgetting; no discrete eviction).
+_SOFT_EPS = 0.5       # min net pseudo-counts for a regime to count toward the footprint
+_SOFT_INTER = 0.04    # base interference rate per foreign learning update
+
+
 class StoreAgent:
-    def __init__(self, regimes, methods, K, rng, fixed=None):
+    def __init__(self, regimes, methods, K, rng, fixed=None, cap_model="lru"):
         self.regimes, self.methods, self.K, self.rng = regimes, methods, K, rng
+        self.cap_model = cap_model  # "lru" = hard slots + eviction; "soft" = graded interference
         self.store = OrderedDict()  # regime -> {method: [alpha, beta]}; insertion order = LRU
         self.fixed = fixed is not None
         # Heterogeneous init breaks symmetry so different agents are predisposed to
@@ -92,15 +98,40 @@ class StoreAgent:
     def competent(self, r):
         return r in self.store
 
+    def _strength(self, r):
+        """Net pseudo-counts accumulated beyond the uninformed Beta(1,1) prior."""
+        return sum(ab[0] + ab[1] - 2.0 for ab in self.store[r].values())
+
+    def _interfere(self, current):
+        """Soft capacity: when the agent's learned footprint exceeds K, every learning
+        update bleeds knowledge out of the OTHER held regimes (proportional to overflow).
+        Dormant regimes are never refreshed, so they decay toward the uninformed prior and
+        are effectively forgotten -- the interference account of catastrophic forgetting,
+        with NO discrete eviction rule."""
+        footprint = sum(1 for r in self.store if self._strength(r) > _SOFT_EPS)
+        overflow = max(0, footprint - self.K)
+        if overflow == 0:
+            return
+        keep = 1.0 - _SOFT_INTER * overflow / max(footprint, 1)
+        for r, methods in self.store.items():
+            if r == current:
+                continue
+            for ab in methods.values():
+                ab[0] = 1.0 + (ab[0] - 1.0) * keep
+                ab[1] = 1.0 + (ab[1] - 1.0) * keep
+
     def ensure(self, r):
-        """Make r learnable; bounded LRU store. Returns True if freshly (re)learned."""
+        """Make r learnable. Returns True if freshly (re)learned.
+        LRU: hard K-slot store with least-recently-used eviction.
+        Soft: lazily create the entry; capacity binds later via interference."""
         if r in self.store:
-            self.store.move_to_end(r)
+            if self.cap_model == "lru":
+                self.store.move_to_end(r)
             return False
         if self.fixed:
             return False  # fixed agents never learn outside their assigned niches
         self.store[r] = {m: [1.0, 1.0] for m in self.methods}
-        if len(self.store) > self.K:
+        if self.cap_model == "lru" and len(self.store) > self.K:
             self.store.popitem(last=False)  # evict least-recently-used
         return True
 
@@ -113,6 +144,8 @@ class StoreAgent:
     def update_belief(self, r, m, success):
         if r in self.store:
             self.store[r][m][0 if success else 1] += 1.0
+            if self.cap_model == "soft":
+                self._interfere(r)
 
     def update_affinity(self, r, reward, eta):
         self.affinity[r] *= np.exp(eta * reward)
@@ -120,7 +153,7 @@ class StoreAgent:
 
 
 def run(steps, regimes, methods, K, mode, n_agents=None, lam=1.5, beta=1.0,
-        gate_lr=0.2, eps_route=0.1, seed=0):
+        gate_lr=0.2, eps_route=0.1, cap_model="lru", seed=0):
     rng = np.random.default_rng(seed)
     eta = eg_eta_for_regimes(len(regimes))
     R = len(regimes)
@@ -128,13 +161,13 @@ def run(steps, regimes, methods, K, mode, n_agents=None, lam=1.5, beta=1.0,
     gate = {r: np.zeros(N) for r in regimes}  # MoE routing logits (regime -> experts)
 
     if mode == "monolith":
-        agents = [StoreAgent(regimes, methods, K, rng)]
+        agents = [StoreAgent(regimes, methods, K, rng, cap_model=cap_model)]
     elif mode == "random":
-        agents = [StoreAgent(regimes, methods, K, rng,
+        agents = [StoreAgent(regimes, methods, K, rng, cap_model=cap_model,
                              fixed=[regimes[i] for i in rng.choice(R, size=K, replace=False)])
                   for _ in range(N)]
     else:
-        agents = [StoreAgent(regimes, methods, K, rng) for _ in range(N)]
+        agents = [StoreAgent(regimes, methods, K, rng, cap_model=cap_model) for _ in range(N)]
 
     err_all, err_react = [], []
     for (regime, errs), is_react in zip(steps, _react_iter(steps)):
@@ -292,10 +325,67 @@ def main():
 
     save_and_plot(rows, R, W, Path(__file__).parent.parent / "results" / "nonstationary_capacity")
 
+    if "--soft" in sys.argv:
+        soft_robustness(R, W)
 
-def save_and_plot(rows, R, W, out_dir):
+
+def soft_robustness(R, W):
+    """P3 robustness: re-run the memory result under a SOFT (interference) capacity model
+    instead of hard LRU eviction, to show catastrophic forgetting is not an artifact of the
+    discrete eviction rule. Forgetting here is graded belief decay under capacity overflow."""
+    print("\n" + "#" * 90)
+    print("# ROBUSTNESS: soft interference capacity model (graded decay, NO discrete eviction)")
+    print("#" * 90)
+    steps, regimes, methods, react = make_nonstationary_stream(R=R, W=W, seed=0)
+    _REACT_CACHE[id(steps)] = react
+    print(f"\n{'K':>3}{'monolith':>17}{'random-div':>17}{'EOI-div':>17}{'MoE-gate':>17}{'specialized':>17}")
+    print(f"{'':>3}{'over / react':>17}{'over / react':>17}{'over / react':>17}{'over / react':>17}{'over / react':>17}")
+    print("-" * 105)
+    rows = []
+    for K in range(1, R + 1):
+        mo, mr = trials(steps, regimes, methods, K, "monolith", cap_model="soft")
+        ro, rr = trials(steps, regimes, methods, K, "random", cap_model="soft")
+        do, dr = trials(steps, regimes, methods, K, "diversity", cap_model="soft")
+        go, gr = trials(steps, regimes, methods, K, "moe", cap_model="soft")
+        so, sr = trials(steps, regimes, methods, K, "specialized", cap_model="soft")
+        _t, p_re = stats.ttest_ind(sr, mr, alternative="less")
+        _t, p_moe_re = stats.ttest_ind(sr, gr, alternative="less")
+        rows.append({"K": K,
+                     "monolith_overall": float(mo.mean()), "monolith_react": float(mr.mean()),
+                     "random_overall": float(ro.mean()), "random_react": float(rr.mean()),
+                     "diversity_overall": float(do.mean()), "diversity_react": float(dr.mean()),
+                     "moe_overall": float(go.mean()), "moe_react": float(gr.mean()),
+                     "specialized_overall": float(so.mean()), "specialized_react": float(sr.mean()),
+                     "spec_vs_mono_react_p": float(p_re), "spec_vs_moe_react_p": float(p_moe_re),
+                     "monolith_overall_sem": _sem(mo), "monolith_react_sem": _sem(mr),
+                     "random_overall_sem": _sem(ro), "random_react_sem": _sem(rr),
+                     "diversity_overall_sem": _sem(do), "diversity_react_sem": _sem(dr),
+                     "moe_overall_sem": _sem(go), "moe_react_sem": _sem(gr),
+                     "specialized_overall_sem": _sem(so), "specialized_react_sem": _sem(sr)})
+        print(f"{K:>3}"
+              f"{f'{mo.mean():.3f}/{mr.mean():.3f}':>17}"
+              f"{f'{ro.mean():.3f}/{rr.mean():.3f}':>17}"
+              f"{f'{do.mean():.3f}/{dr.mean():.3f}':>17}"
+              f"{f'{go.mean():.3f}/{gr.mean():.3f}':>17}"
+              f"{f'{so.mean():.3f}/{sr.mean():.3f}':>17}")
+    print("-" * 105)
+    for K in (1, 3):
+        r = next(x for x in rows if x["K"] == K)
+        print(f"K={K}: post-react specialized {r['specialized_react']:.3f} vs monolith "
+              f"{r['monolith_react']:.3f} ({(r['monolith_react']-r['specialized_react'])/r['monolith_react']*100:+.1f}%, "
+              f"p={r['spec_vs_mono_react_p']:.2g}); vs MoE router {r['moe_react']:.3f} "
+              f"({(r['moe_react']-r['specialized_react'])/r['moe_react']*100:+.1f}%, p={r['spec_vs_moe_react_p']:.2g})")
+    save_and_plot(rows, R, W, Path(__file__).parent.parent / "results" / "nonstationary_capacity",
+                  prefix="nonstationary_soft", json_name="results_soft.json",
+                  paper_fig_name="fig8_nonstationary_soft.pdf",
+                  suptitle=f"Robustness: soft interference capacity model (R={R}, W={W})")
+
+
+def save_and_plot(rows, R, W, out_dir, prefix="nonstationary_sweep",
+                  json_name="results.json", paper_fig_name="fig7_nonstationary.pdf",
+                  suptitle=None):
     out_dir.mkdir(parents=True, exist_ok=True)
-    with open(out_dir / "results.json", "w", encoding="utf-8") as f:
+    with open(out_dir / json_name, "w", encoding="utf-8") as f:
         json.dump({"R": R, "W": W, "probe": PROBE, "rows": rows}, f, indent=2)
 
     try:
@@ -324,11 +414,12 @@ def save_and_plot(rows, R, W, out_dir):
         ax.set_ylabel("prediction error")
         ax.grid(alpha=0.3)
         ax.legend(fontsize=8)
-    fig.suptitle(f"Non-stationary regimes (R={R}, W={W}): population as distributed persistent memory",
+    fig.suptitle(suptitle or
+                 f"Non-stationary regimes (R={R}, W={W}): population as distributed persistent memory",
                  fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
-    fig.savefig(out_dir / "nonstationary_sweep.png", dpi=150)
-    paper_fig = Path(__file__).parent.parent / "paper" / "figures" / "fig7_nonstationary.pdf"
+    fig.savefig(out_dir / f"{prefix}.png", dpi=150)
+    paper_fig = Path(__file__).parent.parent / "paper" / "figures" / paper_fig_name
     if paper_fig.parent.exists():
         fig.savefig(paper_fig)
     print(f"Results + figure saved to {out_dir}")

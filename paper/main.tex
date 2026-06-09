@@ -29,6 +29,7 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 \newtheorem{remark}{Remark}
+\newtheorem{observation}{Observation}
 
 % Custom commands
 \newcommand{\SI}{\text{SI}}
@@ -816,6 +817,55 @@ principle reserve idle experts for dormant regimes, so the result identifies
 \emph{what objective a router would need}, not an inherent limit of routing
 architectures.
 
+\paragraph{Why a reward-driven router forgets (idealized observation).} The
+separation above is not an empirical accident; it follows from a simple asymmetry
+between \emph{reward-driven} capacity allocation and \emph{structural} division of
+labor. We state it informally, under idealizing assumptions matching our setup
+(regimes cycle through dormant intervals; each expert has finite capacity for $K$
+regimes; the gate is updated only from the realized reward of the routed expert).
+
+\begin{observation}[Dormant regimes receive no protective signal]
+\label{obs:router}
+Let regime $r$ be dormant for an interval during which an expert $e$ that holds
+$r$ receives $D$ learning updates from \emph{other} (active) regimes. Under a hard
+capacity-$K$ store with least-recently-used eviction, $e$ retains $r$'s beliefs only
+if fewer than $K$ distinct regimes are used in the interval, so $r$ is evicted once
+$D$ spans $\ge K$ distinct regimes; under a soft interference model with per-update
+decay rate $\rho>0$, the retained strength of $r$ decays as $(1-\rho)^{D}\!\to 0$.
+Crucially, a dormant regime emits \emph{no steps and hence no reward gradient}, so
+the gate term $\Delta\,\mathrm{gate}[r][e]\propto(q_e-\tfrac12)$ is zero throughout
+the dormant interval: the router receives \emph{no signal that would lead it to
+reserve $e$ for $r$}. Reactivation therefore incurs the full relearning cost with
+probability $\to 1$ as the dormancy length grows.
+\end{observation}
+
+By contrast, a converged competitive (or individuality) assignment fixes a
+regime-to-agent map $a(\cdot)$ that is \emph{reward-independent at steady state}:
+the agent $a(r)$ simply idles while $r$ is dormant, applying \emph{no} foreign
+updates to its own store ($D=0$ for its niche), so its retained strength is
+preserved structurally---no signal required. The asymmetry is the crux: routing and
+capacity protection are both reward-driven, but the quantity that would need
+protecting (a dormant niche) is exactly the one that emits no reward. This predicts
+that the router's failure should be \emph{model-agnostic}---present under both hard
+eviction and graded interference---which we confirm next.
+
+\paragraph{Robustness to the capacity model.} A natural worry is that the
+forgetting result is an artifact of the discrete LRU eviction rule. We re-run the
+non-stationarity sweep under a \emph{soft} capacity model with no eviction at all:
+each learning update bleeds pseudo-counts out of an agent's other held regimes at a
+rate that grows with capacity overflow (the interference account of catastrophic
+forgetting; Appendix~\ref{app:soft}, Fig.~\ref{fig:nonstationary_soft}). The
+qualitative picture is unchanged: the monolith still forgets dormant regimes
+(post-reactivation error $0.85$--$0.92$ at tight memory $K\le3$, declining toward
+the population only as $K\to R$) while the specialized
+population retains them ($\approx 0.25$, a $+70\%$ gap, $p\sim10^{-40}$), and the
+reward-driven router remains significantly worse than the population
+($+36\%$ at $K{=}1$, $p\sim10^{-8}$; $+16\%$ at $K{=}3$, $p\sim10^{-7}$). As
+Observation~\ref{obs:router} predicts, the router degrades more \emph{gracefully}
+under graded interference than under hard eviction but never closes the gap until
+$K\to R$, confirming the separation is a property of reward-driven routing rather
+than of any particular forgetting mechanism.
+
 \paragraph{Synthesis.} Taken together: NichePopulation reliably produces
 \emph{coordination-free division of labor} (organization), and on domains with
 genuine regime structure its niches \emph{track performance-relevant regimes}.
@@ -1015,6 +1065,40 @@ All figures referenced in the main text are presented here to maximize space for
     \includegraphics[width=0.98\linewidth]{figures/fig7_nonstationary.pdf}
     \caption{Non-stationarity with finite memory (Section~\ref{sec:meaningfulness}, item 6). Regimes cycle (dormant then reactivating) and each agent has a bounded belief store with LRU eviction. The capacity-bounded monolith (red) must relearn each reactivated regime---its post-reactivation error stays high until $K{=}R$---while the specialized population (blue) retains dormant-niche expertise as a distributed persistent memory (flat in $K$). The gap is largest in the post-reactivation window ($+71\%$ at $K{=}3$). A learned-diversity objective (green, EOI/CDS-style) attains the same distributed memory; competition retains only a marginal post-reactivation edge at $K{=}1$. In contrast, the Mixture-of-Experts learned router (purple) \emph{fails} to retain dormant regimes---its post-reactivation error tracks the monolith's at tight memory (it reuses capacity for active regimes), separating only as $K\to R$.}
     \label{fig:nonstationary}
+\end{figure}
+
+\subsection{Robustness: soft (interference) capacity model}
+\label{app:soft}
+To confirm the distributed-memory result is not an artifact of the discrete
+least-recently-used eviction rule used in the main text, we re-run the
+non-stationarity sweep under a \emph{soft} capacity model. Here no entry is ever
+evicted; instead, each learning update on the active regime decays the
+pseudo-counts of an agent's \emph{other} held regimes by a factor that grows with
+how far the agent's learned footprint exceeds its budget $K$ (the standard
+\emph{interference} account of catastrophic forgetting, with graded rather than
+all-or-nothing loss). A dormant regime is never refreshed, so its beliefs decay
+toward the uninformed prior and must be relearned on reactivation---but smoothly,
+without a hard cutoff. The qualitative picture (Fig.~\ref{fig:nonstationary_soft})
+matches the hard-eviction result of Fig.~\ref{fig:nonstationary}: the monolith
+forgets, the specialized population (and the explicit-diversity arm) retain, and the
+reward-driven router relearns and stays significantly worse than the population at
+tight capacity. Consistent with Observation~\ref{obs:router}, the router's deficit
+shrinks more gradually in $K$ under graded interference than under hard eviction,
+but the separation persists and is highly significant ($p\sim10^{-8}$ at $K{=}1$).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.98\linewidth]{figures/fig8_nonstationary_soft.pdf}
+    \caption{Robustness of the distributed-memory result to the capacity model
+    (Appendix~\ref{app:soft}). Same protocol as Fig.~\ref{fig:nonstationary} but with
+    a soft interference capacity model (graded belief decay under capacity overflow,
+    \emph{no} eviction). The monolith (red) still forgets dormant regimes and the
+    specialized population (blue) and EOI-diversity arm (green) still retain them; the
+    reward-driven MoE router (purple) again relearns on reactivation and stays
+    significantly worse than the population at tight memory, closing only as $K\to R$.
+    The qualitative separation is unchanged, confirming it is not an artifact of
+    discrete LRU eviction.}
+    \label{fig:nonstationary_soft}
 \end{figure}
 
 \subsection{Domain-Specific Prediction Methods}

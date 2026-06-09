@@ -2299,6 +2299,28 @@ locations) localize the source of the gain:
     memory-preservation/load-balancing term could reserve idle experts for dormant
     regimes; the result says \emph{what} a router would need, not that routing
     cannot work.) Even $K{=}1$ agents collectively retain all regimes.
+
+    \emph{Why the router forgets (idealized).} The separation follows from an
+    asymmetry: routing and capacity-protection are both \emph{reward-driven}, but a
+    dormant regime emits no steps and hence no reward gradient, so the gate update
+    $\Delta\,\mathrm{gate}[r][e]\propto(q_e-\tfrac12)$ vanishes throughout dormancy---the
+    router gets \emph{no signal} that would lead it to reserve an expert for a
+    dormant regime. Under hard capacity $K$ with LRU eviction the expert evicts $r$
+    once $\ge K$ other regimes are used; under soft interference its retained
+    strength decays as $(1-\rho)^{D}\!\to0$ over $D$ foreign updates. A converged
+    competitive/individuality assignment, by contrast, fixes a reward-independent
+    regime$\to$agent map whose agent simply \emph{idles} while its niche is dormant
+    ($D{=}0$ for that niche), retaining it structurally. This predicts the router
+    failure is \emph{model-agnostic}.
+
+    \emph{Robustness.} Re-running the sweep under a soft interference capacity model
+    (graded belief decay under capacity overflow, no eviction) reproduces the
+    picture: monolith forgets (post-react $0.85$--$0.92$ at $K{\le}3$), specialized
+    retains ($\approx0.25$, $+70\%$, $p\sim10^{-40}$), and the reward-driven router
+    stays significantly worse than the population ($+36\%$ at $K{=}1$,
+    $p\sim10^{-8}$; $+16\%$ at $K{=}3$). As predicted it degrades more gracefully
+    than under hard eviction but never closes the gap until $K\to R$---so the
+    distributed-memory separation is not an artifact of the discrete eviction rule.
 \end{enumerate}
 
 \begin{keypoint}
