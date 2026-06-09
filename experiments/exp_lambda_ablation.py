@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Lambda Ablation Study.
+Lambda Ablation Study (SYNTHETIC 4-regime toy).
 
 Tests the effect of niche bonus λ on:
 1. Specialization Index (SI)
@@ -10,6 +10,14 @@ Tests the effect of niche bonus λ on:
 λ values tested: {0.0, 0.1, 0.2, 0.3, 0.4, 0.5}
 
 Key finding: λ=0.3 is the optimal value (sweet spot).
+
+.. warning::
+   This runs on a **synthetic** 4-regime environment (``regime_1..4``, uniform
+   probabilities), NOT real data. Its λ=0 SI (~0.39) is therefore **not** the
+   headline λ=0 number. The published "λ=0 → mean SI ≈ 0.65 (every domain
+   > 0.49)" claim comes from the six real domains in ``exp_unified_pipeline.py``
+   (``results/unified_pipeline/results.json``, key ``lambda_ablation``). Do NOT
+   cite ``results/lambda_ablation/results.json`` for the paper's λ=0 headline.
 """
 
 import sys
@@ -24,7 +32,7 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from experiments._affinity_update import apply_affinity_update
+from experiments._affinity_update import apply_affinity_update, eg_eta_for_regimes
 
 
 @dataclass
@@ -59,6 +67,11 @@ def run_single_lambda(lambda_val: float, n_trials: int = 30,
     regime_probs = [0.25, 0.25, 0.25, 0.25]
     n_agents = 8
 
+    # Rescale the EG step to match V3's first-order timescale, exactly as the
+    # canonical headline pipeline does. Without this, V4 EG at eta=0.1 under-
+    # converges over the fixed iteration budget. See _affinity_update.eg_eta_for_regimes.
+    eta_eff = eg_eta_for_regimes(len(regimes), lr) if update_rule == "eg" else lr
+
     for trial in range(n_trials):
         trial_seed = seed + trial
         trial_rng = np.random.default_rng(trial_seed)
@@ -92,7 +105,7 @@ def run_single_lambda(lambda_val: float, n_trials: int = 30,
                 affinity=niche_affinities[winner_id],
                 winning_regime=regime,
                 regimes=regimes,
-                eta=lr,
+                eta=eta_eff,
                 rule=update_rule,
             )
 

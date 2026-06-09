@@ -1,23 +1,18 @@
 """
-Environment module: Synthetic and real market environments.
+Environment module.
 
-- SyntheticMarketEnvironment: Controllable regime-switching market
-- RegimeGenerators: Individual regime dynamics (trend, mean-revert, volatile)
-- RealDataLoader: Load Bybit CSV data for validation
+Keep imports minimal to avoid hard failures from optional/legacy modules
+that may be absent in some branches.
 """
 
-from .synthetic_market import SyntheticMarketEnvironment
-from .regime_generators import (
-    TrendRegime,
-    MeanRevertRegime,
-    VolatileRegime,
-    SidewaysRegime,
-)
+from .regime_classifier import CombinedClassifier, MAClassifier, ReturnsClassifier, VolatilityClassifier
+from .synthetic_market import SyntheticMarketConfig, SyntheticMarketEnvironment
 
 __all__ = [
+    "SyntheticMarketConfig",
     "SyntheticMarketEnvironment",
-    "TrendRegime",
-    "MeanRevertRegime",
-    "VolatileRegime",
-    "SidewaysRegime",
+    "MAClassifier",
+    "VolatilityClassifier",
+    "ReturnsClassifier",
+    "CombinedClassifier",
 ]

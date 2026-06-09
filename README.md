@@ -24,7 +24,7 @@
 
 We present a population-based learning system where learners **spontaneously specialize** to different environmental regimes without explicit supervision. Drawing from ecological niche theory, we introduce **competitive exclusion with niche affinity** that creates evolutionary pressure for strategy space partitioning.
 
-**Core Thesis:** Competition alone, without explicit diversity incentives, is sufficient to induce emergent specialization in learner populations.
+**Core Thesis (v4.1):** Under bounded per-agent capacity and non-stationarity, **retention of dormant-regime knowledge tracks a single property: whether capacity assignment is independent of current task reward.** Reward-chasing allocations (a capacity-bounded monolith, a learned Mixture-of-Experts router) forget dormant regimes and relearn them on reactivation; reward-independent assignments (fixed random niches, an EOI/CDS-style intrinsic-diversity objective, converged competitive exclusion) retain them. Competition is the most **parsimonious** route to reward-independent specialization: no gate to train, no diversity objective to tune, no freezing schedule to pick — the assignment is the equilibrium the dynamics converge to. Supporting claim (unchanged): competition alone, without explicit diversity incentives, suffices to induce emergent specialization (mean SI = 0.65 at λ = 0).
 
 > **Note on Terminology:** We use "learner" to denote individual units in the population, each implementing Thompson Sampling over prediction methods. This distinguishes our approach from LLM-based "agents" which are autoregressive language models.
 
@@ -48,6 +48,26 @@ We present a population-based learning system where learners **spontaneously spe
 > [`docs/V4_FINAL_REPORT.md`](docs/V4_FINAL_REPORT.md). All qualitative
 > findings are preserved; quantitative magnitudes are substantially
 > strengthened.
+
+### ⭐ Headline (v4.1): Coverage and Retention Under Bounded Capacity
+
+Five capacity-allocation mechanisms compared at matched per-agent capacity K (each agent can master only K of R regimes), on a non-stationary stream where regimes go dormant and reactivate:
+
+| Arm (K=1, hard LRU model) | Assignment signal | Post-reactivation error | Retains dormant regimes? |
+|---|---|---|---|
+| Monolith (capacity K) | current active regime | 1.015 | ❌ |
+| MoE learned router | current task reward | 0.928 | ❌ |
+| Random fixed niches | none (frozen) | 0.603 | ⚠️ (coverage gaps) |
+| EOI/CDS-style diversity | intrinsic identity reward | 0.322 | ✅ |
+| **NichePopulation (ours)** | converged identity | **0.283** | ✅ |
+
+- **Retention tracks reward-independence five-for-five.** The specialized population beats the capacity-matched monolith by **+33% overall / +71% post-reactivation** (p < 10⁻³⁶ at K=3); the reward-driven router fails like the monolith (p ~ 10⁻³⁵ vs. ours at K=1).
+- **Why:** a dormant regime emits no reward gradient, so a reward-driven gate gets **no signal** to reserve capacity for it (idealized Observation in the paper). A converged specialist simply idles through dormancy and retains its niche structurally.
+- **Robust to the memory model:** the same dissociation holds when hard LRU eviction is replaced by soft interference decay (`--soft`; monolith forgets at 0.85–0.92, ours retains at ≈0.25, p ~ 10⁻⁴⁰).
+- **Spatial coverage is a commodity** — competition, explicit diversity, and the router all achieve it (competition wins +57% synthetic / +8.7% traffic at K=1 over *random* diversity but only matches purpose-built baselines for K≥2). Competition's value there is parsimony, not dominance.
+- **Corroborates MoE continual-learning theory** (ICLR'25, arXiv:2406.16437): their proof that the gate must be *frozen* for CL convergence is, in our terms, making the assignment reward-independent — competition reaches that state emergently.
+
+Reproduce: `python experiments/exp_capacity_division.py` and `python experiments/exp_nonstationary_capacity.py --soft`.
 
 ### Cross-Domain Experimental Results (Unified Pipeline — 30 Trials Each, V4)
 
@@ -263,6 +283,8 @@ NichePopulation/
 ├── 📁 experiments/                   # Reproducible experiments
 │   ├── _affinity_update.py           # ⭐ Shared V3/V4 update helper
 │   ├── exp_unified_pipeline.py       # ⭐ Main 6-domain pipeline (V4)
+│   ├── exp_capacity_division.py      # ⭐ Coverage under bounded capacity (5 arms + overlap sweep)
+│   ├── exp_nonstationary_capacity.py # ⭐ Retention / catastrophic forgetting (5 arms; --soft model)
 │   ├── exp_method_specialization.py  # Method specialization (V4)
 │   ├── exp_marl_comparison.py        # MARL head-to-head (V4)
 │   ├── exp_lambda_ablation.py        # λ ablation (V4)
@@ -276,16 +298,21 @@ NichePopulation/
 │   ├── solar/         traffic/       air_quality/
 ├── 📁 results/                       # Experiment outputs
 │   ├── unified_pipeline/             # Main pipeline outputs (V4)
+│   ├── capacity_division/            # Coverage results (results.json + overlap sweep)
+│   ├── nonstationary_capacity/       # Retention results (results.json + results_soft.json)
 │   ├── v4_v3_comparison_matched_rate/  # V3 vs V4 ablation
 │   ├── real_marl_comparison/         # MARL head-to-head outputs
 │   └── method_specialization/        # Method specialization outputs
 ├── 📁 paper/                         # LaTeX paper sources
-│   ├── main.tex                      # Canonical paper (26 pages, V4)
-│   ├── method_deep_dive.tex          # Deep-dive companion (72 pages, V4)
+│   ├── main.tex                      # Canonical paper (35 pages, v4.1 reframed)
+│   ├── method_deep_dive.tex          # Deep-dive companion (76 pages)
+│   ├── niche_population_explainer.tex # System explainer (13 pages, AutoAgent-style)
 │   └── references.bib
 ├── 📁 docs/                          # Reports + research docs
 │   ├── V4_FINAL_REPORT.md            # Comprehensive V4 renovation report
-│   └── V4_EG_RENOVATION_AUDIT.md     # V3 defect audit + V4 derivation
+│   ├── V4_EG_RENOVATION_AUDIT.md     # V3 defect audit + V4 derivation
+│   ├── AUDIT_REPORT.md               # Repo-wide audit report
+│   └── ARXIV_SUBMISSION_GUIDE.md     # arXiv packaging instructions
 └── 📁 scripts/                       # Data download + plotting utilities
     ├── download_real_*.py            # Data downloaders
     ├── plot_v4_v3_comparison.py      # V4 vs V3 plots
@@ -329,6 +356,13 @@ python scripts/download_fred_commodities_real.py
 ```bash
 # Main 6-domain pipeline (Table 1 in the paper, V4)
 python experiments/exp_unified_pipeline.py
+
+# Headline: coverage under bounded capacity (5 arms + method-overlap sweep, fig6)
+python experiments/exp_capacity_division.py
+
+# Headline: retention under non-stationarity (5 arms, fig7; --soft adds the
+# interference-model robustness check, fig8)
+python experiments/exp_nonstationary_capacity.py --soft
 
 # Method specialization (Table 2 in the paper, V4)
 python experiments/exp_method_specialization.py
@@ -428,6 +462,19 @@ Five publication-quality figures in `results/figures/`:
 
 ## 📋 Changelog
 
+### v4.1.0 (2026-06-09) — Reward-Independence Reframe + Purpose-Built Baselines ⭐⭐⭐
+
+**Major Update: the thesis is reframed around retention under bounded capacity, benchmarked against purpose-built baselines**
+
+- ✅ **New headline result**: across five capacity-allocation arms, retention of dormant regimes tracks **reward-independence of assignment** (monolith and learned MoE router forget; random/EOI-diversity/competition retain). +71% post-reactivation vs. monolith (p < 10⁻³⁶); router fails at p ~ 10⁻³⁵.
+- ✅ **Two new purpose-built baselines** in the capacity experiments: an EOI/CDS-style learned-diversity arm and a Mixture-of-Experts learned gating router.
+- ✅ **Method-overlap sweep**: competition's edge over learned diversity grows monotonically with method exclusivity (−4.8% → +29.3%).
+- ✅ **Idealized Observation** (paper): why a reward-driven router forgets — dormant regimes emit no protective reward signal.
+- ✅ **Soft interference capacity model** (`--soft`): the dissociation survives removing LRU eviction entirely (not an artifact of discrete eviction).
+- ✅ **Catastrophic-forgetting framing** with continual-learning citations; engagement with MoE-CL theory (ICLR'25, arXiv:2406.16437) — gate-freezing ⇔ reward-independent assignment.
+- ✅ **Paper restructure**: new title (*Reward-Independent Capacity Assignment as a Defense Against Catastrophic Forgetting*); coverage + retention promoted to Main Results; 95% CI error bars on figs 6–8; honest-claim softening in the intro.
+- ✅ **New explainer document**: `paper/niche_population_explainer.pdf` (13 pp) — full-system walkthrough of architecture, mechanisms, the reward-independence principle, and experiments.
+
 ### v4.0.0 (2026-06-04) — Exponentiated-Gradient Canonical Renovation ⭐⭐⭐
 
 **Major Update: replace the V3 additive + clamp heuristic with the canonical Hedge / multiplicative-weights update**
@@ -495,7 +542,8 @@ Five publication-quality figures in `results/figures/`:
 ```bibtex
 @misc{li2026emergent,
   title     = {Emergent Specialization in Learner Populations:
-               Competition as the Source of Diversity},
+               Reward-Independent Capacity Assignment as a Defense
+               Against Catastrophic Forgetting},
   author    = {Li, Yuhao},
   year      = {2026},
   howpublished = {\url{https://github.com/HowardLiYH/NichePopulation}},

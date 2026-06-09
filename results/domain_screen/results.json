@@ -1,0 +1,478 @@
+{
+  "experiment": "domain_screen_oracle_plus_validation",
+  "oracle_gaps": [
+    {
+      "dataset": "solar_denver",
+      "n": 800,
+      "scheme": "level",
+      "gap_pct": 12.422164631467968,
+      "generalist_err": 102.8141935483871,
+      "specialist_err": 90.04244516129033,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid": "momentum",
+        "high": "persistence",
+        "low": "mean_revert"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 3
+    },
+    {
+      "dataset": "traffic_nyc",
+      "n": 800,
+      "scheme": "native",
+      "gap_pct": 10.06609962660883,
+      "generalist_err": 618.5677419354839,
+      "specialist_err": 556.3020967741935,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "night": "persistence",
+        "transition": "mean_revert",
+        "morning_rush": "mean_revert",
+        "midday": "persistence",
+        "evening_rush": "persistence",
+        "weekend": "persistence"
+      },
+      "n_regimes": 6,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "traffic_nyc",
+      "n": 800,
+      "scheme": "volatility",
+      "gap_pct": 4.515136133651334,
+      "generalist_err": 618.5677419354839,
+      "specialist_err": 590.6385663082438,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "low_vol": "drift",
+        "mid_vol": "persistence",
+        "high_vol": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "airq_la",
+      "n": 800,
+      "scheme": "trend",
+      "gap_pct": 3.3040307950133836,
+      "generalist_err": 4.570059018531888,
+      "specialist_err": 4.419062861209308,
+      "best_global": "ma_long",
+      "best_per_regime": {
+        "down": "mean_revert",
+        "up": "ma_long",
+        "flat": "mean_revert"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "airq_la",
+      "n": 800,
+      "scheme": "level",
+      "gap_pct": 2.539946896436226,
+      "generalist_err": 4.570059018531888,
+      "specialist_err": 4.453981946325383,
+      "best_global": "ma_long",
+      "best_per_regime": {
+        "mid": "mean_revert",
+        "high": "ma_long",
+        "low": "mean_revert"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "airq_la",
+      "n": 800,
+      "scheme": "volatility",
+      "gap_pct": 1.9323302567402445,
+      "generalist_err": 4.570059018531888,
+      "specialist_err": 4.48175038536591,
+      "best_global": "ma_long",
+      "best_per_regime": {
+        "mid_vol": "mean_revert",
+        "high_vol": "ma_long",
+        "low_vol": "ma_long"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "traffic_nyc",
+      "n": 800,
+      "scheme": "level",
+      "gap_pct": 1.9232774984876764,
+      "generalist_err": 618.5677419354839,
+      "specialist_err": 606.6709677419354,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid": "drift",
+        "low": "persistence",
+        "high": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "commodity_copper",
+      "n": 125,
+      "scheme": "trend",
+      "gap_pct": 0.9065543398231563,
+      "generalist_err": 269.1621600705826,
+      "specialist_err": 266.722058827301,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "up": "persistence",
+        "down": "persistence",
+        "flat": "drift"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "commodity_copper",
+      "n": 125,
+      "scheme": "volatility",
+      "gap_pct": 0.4336875510898989,
+      "generalist_err": 269.1621600705826,
+      "specialist_err": 267.99483729011183,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid_vol": "mean_revert",
+        "high_vol": "persistence",
+        "low_vol": "drift"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 3
+    },
+    {
+      "dataset": "commodity_copper",
+      "n": 125,
+      "scheme": "level",
+      "gap_pct": 0.21376827715862348,
+      "generalist_err": 269.1621600705826,
+      "specialist_err": 268.5867767582368,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid": "persistence",
+        "high": "persistence",
+        "low": "mean_revert"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "solar_denver",
+      "n": 800,
+      "scheme": "trend",
+      "gap_pct": 0.11044038101931082,
+      "generalist_err": 102.8141935483871,
+      "specialist_err": 102.70064516129032,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "down": "persistence",
+        "up": "persistence",
+        "flat": "momentum"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "weather_chicago",
+      "n": 800,
+      "scheme": "trend",
+      "gap_pct": 0.05409663983657221,
+      "generalist_err": 2.581998064516129,
+      "specialist_err": 2.5806012903225803,
+      "best_global": "mean_revert",
+      "best_per_regime": {
+        "up": "mean_revert",
+        "down": "mean_revert",
+        "flat": "ma_long"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "eth_1h",
+      "n": 800,
+      "scheme": "level",
+      "gap_pct": 0.053342162380898575,
+      "generalist_err": 10.522451612903227,
+      "specialist_err": 10.51683870967742,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid": "drift",
+        "low": "persistence",
+        "high": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "traffic_nyc",
+      "n": 800,
+      "scheme": "trend",
+      "gap_pct": 0.03618023831213034,
+      "generalist_err": 618.5677419354839,
+      "specialist_err": 618.3439426523297,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "down": "persistence",
+        "up": "persistence",
+        "flat": "drift"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 2
+    },
+    {
+      "dataset": "solar_denver",
+      "n": 800,
+      "scheme": "volatility",
+      "gap_pct": 0.0,
+      "generalist_err": 102.8141935483871,
+      "specialist_err": 102.8141935483871,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "high_vol": "persistence",
+        "mid_vol": "persistence",
+        "low_vol": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "weather_chicago",
+      "n": 800,
+      "scheme": "volatility",
+      "gap_pct": 0.0,
+      "generalist_err": 2.581998064516129,
+      "specialist_err": 2.581998064516129,
+      "best_global": "mean_revert",
+      "best_per_regime": {
+        "low_vol": "mean_revert",
+        "mid_vol": "mean_revert",
+        "high_vol": "mean_revert"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "weather_chicago",
+      "n": 800,
+      "scheme": "level",
+      "gap_pct": 0.0,
+      "generalist_err": 2.581998064516129,
+      "specialist_err": 2.581998064516129,
+      "best_global": "mean_revert",
+      "best_per_regime": {
+        "mid": "mean_revert",
+        "low": "mean_revert",
+        "high": "mean_revert"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "btc_4h",
+      "n": 800,
+      "scheme": "trend",
+      "gap_pct": 0.0,
+      "generalist_err": 680.7348387096774,
+      "specialist_err": 680.7348387096774,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "down": "persistence",
+        "flat": "persistence",
+        "up": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "btc_4h",
+      "n": 800,
+      "scheme": "volatility",
+      "gap_pct": 0.0,
+      "generalist_err": 680.7348387096774,
+      "specialist_err": 680.7348387096774,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid_vol": "persistence",
+        "high_vol": "persistence",
+        "low_vol": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "btc_4h",
+      "n": 800,
+      "scheme": "level",
+      "gap_pct": 0.0,
+      "generalist_err": 680.7348387096774,
+      "specialist_err": 680.7348387096774,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid": "persistence",
+        "high": "persistence",
+        "low": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "eth_1h",
+      "n": 800,
+      "scheme": "trend",
+      "gap_pct": 0.0,
+      "generalist_err": 10.522451612903227,
+      "specialist_err": 10.522451612903227,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "down": "persistence",
+        "up": "persistence",
+        "flat": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "eth_1h",
+      "n": 800,
+      "scheme": "volatility",
+      "gap_pct": 0.0,
+      "generalist_err": 10.522451612903227,
+      "specialist_err": 10.522451612903227,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "low_vol": "persistence",
+        "mid_vol": "persistence",
+        "high_vol": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "doge_4h",
+      "n": 800,
+      "scheme": "trend",
+      "gap_pct": 0.0,
+      "generalist_err": 0.004306580645161289,
+      "specialist_err": 0.004306580645161289,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "down": "persistence",
+        "flat": "persistence",
+        "up": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "doge_4h",
+      "n": 800,
+      "scheme": "volatility",
+      "gap_pct": 0.0,
+      "generalist_err": 0.004306580645161289,
+      "specialist_err": 0.004306580645161289,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid_vol": "persistence",
+        "low_vol": "persistence",
+        "high_vol": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "doge_4h",
+      "n": 800,
+      "scheme": "level",
+      "gap_pct": 0.0,
+      "generalist_err": 0.004306580645161289,
+      "specialist_err": 0.004306580645161289,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid": "persistence",
+        "low": "persistence",
+        "high": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "sol_4h",
+      "n": 800,
+      "scheme": "trend",
+      "gap_pct": 0.0,
+      "generalist_err": 2.8902580645161287,
+      "specialist_err": 2.8902580645161287,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "flat": "persistence",
+        "down": "persistence",
+        "up": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "sol_4h",
+      "n": 800,
+      "scheme": "volatility",
+      "gap_pct": 0.0,
+      "generalist_err": 2.8902580645161287,
+      "specialist_err": 2.8902580645161287,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "low_vol": "persistence",
+        "mid_vol": "persistence",
+        "high_vol": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    },
+    {
+      "dataset": "sol_4h",
+      "n": 800,
+      "scheme": "level",
+      "gap_pct": 0.0,
+      "generalist_err": 2.8902580645161287,
+      "specialist_err": 2.8902580645161287,
+      "best_global": "persistence",
+      "best_per_regime": {
+        "mid": "persistence",
+        "low": "persistence",
+        "high": "persistence"
+      },
+      "n_regimes": 3,
+      "distinct_winners": 1
+    }
+  ],
+  "coupled_real_vs_shuffled": [
+    {
+      "dataset": "solar_denver",
+      "scheme": "level",
+      "oracle_gap_pct": 12.422164631467968,
+      "real_vs_shuffled_gap_pct": 18.07776963050451,
+      "p": 3.9996433800056913e-16,
+      "d": -4.190410939105454,
+      "si_real": 0.9947939682101747,
+      "si_shuf": 0.9919795420228785
+    },
+    {
+      "dataset": "traffic_nyc",
+      "scheme": "native",
+      "oracle_gap_pct": 10.06609962660883,
+      "real_vs_shuffled_gap_pct": 15.37699679706763,
+      "p": 3.1656220367763954e-10,
+      "d": -2.59148812030264,
+      "si_real": 0.9986674114924302,
+      "si_shuf": 0.9990999433454879
+    }
+  ]
+}

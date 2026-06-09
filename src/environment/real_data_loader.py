@@ -9,7 +9,18 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 import numpy as np
 
-from .hmm_regime_detector import HMMRegimeDetector
+try:
+    from .hmm_regime_detector import HMMRegimeDetector
+except ImportError:
+    class HMMRegimeDetector:  # type: ignore[override]
+        """Fallback placeholder when legacy HMM detector is unavailable."""
+
+        def __init__(self, *args, **kwargs):
+            raise ImportError(
+                "src.environment.hmm_regime_detector is not present in this branch. "
+                "Use domain-specific real-data regime detection paths "
+                "(src/domains/* detect_regime) or restore the HMM module."
+            )
 
 
 # Default path to local data

@@ -1,0 +1,58 @@
+{
+  "crypto": {
+    "domain": "crypto",
+    "metric_name": "sharpe",
+    "higher_is_better": true,
+    "diverse_mean": -0.061635540005011286,
+    "diverse_std": 6.938893903907228e-18,
+    "homo_mean": 0.30000000000000004,
+    "homo_std": 5.551115123125783e-17,
+    "improvement_pct": -120.54518000167043,
+    "mean_si": 0.46831451581932965,
+    "si_perf_correlation": NaN,
+    "si_perf_pvalue": NaN,
+    "n_trials": 30
+  },
+  "commodities": {
+    "domain": "commodities",
+    "metric_name": "directional_accuracy",
+    "higher_is_better": true,
+    "diverse_mean": 0.5194374936533129,
+    "diverse_std": 0.0063850881083534,
+    "homo_mean": 0.5,
+    "homo_std": 0.0,
+    "improvement_pct": 3.8874987306625863,
+    "mean_si": 0.1943749365331294,
+    "si_perf_correlation": 0.9999999999999999,
+    "si_perf_pvalue": 0.0,
+    "n_trials": 30
+  },
+  "weather": {
+    "domain": "weather",
+    "metric_name": "rmse",
+    "higher_is_better": false,
+    "diverse_mean": 1.4890964930190662,
+    "diverse_std": 0.005781873569902227,
+    "homo_mean": 1.5766737138672662,
+    "homo_std": 4.440892098500626e-16,
+    "improvement_pct": 5.554555776374968,
+    "mean_si": 0.5554555776374995,
+    "si_perf_correlation": -1.0,
+    "si_perf_pvalue": 0.0,
+    "n_trials": 30
+  },
+  "solar": {
+    "domain": "solar",
+    "metric_name": "rmse",
+    "higher_is_better": false,
+    "diverse_mean": 42.65435882719564,
+    "diverse_std": 0.2237925295144559,
+    "homo_mean": 44.085711971113746,
+    "homo_std": 2.1316282072803006e-14,
+    "improvement_pct": 3.2467506589345176,
+    "mean_si": 0.3246750658934465,
+    "si_perf_correlation": -0.9999999999999998,
+    "si_perf_pvalue": 1.7340728374719293e-216,
+    "n_trials": 30
+  }
+}

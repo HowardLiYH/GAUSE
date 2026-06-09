@@ -1,6 +1,6 @@
 # Experiments
 
-This folder contains the key experiments for the paper *"Emergent Specialization in Learner Populations: Competition as the Source of Diversity"* (v4.0.0).
+This folder contains the key experiments for the paper *"Emergent Specialization in Learner Populations: Reward-Independent Capacity Assignment as a Defense Against Catastrophic Forgetting"* (v4.1.0).
 
 > **As of v4.0.0**, all experiments use the canonical exponentiated-gradient (Hedge / multiplicative-weights) update on the niche affinity by default. The V3 additive heuristic is retained behind `update_rule="v3_additive"` for ablation and comparison.
 
@@ -18,6 +18,8 @@ This runs the main experiment across all 6 domains with identical configuration 
 | File | Purpose | Headline V4 Finding |
 |------|---------|---------------------|
 | `exp_unified_pipeline.py` | **Main reproducibility script** | Mean SI = 0.992, Cohen's d = 73.4 across 6 domains |
+| `exp_capacity_division.py` | ⭐ Coverage under bounded capacity (5 arms: monolith, random, EOI-diversity, MoE router, competition; plus method-overlap sweep) | Competition wins at K=1 (+57% synthetic, +8.7% traffic); edge over learned diversity scales with method exclusivity (−4.8% → +29.3%) |
+| `exp_nonstationary_capacity.py` | ⭐ Retention / catastrophic forgetting under non-stationarity (same 5 arms; `--soft` runs the interference-decay robustness model) | Retention tracks reward-independence 5-for-5: monolith + MoE router forget dormant regimes (p < 10⁻³⁶, p ~ 10⁻³⁵); random/diversity/competition retain |
 | `exp_method_specialization.py` | Method specialization analysis | Learners specialize in prediction methods (+25.9% improvement, 86% method coverage) |
 | `exp_marl_comparison.py` | Head-to-head MARL comparison | NichePop SI = 1.000 vs. IQL/VDN/QMIX ≤ 0.016, MAPPO = 0.000 (≥100× gap) |
 | `exp_lambda_ablation.py` | λ ablation study | λ = 0.3 is the sweet spot; mean SI ≥ 0.98 in λ ∈ [0.2, 0.4] |
@@ -50,4 +52,6 @@ Results are saved to `../results/` as JSON files alongside figures. The main V4 
 - `results/unified_pipeline/results.json` — Table 1
 - `results/method_specialization/results.json` — Table 2
 - `results/real_marl_comparison/results.json` — Table 3
+- `results/capacity_division/results.json` — coverage under bounded capacity (fig6) + overlap sweep
+- `results/nonstationary_capacity/results.json` — retention / forgetting (fig7); `results_soft.json` — soft-model robustness (fig8)
 - `results/v4_v3_comparison_matched_rate/` — V3 vs V4 diagnostic plots + trajectories

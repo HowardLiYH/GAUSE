@@ -34,6 +34,8 @@ from tqdm import tqdm
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from experiments._affinity_update import eg_eta_for_regimes
+
 
 def bootstrap_ci(data: np.ndarray, n_bootstrap: int = 1000,
                  confidence: float = 0.95) -> Tuple[float, float]:
@@ -65,11 +67,15 @@ def cohens_d(group1: np.ndarray, group2: np.ndarray) -> float:
 class PredictionAgent:
     """Agent that specializes in prediction methods for specific regimes."""
 
-    def __init__(self, agent_id: int, methods: List[str], regimes: List[str], seed: int = None):
+    def __init__(self, agent_id: int, methods: List[str], regimes: List[str], seed: int = None,
+                 lr_override: float = None):
         self.agent_id = agent_id
         self.methods = methods
         self.regimes = regimes
         self.rng = np.random.default_rng(seed)
+        # When set, use this exact EG win-step instead of the regime-count
+        # rescale. Used by the learning-rate sweep (exp_lr_sweep.py).
+        self.lr_override = lr_override
 
         # Method beliefs per regime (higher = more preferred)
         self.method_beliefs = {
@@ -104,6 +110,10 @@ class PredictionAgent:
             loss:   alpha[regime] *= exp(-lr/2)
         followed by simplex normalization. This preserves strict positivity and
         the simplex by construction, replacing the V3 additive + max(0.01, .) clamp.
+
+        ``lr`` is rescaled per regime count to match the canonical headline
+        pipeline's specialization timescale (eg_eta_for_regimes); the loss step
+        keeps the original 2:1 win:loss magnitude ratio.
         """
         self.total += 1
 
@@ -113,13 +123,14 @@ class PredictionAgent:
         else:
             self.method_beliefs[regime][method] = max(0.1, self.method_beliefs[regime][method] - 0.3)
 
+        lr = self.lr_override if self.lr_override is not None else eg_eta_for_regimes(len(self.regimes))
         primary_niche = max(self.niche_affinities, key=self.niche_affinities.get)
         if won:
-            self.niche_affinities[regime] *= math.exp(0.1)
+            self.niche_affinities[regime] *= math.exp(lr)
             if regime == primary_niche:
                 self.niche_affinities[regime] *= math.exp(niche_bonus)
         else:
-            self.niche_affinities[regime] *= math.exp(-0.05)
+            self.niche_affinities[regime] *= math.exp(-lr / 2)
 
         total_affinity = sum(self.niche_affinities.values())
         self.niche_affinities = {r: a / total_affinity for r, a in self.niche_affinities.items()}
@@ -137,7 +148,8 @@ class PredictionPopulation:
     """Population of prediction agents competing across regimes."""
 
     def __init__(self, n_agents: int, methods: List[str], regimes: List[str],
-                 niche_bonus_lambda: float = 0.5, seed: int = None):
+                 niche_bonus_lambda: float = 0.5, seed: int = None,
+                 lr_override: float = None):
         self.n_agents = n_agents
         self.methods = methods
         self.regimes = regimes
@@ -145,7 +157,8 @@ class PredictionPopulation:
         self.rng = np.random.default_rng(seed)
 
         self.agents = [
-            PredictionAgent(i, methods, regimes, seed=seed + i if seed else None)
+            PredictionAgent(i, methods, regimes, seed=seed + i if seed else None,
+                            lr_override=lr_override)
             for i in range(n_agents)
         ]
 
@@ -188,11 +201,14 @@ class PredictionPopulation:
 
             agent.update(regime, method, won, niche_bonus=bonus)
 
+        mean_error = float(np.mean([p['error'] for p in predictions.values()]))
+
         self.history.append({
             'regime': regime,
             'winner_id': winner_id,
             'winner_method': winner_method,
-            'winner_error': predictions[winner_id]['error']
+            'winner_error': predictions[winner_id]['error'],
+            'mean_error': mean_error,
         })
 
         return {'winner_id': winner_id, 'winner_method': winner_method}
@@ -489,7 +505,12 @@ def run_lambda_experiment(domain: str, lambda_val: float, n_trials: int = 30,
 def run_all_experiments(n_trials: int = 30):
     """Run λ sweep on all domains."""
 
-    domains = ["synthetic", "energy", "weather", "finance"]
+    # NOTE: the "synthetic" domain was dropped. Its generator cycles the 4
+    # regimes in fixed equal-frequency order with deterministic predictors, so
+    # all agents tie every step and no affinity ever becomes asymmetric
+    # (SI == 0 regardless of eta). It was not paper-relevant and only produced
+    # a degenerate row. Real-data domains are retained.
+    domains = ["energy", "weather", "finance"]
     lambda_values = [0.0, 0.25, 0.50]
 
     results = {
@@ -531,7 +552,6 @@ def run_all_experiments(n_trials: int = 30):
         sig = results["results"][domain]["0.0"]["test_vs_040"]["significant"]
 
         conditions = {
-            "synthetic": "Yes (by design)",
             "energy": "Yes",
             "weather": "Yes",
             "finance": "No (strategy overlap)"

@@ -1,0 +1,695 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+
+\newtcolorbox{designbox}{colback=blue!4, colframe=blue!40, boxrule=0.5pt, arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt}
+
+\newtheorem{observation}{Observation}
+\newtheorem{principle}{Principle}
+
+\newcommand{\SI}{\mathrm{SI}}
+\newcommand{\E}{\mathbb{E}}
+
+\title{\textbf{NichePopulation: Competition-Driven Specialization and\\
+Reward-Independent Capacity Assignment for Learner Populations}\\[0.4cm]
+\large An Explanatory Companion: Architecture, Mechanisms, and Demonstrations}
+
+\author{Yuhao Li\\
+University of Pennsylvania\\
+\texttt{li88@sas.upenn.edu}}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Learning systems that must serve many distinct environmental regimes with
+capacity-limited learners face a persistent allocation problem: which learner
+handles which regime, and---when the environment is non-stationary---who
+\emph{keeps} a regime that falls dormant? In practice this gap appears as three
+recurring failure modes: homogenization (every learner converges to the same
+behavior), coverage gaps (no learner masters rare regimes), and catastrophic
+forgetting (dormant-regime knowledge is overwritten to serve active ones). To
+address these failures, we present \textbf{NichePopulation}, a deliberately
+minimal population-learning framework built on three tightly coupled components:
+\emph{per-regime belief learning} (Thompson sampling over a shared method
+inventory), \emph{niche-affinity tracking} (a canonical exponentiated-gradient
+update on the regime simplex), and \emph{winner-take-all competitive exclusion}
+(only the per-step winner reinforces its niche). At the core of the framework is
+a single emergent property with outsized consequences: the converged
+regime-to-agent assignment is \emph{structural}---independent of current task
+reward---so a specialist simply idles while its niche is dormant and retains its
+expertise. We show that this property, not specialization per se, is what
+separates mechanisms that survive non-stationarity from mechanisms that do not:
+across five capacity-allocation arms (capacity-bounded monolith, learned
+Mixture-of-Experts router, fixed random niches, an EOI/CDS-style intrinsic
+diversity objective, and emergent competition), every reward-chasing allocation
+forgets dormant regimes and every reward-independent assignment retains them
+($+71\%$ lower post-reactivation error, $p\sim10^{-35}$; robust to swapping
+hard eviction for soft interference). Empirical results across six real-world
+domains (145{,}294 records) and controlled synthetic tasks show that the
+framework reliably self-organizes into one-per-regime specialists (mean SI
+$=0.65$ from competition alone), matches purpose-built diversity and routing
+baselines on spatial coverage with none of their machinery, and is structurally
+immune to a failure mode of reward-driven routing. Code and data:
+\url{https://github.com/HowardLiYH/NichePopulation}.
+\end{abstract}
+
+\vspace{0.3cm}
+\noindent\textbf{Keywords:} emergent specialization; competitive exclusion;
+multi-agent learning; catastrophic forgetting; mixture-of-experts;
+reward-independent assignment
+
+\newpage
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Introduction}
+%==============================================================================
+
+\begin{quote}
+\emph{``Two species with identical ecological niches cannot stably coexist.''}\\
+---the competitive exclusion principle \cite{gause1934struggle,hardin1960competitive}
+\end{quote}
+
+Populations of learners that share an environment---trading strategies in a
+market, sensors in a distributed network, experts inside a mixture-of-experts
+model---face a coordination problem that single learners do not: how should the
+population \emph{divide} a heterogeneous task space, without a central
+coordinator, so that every regime of the environment is served by a competent
+specialist? Despite decades of progress in multi-agent learning, three
+intertwined limitations persist in standard approaches.
+
+First, \textbf{shared objectives homogenize}. Cooperative multi-agent
+reinforcement learning methods (IQL, VDN, QMIX, MAPPO)
+\cite{tan1993multi,rashid2018qmix,yu2022surprising} optimize a shared task
+return, and a well-documented consequence is that agents converge to
+near-identical policies. In our head-to-head re-runs, all four methods reach a
+Specialization Index below $0.02$ on every domain---no division of labor emerges
+by default. Second, \textbf{explicit coordination is expensive}. Methods that do
+produce diverse roles---diversity-MARL (ROMA, RODE, MAVEN, EOI, CDS)
+\cite{wang2020roma,wang2021rode,mahajan2019maven,jiang2021eoi,li2021cds},
+quality-diversity archives \cite{mouret2015illuminating}, or learned gating
+networks---require auxiliary machinery: intrinsic
+identifiability rewards, behavior descriptors chosen \emph{a priori}, or a
+trained router. Each adds objectives, hyperparameters, and failure modes of its
+own. Third, and least appreciated, \textbf{reward-driven capacity allocation
+forgets}. When the environment is non-stationary and per-learner capacity is
+bounded, any mechanism that allocates capacity by chasing current reward---a
+single capacity-bounded model, or a Mixture-of-Experts gate trained on task
+reward---systematically overwrites knowledge of regimes that are currently
+dormant, and pays a full relearning cost each time a regime reactivates. The
+dormant regime is precisely the one emitting no reward signal, so a reward-driven
+allocator receives no signal to protect it.
+
+To address these limitations, we introduce a cohesive design philosophy centered
+on a single ecological mechanism: \textbf{competitive exclusion}. The framework,
+named \textbf{NichePopulation}, is built from three integrated components:
+
+\textbf{First}, each agent maintains \emph{per-regime method beliefs}---Beta
+distributions over the success of each prediction method in each regime, acted
+on by Thompson sampling. This is the agent's competence: what it knows how to do,
+and where. \textbf{Second}, each agent tracks a \emph{niche affinity}
+distribution over regimes, updated by the canonical exponentiated-gradient
+(Hedge / multiplicative-weights) rule. This is the agent's identity: where it
+belongs. \textbf{Third}, agents are coupled solely through \emph{winner-take-all
+competition}: at each step, all agents act, and only the best performer
+reinforces its affinity for the current regime. No communication, no shared
+reward, no gate, no diversity objective. Competition makes homogeneous strategies
+unstable---identical agents split the same wins, so deviating to a less-contested
+regime pays---and the population partitions into one-per-regime specialists.
+
+The key insight of this document is that the resulting assignment has a property
+that purpose-built alternatives lack: \emph{it is reward-independent at
+convergence}. A converged specialist holds its niche by identity, not by
+moment-to-moment reward, so when its regime goes dormant the specialist simply
+idles and \emph{retains} its expertise. We formalize this as a
+\textbf{reward-independence principle} (Section~\ref{sec:principle}), show that
+it cleanly dichotomizes five capacity-allocation mechanisms in controlled
+experiments (every reward-chasing arm forgets; every reward-independent arm
+retains), and demonstrate that it independently corroborates recent
+mixture-of-experts theory, which finds that the gating network's updates must be
+\emph{terminated} for continual-learning convergence.
+
+In summary, this work makes the following key contributions:
+
+\textbf{1) A reward-independence principle for retention.} We identify
+reward-independence of capacity assignment as the property governing whether a
+capacity-bounded system retains dormant-task knowledge under non-stationarity,
+verify it five-for-five across allocation mechanisms, and explain it with an
+idealized observation: dormant tasks emit no protective reward signal, so only
+structural assignments can reserve capacity for them.
+
+\textbf{2) A coordination-free specialization mechanism.} NichePopulation couples
+winner-take-all competition with an exponentiated-gradient niche update and
+nothing else. Competition alone (niche bonus $\lambda=0$) drives mean SI to
+$0.65$ across six real domains; with the default bonus the population reaches
+SI $\approx 0.99$ and one-per-regime coverage.
+
+\textbf{3) Honest benchmarking against purpose-built baselines.} Rather than
+compare only to cooperative MARL (which does not try to specialize), we compare
+to an EOI/CDS-style learned-diversity objective and a learned MoE router at
+matched capacity. Spatial coverage proves to be a commodity all three achieve;
+competition's value there is parsimony. Retention is not a commodity: the
+reward-driven router fails it decisively.
+
+\textbf{4) A meaningfulness audit.} We show that the Specialization Index
+certifies \emph{organization}, not exploitable structure (it is invariant to
+regime-label shuffling and inflatable by the learning rate), and we localize
+exactly when division of labor improves task accuracy---under bounded capacity
+and non-stationarity---and when it does not.
+
+%==============================================================================
+\section{Related Work}
+%==============================================================================
+
+We review prior work along five dimensions closely related to NichePopulation.
+
+\textbf{Cooperative MARL.} Independent Q-Learning, value-decomposition methods
+(VDN, QMIX), and multi-agent policy gradients (MAPPO) optimize shared objectives
+with centralized training. These methods are the right baselines for cooperative
+control, but they do not attempt diversity, and empirically they homogenize: in
+our re-runs all reach SI $\le 0.02$. We treat them as confirmatory contrast, not
+as competitors on specialization.
+
+\textbf{Diversity- and role-emergence MARL.} ROMA \cite{wang2020roma} and RODE
+\cite{wang2021rode} learn role embeddings; MAVEN \cite{mahajan2019maven}
+injects diverse exploration; EOI \cite{jiang2021eoi} and CDS \cite{li2021cds}
+add intrinsic individuality or mutual-information objectives. These methods do produce
+division of labor, at the cost of explicit diversity machinery. We benchmark
+directly against an EOI/CDS-style intrinsic-reward arm and find it a strong
+baseline: it matches competition on coverage for $K\ge2$ and retains dormant
+regimes (its assignment is driven by an identity reward, not task reward---the
+reward-independence principle again). Competition's advantage over it is
+parsimony, not dominance.
+
+\textbf{Quality-diversity optimization.} MAP-Elites \cite{mouret2015illuminating}
+and novelty search \cite{lehman2011evolving} maintain archives of diverse high performers, but require behavior descriptors defined
+\emph{a priori}. NichePopulation needs no descriptors: niches are discovered by
+the dynamics.
+
+\textbf{Mixture-of-experts in continual learning.} Recent theory
+\cite{li2024moecl} establishes that MoE can mitigate catastrophic forgetting by
+isolating tasks in experts---%
+\emph{provided} experts are plentiful relative to tasks and the gating network's
+updates are eventually terminated, without which continual task arrival
+destabilizes routing. Our experiments occupy exactly the regime those provisos
+exclude (fixed total capacity, experts forced into reuse, gate still learning)
+and show that isolation then breaks down: the router inherits the monolith's
+forgetting. Freezing the gate is, in our terms, making the assignment
+reward-independent; competition reaches that state emergently, with no freezing
+schedule to tune.
+
+\textbf{Ecological niche theory.} The competitive exclusion principle
+\cite{gause1934struggle,hardin1960competitive} and MacArthur's resource
+partitioning \cite{macarthur1958population} describe how competition alone
+drives species into complementary niches. NichePopulation operationalizes this
+for artificial learners and inherits its most useful property: the partition,
+once formed, is maintained by identity rather than by ongoing payoff, which is
+what makes it robust to dormancy.
+
+%==============================================================================
+\section{The NichePopulation Framework: A Unified Architecture for
+Emergent Division of Labor}
+%==============================================================================
+
+This section presents the integrated architecture. We first articulate the
+design philosophy (3.1), then detail the architectural blueprint (3.2), and
+finally explain the per-step dynamics that realize self-organization (3.3).
+
+\subsection{Design Philosophy: The Competitive-Exclusion Loop}
+
+Contemporary approaches to division of labor treat the assignment of learners to
+tasks as something to be \emph{optimized}: a gate is trained, a diversity
+objective is added, roles are learned. NichePopulation is founded on the opposite
+principle: \textbf{the assignment should be an equilibrium, not an objective}.
+We formalize this as the competitive-exclusion loop, a recursive paradigm
+structured around four functions:
+
+\begin{designbox}
+\textbf{Compete}: all agents act on the current regime; one wins.\\
+\textbf{Reinforce}: only the winner strengthens its affinity for that regime.\\
+\textbf{Differentiate}: losers' relative affinities drift toward less-contested
+regimes.\\
+\textbf{Stabilize}: once each agent owns a regime, deviation is unprofitable;
+the partition is a fixed point.
+\end{designbox}
+
+The key property of this loop is \emph{what it leaves behind}. Because the
+converged partition is a fixed point of identity (each agent's affinity
+concentrates on its niche), it no longer depends on the flow of reward. An agent
+whose niche is dormant receives no wins, but it also receives no pressure to
+abandon its niche---it simply idles. This is the structural source of the
+retention results in Section~\ref{sec:experiments}: the loop intrinsically
+unifies \emph{organizing} with \emph{remembering}.
+
+\subsection{Architectural Blueprint: Components and Their Roles}
+
+The loop is instantiated through three principal components per agent, plus one
+population-level rule.
+
+\textbf{1. Method-Belief Store: The Competence Layer.} Each agent $i$ maintains,
+for each regime $r$ it has encountered, a Beta distribution
+$\mathrm{Beta}(\beta^{+}_{i,r,m},\, \beta^{-}_{i,r,m})$ over the success rate of
+each method $m$ in a shared inventory of $M$ methods. This store answers
+\emph{``what works here?''} and is updated by standard Bayesian counting. In the
+bounded-capacity experiments the store is explicitly finite: it holds at most
+$K$ regimes, with either least-recently-used eviction (hard model) or graded
+interference decay (soft model)---Section~\ref{sec:capacity}.
+
+\textbf{2. Niche Affinity: The Identity Layer.} Each agent maintains a
+distribution $\alpha_i \in \Delta^R$ over regimes---its evolving answer to
+\emph{``where do I belong?''} Affinity is updated only on wins, by the canonical
+exponentiated-gradient rule (Section~\ref{sec:affinity}), and read out through
+the Specialization Index $\SI(\alpha) = 1 - H(\alpha)/\log R$, which is $1$ for
+a one-hot specialist and $0$ for a uniform generalist.
+
+\textbf{3. Thompson-Sampling Actor: The Decision Layer.} At each step the agent
+samples $\tilde{\theta}_m \sim \mathrm{Beta}(\beta^{+},\beta^{-})$ for every
+method and plays the argmax---a principled exploration--exploitation balance
+requiring no tuned exploration schedule.
+
+\textbf{4. Winner-Take-All Rule: The Population Coupling.} The \emph{only}
+interaction between agents is the per-step competition: the agent with the
+highest (optionally niche-shaped) reward is declared winner and is the only one
+to reinforce its affinity. There is no communication channel, no shared critic,
+no gate, and no diversity term. This minimality is deliberate: every emergent
+property of the system must be attributable to competition, because nothing else
+couples the agents.
+
+\subsection{System Dynamics: One Step of the Loop}
+
+The components interact in a fast per-step cycle. Given the environment in
+regime $r_t$:
+
+\begin{enumerate}[itemsep=2pt]
+    \item \textbf{Act.} Every agent $i$ selects a method $m_i$ by Thompson
+    sampling from its beliefs for $r_t$ (agents without competence in $r_t$ act
+    uninformed) and receives raw reward $R_i$.
+    \item \textbf{Score.} Each agent's competitive score adds an additive niche
+    bonus centred on the uniform affinity:
+    $\tilde{R}_i = R_i + \lambda\,(\alpha_{i,r_t} - 1/R)$, with $\lambda \ge 0$.
+    At $\lambda = 0$ the bonus vanishes and raw reward decides.
+    \item \textbf{Select winner.} $i^* = \arg\max_i \tilde{R}_i$.
+    \item \textbf{Update beliefs.} Agents update their Beta counts for the
+    methods they played (success/failure), within their capacity budget.
+    \item \textbf{Update identity.} Only the winner applies the
+    exponentiated-gradient affinity update for $r_t$ and renormalizes.
+\end{enumerate}
+
+Two timescales emerge from this single cycle without being designed in: a
+\emph{fast} competence dynamic (beliefs sharpen within a regime in tens of
+steps) and a \emph{slow} identity dynamic (affinities concentrate over hundreds
+of steps). The slow dynamic is the one with the architectural consequence: once
+identities have concentrated, the regime-to-agent map is fixed and
+reward-independent, and the population behaves as a distributed, persistent
+memory over the regime space.
+
+%==============================================================================
+\section{Niche Affinity and the Exponentiated-Gradient Update}
+\label{sec:affinity}
+%==============================================================================
+
+\subsection{The Update Rule}
+
+When agent $i$ wins in regime $r$ with normalized reward (quality) $q \in [0,1]$,
+its affinity updates multiplicatively and renormalizes:
+\begin{equation}
+    \alpha_{i,r} \leftarrow \frac{\alpha_{i,r}\, e^{\eta q}}
+    {\sum_{r'} \alpha_{i,r'}\, e^{\eta q\,\mathbf{1}[r'=r]}},
+\end{equation}
+the canonical exponentiated-gradient / Hedge / multiplicative-weights step on
+the regime simplex. Three properties motivate this choice over additive
+heuristics. \textbf{(i) Simplex preservation by construction:} affinities remain
+a probability distribution with no clamping (an earlier additive variant of this
+project required an undocumented clamp whose pathology suppressed roughly half
+the specialization signal; replacing it with EG is what separates the current
+V4 results from the V3 ones). \textbf{(ii) A constant effective rate:} the
+multiplicative step does not slow down or speed up depending on the current
+state in the way the clamped additive rule did. \textbf{(iii) A standard form:}
+EG on the simplex is the textbook update for tracking the best coordinate,
+making the algorithm's one learnable dynamic maximally legible. We deliberately
+do \emph{not} claim Hedge's adversarial regret bound transfers to our coupled
+winner-take-all setting; that would require separate analysis.
+
+\subsection{Worked Demonstration}
+
+Consider $R=3$ regimes, $\eta = 0.6$, and an agent at uniform affinity
+$\alpha = (0.333, 0.333, 0.333)$. The agent wins three consecutive steps in
+regime $1$ with quality $q = 1$:
+\[
+(0.333,0.333,0.333) \;\to\; (0.477,0.262,0.262) \;\to\; (0.624,0.188,0.188)
+\;\to\; (0.751,0.124,0.124).
+\]
+Three wins move SI from $0$ to $0.39$; ten wins take it past $0.8$. The same
+trajectory in reverse never occurs spontaneously: losing in regime 1 does not
+push the agent away (losers do not update); it is \emph{winning elsewhere} that
+re-anchors identity. This asymmetry---identity moves only on positive evidence
+of fit---is what makes converged identities stable through dormancy.
+
+\subsection{Heterogeneous Initialization and Symmetry Breaking}
+
+Agents start near-uniform with small random perturbations. The perturbation
+carries no labels and no assignment; it only breaks ties so that the first few
+competitions are not decided by coin flips alone. The eventual one-per-regime
+partition is an equilibrium selected by the dynamics, not an initialization
+artifact: random-shuffle controls confirm the same partition statistics under
+re-drawn perturbations.
+
+%==============================================================================
+\section{Competitive Exclusion and Winner-Take-All Dynamics}
+%==============================================================================
+
+\subsection{Why Strictness Matters}
+
+Winner-take-all is not a simplification of softer competition---it is the key
+structural driver of differentiation. Under proportional (softmax) credit,
+identical agents can persist indefinitely: each receives a share of every
+regime's reward, and hedging across niches is stable. Under winner-take-all,
+identical agents split wins evenly in expectation, so each one's per-regime
+reinforcement halves; an agent that deviates to an uncontested regime wins that
+regime \emph{outright}. Formally (companion paper, Proposition 1), homogeneous
+strategy profiles are not Nash equilibria of the winner-take-all game: a
+unilateral deviation to a less-contested niche strictly increases expected
+reinforcement.
+
+\subsection{The Niche Bonus Is an Accelerator, Not the Cause}
+
+The additive shaping term $\lambda(\alpha_{i,r_t} - 1/R)$ advantages an agent
+competing in a regime it already prefers. Setting $\lambda = 0$ removes it
+entirely---and specialization still emerges, with mean SI $0.65$ across the six
+real domains (every domain $> 0.49$, versus $0.13$ for a random baseline). The
+$\lambda$-sweep is flat and high ($\SI > 0.98$) across $\lambda \in [0.2,0.4]$
+and declines at $0.5$, where over-locked winners stop contesting secondary
+regimes and leave some niches under-filled. The mechanism therefore needs no
+shaping to work; shaping only sharpens it.
+
+\subsection{What the Population Looks Like After Convergence}
+
+On every real domain, the converged population is a clean partition: each agent
+holds a primary niche with affinity $\ge 0.95$, every regime is owned by at
+least one agent, and the population collectively uses $86\%$ of the shared
+method inventory (specialists adopt the methods suited to their niche). The
+assignments are interpretable by inspection---a property no deep MARL baseline
+in our comparison offers.
+
+%==============================================================================
+\section{Bounded Capacity and Memory Models}
+\label{sec:capacity}
+%==============================================================================
+
+Specialization only matters when no single learner can do everything. We model
+this with an explicit per-agent capacity $K$: each agent can hold beliefs for at
+most $K$ of the $R$ regimes. Two memory models implement the constraint.
+
+\subsection{Hard Model: LRU Slots}
+
+The belief store holds $K$ regime entries; learning an uncached regime evicts
+the least-recently-used entry. Eviction is total: the evicted regime's beliefs
+reset to the uninformed prior, and re-encountering it costs a full relearning
+period. This is the cleanest possible model of ``capacity binds.''
+
+\subsection{Soft Model: Interference Decay}
+
+A natural objection is that real learners do not evict discretely---knowledge
+\emph{interferes}. The soft model removes eviction entirely: every learning
+update on the active regime decays the pseudo-counts of the agent's other held
+regimes by a factor that grows with how far the agent's learned footprint
+exceeds $K$. Dormant regimes are never refreshed, so they decay smoothly toward
+the prior---the interference account of catastrophic forgetting, with graded
+rather than all-or-nothing loss. Every retention result in
+Section~\ref{sec:experiments} is reproduced under both models; the headline
+separation is a property of \emph{who gets updated}, not of how forgetting is
+discretized.
+
+\subsection{The Five Capacity-Allocation Arms}
+
+All experiments compare five mechanisms at matched per-agent capacity $K$:
+
+\begin{enumerate}[itemsep=2pt]
+    \item \textbf{Monolith}: one agent with capacity $K$ serves everything.
+    Allocation chases the active regime by necessity.
+    \item \textbf{MoE router}: $N$ capacity-$K$ experts behind a learned gate
+    ($\epsilon$-greedy routing; gate trained on routed-expert quality).
+    Allocation chases current reward by design.
+    \item \textbf{Random diversity}: $N$ agents with fixed, random capacity-$K$
+    niches. Allocation is frozen---fully reward-independent, but coverage is
+    accidental.
+    \item \textbf{Learned diversity (EOI/CDS-style)}: all agents receive an
+    intrinsic identifiability reward $\log p(i \mid r)$ on top of task quality;
+    the identified owner learns the regime. Allocation follows an
+    \emph{identity} signal, not task reward.
+    \item \textbf{NichePopulation (ours)}: winner-take-all competition;
+    allocation is an emergent, converged identity.
+\end{enumerate}
+
+This five-arm design is deliberate: the arms differ in \emph{what signal drives
+capacity assignment}, which is exactly the axis the next section's principle
+predicts should matter.
+
+%==============================================================================
+\section{The Reward-Independence Principle}
+\label{sec:principle}
+%==============================================================================
+
+\subsection{Why a Reward-Driven Router Forgets}
+
+Consider a regime $r$ that goes dormant for an extended interval while an expert
+$e$ holding $r$ receives $D$ learning updates from other, active regimes.
+
+\begin{observation}[Dormant regimes receive no protective signal]
+Under the hard capacity model, $e$ retains $r$ only if fewer than $K$ distinct
+regimes are used during the interval; under the soft model, $r$'s retained
+strength decays as $(1-\rho)^D \to 0$. Crucially, a dormant regime emits no
+steps and hence no reward gradient: the gate update
+$\Delta\,\mathrm{gate}[r][e] \propto (q_e - \tfrac12)$ is identically zero
+throughout dormancy, so the router receives no signal that would lead it to
+reserve $e$ for $r$. Reactivation therefore incurs the full relearning cost with
+probability $\to 1$ as dormancy grows.
+\end{observation}
+
+The asymmetry is the crux: \emph{routing and capacity protection draw on the
+same signal, and the regime most needing protection is the one producing none.}
+A converged competitive (or identity-driven) assignment escapes the trap because
+it is reward-independent at steady state: the specialist for $r$ simply idles
+through dormancy, applying zero foreign updates to its own store ($D = 0$ for
+its niche), and retains it structurally---no signal required.
+
+\begin{principle}[Reward-independent assignment]
+\label{prin:ria}
+Under bounded per-agent capacity and non-stationarity, a capacity-allocation
+mechanism retains dormant-task knowledge if and only if its regime-to-learner
+assignment is independent of current task reward.
+\end{principle}
+
+\subsection{The Five-Arm Dissociation}
+
+Principle~\ref{prin:ria} makes a sharp prediction across the five arms of
+Section~\ref{sec:capacity}, verified in full by the experiments:
+
+\begin{center}
+\small
+\begin{tabular}{llcc}
+\toprule
+\textbf{Arm} & \textbf{Assignment signal} & \textbf{Reward-indep.?} &
+\textbf{Retains?} \\
+\midrule
+Monolith & current active regime & no & no \\
+MoE router & current task reward & no & no \\
+Random diversity & none (frozen) & yes & yes \\
+Learned diversity & intrinsic identity reward & yes & yes \\
+NichePopulation & converged identity & yes & yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Five for five, retention tracks reward-independence---not specialization, not
+population size, not learning sophistication. Among the retaining arms,
+competition is the most parsimonious: random diversity retains but cannot
+guarantee coverage at $K = 1$ (unowned regimes are possible); learned diversity
+retains but requires the auxiliary intrinsic-reward machinery; gate-freezing
+(the prescription of recent MoE continual-learning theory \cite{li2024moecl})
+retains but requires deciding \emph{when} to freeze. Competition needs none of these---the
+reward-independent assignment is the equilibrium the dynamics converge to.
+
+\subsection{Relation to MoE Continual-Learning Theory}
+
+Recent theory on mixture-of-experts in continual learning \cite{li2024moecl}
+proves that the gating network's updates must be \emph{terminated} after sufficient training for the
+system to converge, and that MoE's forgetting-mitigation holds when experts are
+plentiful or can be added. Read through Principle~\ref{prin:ria}, both findings
+are the same statement: a stabilized (frozen) gate is a reward-independent
+assignment, and plentiful experts remove the forced reuse that makes
+reward-chasing destructive. Our experiments cover the complementary regime the
+theory excludes---fixed total capacity, forced reuse ($K \ll R$), gate still
+learning---and find exactly the failure the principle predicts. The two lines of
+work corroborate each other from opposite directions: regression theory
+prescribes freezing; population dynamics exhibits a mechanism that arrives at
+the frozen state emergently.
+
+%==============================================================================
+\section{Experiments and Evaluation}
+\label{sec:experiments}
+%==============================================================================
+
+\subsection{Experimental Settings}
+
+\textbf{Domains.} Six real-world domains with verified public data
+(145{,}294 records): cryptocurrency (Bybit; 8{,}766 daily bars), commodities
+(FRED; 5{,}630), weather (Open-Meteo; 9{,}105), solar irradiance (Open-Meteo;
+116{,}834 hourly), urban traffic (NYC TLC; 2{,}879 hourly), and air quality
+(Open-Meteo; 2{,}880 hourly). Each domain defines 4--6 regimes and 5 tailored
+prediction methods. Controlled synthetic regime-champion streams (each regime
+has a distinct optimal method, with a tunable separation parameter) isolate
+mechanisms that real data confounds.
+
+\textbf{Baselines.} Homogeneous (best single method), random selection,
+cooperative MARL (IQL, VDN, QMIX, MAPPO) at matched agent counts and training
+budgets, and---for the capacity experiments---the five-arm comparison of
+Section~\ref{sec:capacity}.
+
+\textbf{Metrics.} Specialization Index (organization), task prediction error
+(performance), post-reactivation error (retention, measured in a 15-step probe
+window after each regime reactivation). Protocol: 20--30 seeded trials per
+condition, $95\%$ confidence intervals, one-sided Welch tests with
+Holm--Bonferroni robustness checks for sweep families.
+
+\subsection{Results on Emergent Self-Organization}
+
+Under the default configuration, every domain converges to near-perfect
+organization (mean SI $= 0.992$; all domains $> 0.98$), versus $\le 0.02$ for
+all cooperative MARL baselines---a qualitative, not quantitative, gap. The
+critical ablation sets $\lambda = 0$: competition alone yields mean SI $= 0.65$
+(every domain $> 0.49$), $5.1\times$ the random baseline, confirming that the
+niche bonus accelerates but does not cause specialization. Populations use
+$86\%$ of the method inventory on average; division of labor extends to
+\emph{how} agents predict, not just \emph{where}.
+
+We treat these SI results as a diagnostic, not a headline. A battery of
+controls shows SI is invariant to regime-label shuffling and inflatable by the
+learning rate: high SI certifies organization, not exploitable structure. The
+performance-relevant results follow.
+
+\subsection{Results on Coverage Under Bounded Capacity}
+
+With per-agent capacity bounded ($K < R$), the specialized population beats the
+capacity-matched monolith decisively (synthetic $+73\%$ at $K{=}1$; real traffic
+$+22\%$), and beats the equal-capacity \emph{random}-diversity population
+specifically at tight capacity (synthetic $+57\%$, $p<10^{-16}$; traffic
+$+8.7\%$, $p<10^{-3}$ at $K{=}1$), where random assignment leaves coverage gaps
+that competitive exclusion provably fills. Against the purpose-built arms the
+honest finding is parity: the learned-diversity objective matches competition
+for $K \ge 2$ (and exceeds it on some real domains), and the MoE router matches
+it on the synthetic task at every $K$. A method-overlap sweep maps the boundary:
+competition's edge over learned diversity grows monotonically with method
+exclusivity, from $-4.8\%$ (overlapping methods) to $+29.3\%$ (fully exclusive).
+\emph{Spatial coverage is a commodity}; competition's value there is parsimony
+and sample-efficiency on noisy real data (it beats the router on traffic at
+$K{=}1$ by $+5.1\%$), not dominance.
+
+\subsection{Results on Retention Under Non-Stationarity}
+
+Regimes cycle (a sliding window of $W{=}3$ of $R{=}6$ regimes is active per
+epoch), so every regime goes dormant and reactivates. This is where the five
+arms dissociate exactly as Principle~\ref{prin:ria} predicts:
+
+\begin{center}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Arm ($K{=}1$, hard model)} & \textbf{Post-reactivation error} &
+\textbf{Retains?} \\
+\midrule
+Monolith & $1.015$ & no \\
+MoE router & $0.928$ & no \\
+Random diversity & $0.603$ & partially (coverage gaps) \\
+Learned diversity & $0.322$ & yes \\
+NichePopulation & $\mathbf{0.283}$ & yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The population beats the capacity-matched monolith by $+33\%$ overall and
+$+71\%$ in the post-reactivation window ($p<10^{-36}$ at $K{=}3$), and the
+router---which matched competition on spatial coverage---fails here decisively
+($0.928$ vs.\ $0.283$ at $K{=}1$, $p\sim10^{-35}$; the gap stays significant
+through $K{=}4$, $p<10^{-12}$), closing only as $K \to R$. The specialized
+population is essentially flat in $K$: even $K{=}1$ agents collectively form a
+complete persistent memory.
+
+\subsection{Ablation: Robustness to the Memory Model}
+
+Re-running the entire sweep under the soft interference model (no eviction at
+all) reproduces the dissociation: the monolith still forgets (post-reactivation
+error $0.85$--$0.92$ at $K \le 3$), the specialized population still retains
+($\approx 0.25$, a $+70\%$ gap, $p\sim10^{-40}$), and the router remains
+significantly worse than the population ($+36\%$ at $K{=}1$, $p\sim10^{-8}$;
+$+16\%$ at $K{=}3$). As the Observation predicts, the router degrades more
+gracefully under graded interference than under hard eviction---but never closes
+the gap until $K \to R$. The separation is a property of reward-driven
+allocation, not of any particular forgetting mechanism.
+
+\subsection{Ablation: The Honest Audit}
+
+Three controls scope all of the above. \textbf{(i)} SI is invariant to
+regime-label shuffling: it measures organization, not structure. \textbf{(ii)}
+An oracle structure-diagnostic shows four of six domains have a globally
+dominant method (no exploitable regime structure); on the two structured domains
+(traffic, solar), causal leakage-free regime labels beat shuffled labels by
+$+15.4\%$ and $+12.8\%$. \textbf{(iii)} With \emph{unlimited} capacity, a single
+regime-conditioned monolith matches or beats the population: division of labor
+is a task-accuracy lever \emph{specifically} under bounded capacity and
+non-stationarity, not in general. We consider this audit as much a contribution
+as the positive results: it states exactly where the mechanism's value lives.
+
+%==============================================================================
+\section{Conclusion and Future Work}
+%==============================================================================
+
+We presented NichePopulation, a minimal framework in which winner-take-all
+competition over a niche-affinity simplex makes a population of capacity-bounded
+learners self-organize into one-per-regime specialists---with no communication,
+shared rewards, gates, or diversity objectives. The framework's deepest property
+is that its converged assignment is \emph{reward-independent}: specialists hold
+niches by identity, idle through dormancy, and thereby retain what reward-driven
+allocators---including the standard learned MoE router---systematically forget.
+Across five capacity-allocation mechanisms, retention tracks
+reward-independence of assignment five-for-five; across six real-world domains
+and controlled synthetic tasks, competition matches purpose-built diversity and
+routing baselines on spatial coverage with none of their machinery, and
+separates from them decisively on retention ($+71\%$ post-reactivation,
+$p\sim10^{-35}$, robust to the memory model). An honest audit bounds the claim:
+with slack capacity and stationary regimes, a regime-conditioned monolith
+suffices; division of labor pays specifically when capacity binds and the world
+shifts.
+
+Several directions remain promising. First, a function-approximation
+demonstration: the reward-independence principle predicts the router's failure
+is architecture-agnostic, and validating it with gradient-trained experts on a
+standard continual-learning benchmark would convert the prediction into
+evidence. Second, hybrid allocators: a router augmented with an explicit
+memory-preservation or load-balancing term could in principle reserve idle
+experts for dormant regimes---our results specify \emph{what objective such a
+router would need}, and testing one would complete the design space. Third,
+scaling the population: decentralized competition over hundreds of regimes,
+where the one-per-regime equilibrium must coexist with agent churn and partial
+observability. Finally, deployment in real elastic systems---trading-strategy
+pools, sensor networks, and expert pools inside large models---where the
+parsimony of competition (no gate to train, no schedule to freeze, no diversity
+coefficient to tune) is most valuable.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

@@ -17,7 +17,6 @@ Baselines:
 """
 
 from .oracle import OracleSpecialist, EmpiricalOracle
-from .simple_strategies import BuyAndHold, MomentumStrategy, MeanReversionStrategy
 from .random_selection import RandomSelectionPopulation
 from .homogeneous import HomogeneousPopulation
 from .marl_baselines import IndependentQLearning, QMIX, MAPPO, QualityDiversity, MARLConfig
@@ -25,9 +24,6 @@ from .marl_baselines import IndependentQLearning, QMIX, MAPPO, QualityDiversity,
 __all__ = [
     "OracleSpecialist",
     "EmpiricalOracle",
-    "BuyAndHold",
-    "MomentumStrategy",
-    "MeanReversionStrategy",
     "RandomSelectionPopulation",
     "HomogeneousPopulation",
     "IndependentQLearning",

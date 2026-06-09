@@ -1,0 +1,61 @@
+{
+  "experiment": "computational_benchmarks",
+  "date": "2026-06-04T17:12:14.436122",
+  "config": {
+    "n_iterations": 1000,
+    "n_trials": 5
+  },
+  "methods": {
+    "ours": {
+      "name": "Ours (NichePopulation)",
+      "train_time_mean": 0.3305988311767578,
+      "train_time_std": 0.007169604336932182,
+      "inference_time_mean_ms": 0.0792989730834961,
+      "inference_time_std_ms": 0.059480547075332436,
+      "memory_peak_mb": 0.8457584381103516,
+      "lines_of_code": 973,
+      "interpretable": true,
+      "requires_gpu": false
+    },
+    "iql": {
+      "name": "IQL",
+      "train_time_mean": 2.092809699688231,
+      "train_time_std": 0.11776204633128258,
+      "inference_time_mean_ms": 0.49660297149779764,
+      "inference_time_std_ms": 0.09774862522688257,
+      "memory_peak_mb": 256.0,
+      "lines_of_code": 450,
+      "interpretable": false,
+      "requires_gpu": true
+    },
+    "qmix": {
+      "name": "QMIX",
+      "train_time_mean": 3.6543380264350716,
+      "train_time_std": 0.32545832992509244,
+      "inference_time_mean_ms": 0.811783477717578,
+      "inference_time_std_ms": 0.1593281692336555,
+      "memory_peak_mb": 512.0,
+      "lines_of_code": 750,
+      "interpretable": false,
+      "requires_gpu": true
+    },
+    "mappo": {
+      "name": "MAPPO",
+      "train_time_mean": 3.685823603654449,
+      "train_time_std": 0.8435924639020929,
+      "inference_time_mean_ms": 0.5931042915634027,
+      "inference_time_std_ms": 0.11884667666484032,
+      "memory_peak_mb": 384.0,
+      "lines_of_code": 600,
+      "interpretable": false,
+      "requires_gpu": true
+    }
+  },
+  "advantages": {
+    "speedup_vs_iql": 6.3303602503340075,
+    "speedup_vs_qmix": 11.053693122348776,
+    "speedup_vs_mappo": 11.1489311396984,
+    "memory_reduction_vs_iql_pct": 99.66962561011314,
+    "loc_reduction_vs_qmix": -223
+  }
+}

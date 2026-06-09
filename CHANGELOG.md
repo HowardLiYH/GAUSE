@@ -3,9 +3,69 @@
 ## Research Journey: Emergent Specialization in Learner Populations
 
 This document chronicles the complete research journey from initial conception
-through v4.0.0 (the Exponentiated-Gradient canonical renovation). The project
+through v4.1.0 (the reward-independence reframe). The project
 was originally framed as "Multi-Agent Systems"; this framing was retired in
 v3.0.0 in favor of "Learner Populations" for academic clarity.
+
+---
+
+## v4.1.0 -- The Reward-Independence Reframe
+
+**Date**: 2026-06-09
+**Scope**: Reframe the thesis around retention under bounded capacity; add
+purpose-built diversity/MoE baselines; formalize why reward-driven routing
+forgets; verify robustness to the capacity model; restructure the paper.
+
+### New headline thesis
+
+Under bounded per-agent capacity and non-stationarity, **retention of
+dormant-regime knowledge tracks reward-independence of capacity assignment**.
+Across five arms (capacity-matched monolith, MoE learned router, random fixed
+niches, EOI/CDS-style learned diversity, competitive exclusion), the two
+reward-driven allocations forget dormant regimes and the three
+reward-independent ones retain them — five for five. Competition is the most
+parsimonious route to reward-independent assignment (no gate, no diversity
+objective, no freezing schedule).
+
+### Experiments (`experiments/exp_capacity_division.py`, `experiments/exp_nonstationary_capacity.py`)
+
+- **Two new purpose-built baselines** added to both capacity experiments:
+  an EOI/CDS-style intrinsic-diversity arm and a Mixture-of-Experts learned
+  gating router (trained on task reward).
+- **Method-overlap sweep** (coverage experiment): competition's edge over
+  learned diversity scales monotonically with method exclusivity
+  (-4.8% at full overlap to +29.3% at full exclusivity, K=1).
+- **Soft interference capacity model** (`--soft`): replaces hard LRU eviction
+  with gradual interference decay; the forgetting dissociation survives
+  (monolith 0.85-0.92 post-reactivation error vs. ours ~0.25, p ~ 1e-40),
+  ruling out an eviction-rule artifact. Outputs `results_soft.json` + fig8.
+- **95% CI error bars** added to figs 6-8.
+
+### Paper (`paper/main.tex`, `paper/method_deep_dive.tex`)
+
+- **New title**: *Emergent Specialization in Learner Populations:
+  Reward-Independent Capacity Assignment as a Defense Against Catastrophic
+  Forgetting*.
+- **Abstract / intro / contributions rewritten** to lead with the
+  reward-independence principle; honest softening of inevitability claims.
+- **Idealized Observation** added: a dormant regime emits no reward gradient,
+  so any reward-driven gate receives no signal to protect its capacity.
+- **MoE-in-CL engagement**: new Related Work paragraph on Li et al. (ICLR'25,
+  arXiv:2406.16437) — their gate-freezing requirement for CL convergence is
+  the reward-independence condition; competition reaches it emergently.
+- **Restructure**: coverage + retention promoted to a new "Main Results:
+  Coverage and Retention Under Bounded Capacity" section; all cross-references
+  updated; catastrophic-forgetting framing with CL citations (French 1999,
+  Kirkpatrick 2017, Parisi 2019, Rusu 2016).
+- **New explainer document**: `paper/niche_population_explainer.tex` (13 pp,
+  AutoAgent-style full-system walkthrough).
+
+### Repo hygiene
+
+- Removed superseded `paper/appendix_workflow.tex` (v2 is canonical) and the
+  stale `paper/arxiv_submission.zip` (now gitignored; regenerate on demand).
+- Moved `AUDIT_REPORT.md` and `ARXIV_SUBMISSION_GUIDE.md` to `docs/`.
+- README, REPRODUCIBILITY, and experiments/README updated to v4.1.
 
 ---
 

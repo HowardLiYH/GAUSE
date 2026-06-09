@@ -61,7 +61,8 @@ python scripts/collect_bybit_data.py           # Crypto
 python scripts/download_fred_commodities_real.py  # Commodities
 python scripts/download_real_weather.py        # Weather
 python scripts/download_real_solar.py          # Solar
-# Traffic and Air Quality: See NYC TLC and Open-Meteo APIs
+python scripts/download_real_traffic.py        # Traffic (NYC TLC, Jan-Apr 2023)
+# Air Quality: See Open-Meteo air-quality API
 ```
 
 ## Data Verification

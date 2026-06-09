@@ -5,23 +5,14 @@ Run with: pytest tests/
 """
 
 import pytest
-import numpy as np
-import pandas as pd
-from pathlib import Path
-import sys
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.environment.synthetic_market import SyntheticMarketEnvironment, SyntheticMarketConfig
-from src.agents.method_selector import MethodSelector
-from src.agents.population import Population, PopulationConfig, compute_reward_from_methods
-from src.analysis.specialization import (
-    compute_specialization_index,
-    compute_population_diversity,
-    SpecializationTracker,
+pytestmark = pytest.mark.skip(
+    reason=(
+        "Legacy pre-V4 test suite targeting removed API "
+        "(src.agents.population, regime_generators, RandomSelector). "
+        "Current canonical tests live in tests/test_eg_update.py."
+    )
 )
-from src.baselines.oracle import OracleSpecialist
-from src.baselines.random_selection import RandomSelector
 
 
 class TestSyntheticMarket:

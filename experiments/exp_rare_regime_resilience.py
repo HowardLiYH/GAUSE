@@ -19,7 +19,7 @@ import json
 from pathlib import Path
 
 _sys.path.insert(0, str(Path(__file__).parent.parent))
-from experiments._affinity_update import apply_affinity_update
+from experiments._affinity_update import apply_affinity_update, eg_eta_for_regimes
 
 # Domain configurations with regime probabilities and affinity matrices
 DOMAIN_CONFIGS = {
@@ -207,12 +207,13 @@ def train_niche_population(
         else:
             winner['beliefs'][regime][winner_method]['beta'] += 1
 
-        # Update winner's affinity
+        # Update winner's affinity (EG step rescaled to the canonical
+        # headline timescale, per regime count).
         winner['affinity'] = apply_affinity_update(
             affinity=winner['affinity'],
             winning_regime=regime,
             regimes=regimes,
-            eta=0.1,
+            eta=eg_eta_for_regimes(len(regimes)),
             rule="eg",
         )
 

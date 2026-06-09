@@ -22,15 +22,67 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .regime_generators import (
-    BaseRegime,
-    TrendRegime,
-    MeanRevertRegime,
-    VolatileRegime,
-    SidewaysRegime,
-    create_regime,
-    REGIME_OPTIMAL_METHODS,
-)
+class BaseRegime:
+    """Minimal regime interface for synthetic return generators."""
+
+    def generate_returns(self, n_bars: int, seed: Optional[int] = None) -> np.ndarray:
+        raise NotImplementedError
+
+
+class TrendRegime(BaseRegime):
+    def __init__(self, drift: float = 0.001, volatility: float = 0.008):
+        self.drift = drift
+        self.volatility = volatility
+
+    def generate_returns(self, n_bars: int, seed: Optional[int] = None) -> np.ndarray:
+        rng = np.random.default_rng(seed)
+        return rng.normal(self.drift, self.volatility, n_bars)
+
+
+class MeanRevertRegime(BaseRegime):
+    def __init__(self, mean: float = 0.0, speed: float = 0.12, volatility: float = 0.012):
+        self.mean = mean
+        self.speed = speed
+        self.volatility = volatility
+
+    def generate_returns(self, n_bars: int, seed: Optional[int] = None) -> np.ndarray:
+        rng = np.random.default_rng(seed)
+        x = np.zeros(n_bars)
+        eps = rng.normal(0.0, self.volatility, n_bars)
+        for t in range(1, n_bars):
+            x[t] = x[t - 1] + self.speed * (self.mean - x[t - 1]) + eps[t]
+        return x
+
+
+class VolatileRegime(BaseRegime):
+    def __init__(self, volatility: float = 0.03):
+        self.volatility = volatility
+
+    def generate_returns(self, n_bars: int, seed: Optional[int] = None) -> np.ndarray:
+        rng = np.random.default_rng(seed)
+        return rng.normal(0.0, self.volatility, n_bars)
+
+
+REGIME_OPTIMAL_METHODS = {
+    "trend_up": ["BuyMomentum", "BreakoutLong", "TrendRider"],
+    "trend_down": ["SellMomentum", "BreakoutShort", "TrendFader"],
+    "mean_revert": ["MeanRevert", "BollingerMR", "RSI_MR"],
+    "volatile": ["VolBreakout", "VolScalp", "VolFade"],
+}
+
+
+def create_regime(name: str) -> BaseRegime:
+    """Create a regime generator from legacy regime names."""
+    if name == "trend_up":
+        return TrendRegime(drift=0.001, volatility=0.008)
+    if name == "trend_down":
+        return TrendRegime(drift=-0.001, volatility=0.008)
+    if name == "mean_revert":
+        return MeanRevertRegime(mean=0.0, speed=0.12, volatility=0.012)
+    if name == "volatile":
+        return VolatileRegime(volatility=0.03)
+    # Fallback to a neutral low-drift trend regime for unknown labels
+    return TrendRegime(drift=0.0, volatility=0.01)
 
 
 @dataclass
