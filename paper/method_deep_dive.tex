@@ -2899,7 +2899,7 @@ In NichePopulation, agents are \textbf{competing for limited slots}. If Agent A 
 
 \begin{table}[h]
 \centering
-\caption{SI Comparison: NichePopulation vs. MARL Baselines (30 trials per domain)}
+\caption{SI Comparison: NichePopulation vs. MARL Baselines (10 trials per domain)}
 \begin{tabular}{l|cccc|c}
 \toprule
 Domain & IQL SI & VDN SI & QMIX SI & MAPPO SI & NichePopulation SI \\
@@ -2943,16 +2943,25 @@ We trained actual MARL algorithms (IQL, VDN, QMIX, MAPPO) and NichePopulation on
     \item \textbf{Fair comparison}: All methods train and evaluate on identical reward structure
 \end{itemize}
 
-\textbf{Raw Performance in Rare Regimes} (higher = better):
+\emph{Note.} This rare-regime probe is a \emph{separate, more aggressive}
+experiment than the main-text MARL slices (Table above): here we force the
+environment into each domain's rare regime and compare against both a
+homogeneous baseline and trained MARL. Numbers therefore differ from the
+main-text per-regime gaps and are reported verbatim from
+\texttt{results/rare\_regime\_resilience/results.json} (all six domains).
+
+\textbf{Raw Performance in Rare Regimes} (higher = better; bold = row best):
 \begin{center}
-\begin{tabular}{lcccccc}
+\begin{tabular}{llccccc}
 \toprule
 Domain & Rare Regime & Niche & IQL & VDN & QMIX & MAPPO \\
 \midrule
-Weather & Extreme (10\%) & \textbf{0.990} & 0.936 & 0.918 & 0.910 & 0.908 \\
-Commodities & Volatile (15\%) & \textbf{0.836} & 0.778 & 0.746 & 0.742 & 0.753 \\
-Traffic & Morning (9\%) & \textbf{1.091} & 1.038 & 0.977 & 0.970 & 0.992 \\
-Crypto & Volatile (15\%) & \textbf{0.838} & 0.782 & 0.740 & 0.736 & 0.755 \\
+Crypto & Volatile (15\%) & \textbf{0.820} & 0.732 & 0.733 & 0.736 & 0.737 \\
+Weather & Extreme (10\%) & \textbf{0.981} & 0.670 & 0.656 & 0.664 & 0.654 \\
+Traffic & Morning (9\%) & \textbf{1.070} & 0.925 & 0.925 & 0.934 & 0.931 \\
+Commodities & Volatile (15\%) & \textbf{0.823} & 0.698 & 0.681 & 0.676 & 0.670 \\
+Air Quality & Unhealthy (4\%) & 1.014 & 1.011 & 1.021 & 1.025 & \textbf{1.029} \\
+Solar & Low (20\%) & 0.920 & 0.909 & 0.921 & 0.927 & \textbf{0.930} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -2963,37 +2972,55 @@ Crypto & Volatile (15\%) & \textbf{0.838} & 0.782 & 0.740 & 0.736 & 0.755 \\
 \toprule
 Domain & vs IQL & vs VDN & vs QMIX & vs MAPPO \\
 \midrule
-Weather & +5.7\% & +7.8\% & +8.8\% & +9.0\% \\
-Commodities & +7.4\% & +12.1\% & +12.6\% & +10.9\% \\
-Traffic (morning) & +5.1\% & +11.7\% & +12.5\% & +10.0\% \\
-Crypto & +7.2\% & +13.2\% & +13.7\% & +11.0\% \\
+Crypto & +12.0\% & +11.8\% & +11.4\% & +11.3\% \\
+Weather & +46.6\% & +49.6\% & +47.9\% & +50.1\% \\
+Traffic (morning) & +15.8\% & +15.8\% & +14.6\% & +14.9\% \\
+Commodities & +17.9\% & +20.7\% & +21.6\% & +22.7\% \\
+Air Quality & +0.3\% & $-0.7$\% & $-1.1$\% & $-1.5$\% \\
+Solar & +1.2\% & $-0.1$\% & $-0.8$\% & $-1.0$\% \\
 \midrule
-\textbf{Average} & \textbf{+6.6\%} & \textbf{+10.4\%} & \textbf{+11.0\%} & \textbf{+9.5\%} \\
+\textbf{Average} & \textbf{+15.6\%} & \textbf{+16.2\%} & \textbf{+15.6\%} & \textbf{+16.1\%} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Specialization Index Comparison} (key insight):
+\textbf{NichePopulation specialist SI per domain} (the rare-regime probe stores
+only the Niche specialist SI; for MARL SI see the headline comparison above,
+where IQL/VDN/QMIX $\approx 0.01$ and MAPPO $= 0.00$ across domains):
 \begin{center}
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccc}
 \toprule
-Domain & Niche SI & IQL SI & VDN SI & QMIX SI & MAPPO SI \\
+ & Crypto & Weather & Traffic & Commodities & Air Quality & Solar \\
 \midrule
-Crypto & \textbf{0.854} & 0.008 & 0.009 & 0.009 & 0.000 \\
-Weather & \textbf{0.870} & 0.016 & 0.015 & 0.014 & 0.000 \\
-Commodities & \textbf{0.862} & 0.007 & 0.007 & 0.007 & 0.000 \\
-Traffic & \textbf{0.776} & 0.011 & 0.011 & 0.011 & 0.000 \\
+Niche specialist SI & 0.827 & 0.484 & 1.000 & 0.874 & 0.079 & 1.000 \\
+Has-specialist rate & 0.87 & 0.50 & 1.00 & 0.90 & 0.10 & 1.00 \\
 \bottomrule
 \end{tabular}
 \end{center}
+Air quality (SI~$0.08$, has-specialist rate $0.10$) is the clear non-specializing
+case, and it is exactly the domain with no rare-regime advantage---reinforcing the
+structure-dependence of the effect. Weather's intermediate SI~$0.48$ (has-specialist
+rate $0.50$) reflects an \emph{intermittent} specialist that nonetheless yields the
+largest gain when it does form, since the extreme-weather regime is highly
+method-discriminative.
 
-\textbf{Key findings}:
+\textbf{Key findings} (honest, structure-dependent):
 \begin{itemize}
-    \item \textbf{NichePopulation outperforms all real MARL methods} in rare regimes (+6.6\% to +11.0\%)
-    \item \textbf{MARL produces near-zero SI}: IQL/VDN/QMIX achieve SI $\approx$ 0.01; MAPPO achieves SI = 0.00
-    \item \textbf{NichePopulation achieves high SI}: Average SI = 0.84 across domains
-    \item \textbf{Root cause confirmed}: MARL's joint reward optimization drives agents toward identical policies, lacking rare-regime specialists
-    \item \textbf{Winner-take-all is key}: Only NichePopulation's competitive mechanism produces diversity
+    \item \textbf{Large gains where structure exists}: in the four high-structure
+    rare regimes (weather, commodities, crypto, traffic) NichePopulation beats
+    every MARL method by $+11.4\%$ to $+50.1\%$.
+    \item \textbf{No advantage where structure is absent}: in air quality and
+    solar---the low oracle-gap domains---NichePopulation is statistically tied
+    with (or marginally below) MARL, and the population fails to form a
+    specialist (SI $\approx 0.08$ for air quality). This is consistent with the
+    oracle diagnostic: no exploitable regime structure means no specialization
+    benefit.
+    \item \textbf{MARL produces near-zero SI everywhere}: IQL/VDN/QMIX achieve
+    SI $\approx 0.01$; MAPPO achieves SI $= 0.00$.
+    \item \textbf{Root cause confirmed}: MARL's joint-reward optimization drives
+    agents toward identical policies, lacking rare-regime specialists; the
+    advantage of competitive exclusion is real but conditional on the data
+    actually rewarding specialists.
 \end{itemize}
 \end{example}
 
@@ -3275,6 +3302,15 @@ The first-order conditions yield that optimal affinity concentrates on regimes w
 \end{itemize}
 
 For intermediate $\lambda$, we can bound the expected entropy reduction, yielding the stated lower bound.
+
+\emph{Caveat.} This is a heuristic sketch, not a tight proof. Under uniform regime
+sampling the additive bonus has zero single-agent expectation
+($\sum_r \pi(r)\lambda(\alpha_r-1/R)=0$), so the concentration incentive in the
+deployed algorithm comes from \emph{competitive reinforcement} (only the per-step
+winner updates), not from single-agent reward maximisation. The bound is also
+vacuous at $\lambda=0$ and therefore does not, by itself, establish the
+competition-only result; that case rests on the divergence argument
+(Section~\ref{prop:si-lower-bound} discussion) and the empirical $\lambda$ ablation.
 \end{proof}
 
 \subsection{Numerical Verification}

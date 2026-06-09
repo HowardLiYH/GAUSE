@@ -86,7 +86,7 @@ Critically, we demonstrate that \textbf{setting $\lambda = 0$ (no niche bonus) s
 
     \item We prove that \textbf{competition alone induces specialization}: at $\lambda = 0$, mean SI $= 0.65$ across the unified pipeline (every domain $> 0.49$), and SI $> 0.39$ on every real-data benchmark with separate prediction agents, significantly above random baselines (SI $\approx$ 0.13). This is our core theoretical contribution.
 
-    \item We demonstrate \textbf{method-level division of labor}: learners specialize not just to environmental regimes but to specific prediction strategies, with populations using 87\% of available methods.
+    \item We demonstrate \textbf{method-level division of labor}: learners specialize not just to environmental regimes but to specific prediction strategies, with populations using 86\% of available methods.
 
     \item We substantially outperform \textbf{MARL baselines} (IQL, VDN, QMIX, MAPPO) in inducing specialization (NichePopulation SI $= 1.000$ vs.\ MARL SI $\leq 0.02$ in a four-domain V4 head-to-head, $\geq 100\times$ gap) while being simpler, 4$\times$ faster, and using 99\% less memory.
 
@@ -152,11 +152,12 @@ Each learner $i$ maintains two learned representations:
 \end{equation}
 Thompson Sampling provides principled exploration-exploitation balance: uncertain methods are occasionally selected to gather information, while well-understood high-performing methods are exploited.
 
-\paragraph{Competitive Exclusion.} All learners execute their selected methods simultaneously and receive rewards. The \textbf{winner} is the learner with highest adjusted reward:
+\paragraph{Competitive Exclusion.} All learners execute their selected methods simultaneously and receive rewards. The \textbf{winner} is the learner with highest adjusted reward, where the niche bonus is an \emph{additive} shaping term centred on the uniform affinity $1/R$:
 \begin{equation}
-    i^* = \argmax_i \tilde{R}_i, \quad \text{where } \tilde{R}_i = R_i \cdot (1 + \lambda \cdot \mathbf{1}[r^*_i = r_t] \cdot \alpha_{i,r_t})
+\label{eq:niche_bonus}
+    i^* = \argmax_i \tilde{R}_i, \quad \text{where } \tilde{R}_i = R_i + \lambda \cdot \left(\alpha_{i,r_t} - \tfrac{1}{R}\right)
 \end{equation}
-Here, $r^*_i = \argmax_r \alpha_{i,r}$ is learner $i$'s primary niche, and $\lambda \geq 0$ is the niche bonus coefficient. When $\lambda > 0$, learners receive amplified rewards when the current regime matches their preferred niche, creating additional pressure for specialization.
+Here $\lambda \geq 0$ is the niche bonus coefficient and $\alpha_{i,r_t}$ is learner $i$'s affinity for the \emph{current} regime $r_t$. When $\lambda > 0$, a learner that has come to prefer the current regime ($\alpha_{i,r_t} > 1/R$) is advantaged and one that under-weights it is penalised, creating additional pressure for specialization. The $-1/R$ baseline centres the term (it is constant across learners and hence cancels in the $\argmax$); it is retained only to match the implementation. This additive shaping is exactly the rule used in the released code and the companion deep-dive~\cite{li2026emergent}; at $\lambda = 0$ it vanishes, so the winner is decided by raw reward alone.
 
 The key mechanism is \textbf{competitive exclusion}: only the winner receives positive belief updates. This creates winner-take-all dynamics where learners with identical strategies compete directly, reducing their expected payoffs.
 
@@ -195,7 +196,7 @@ additive heuristic used in V1--V3 of this paper appear in the companion deep-div
         \STATE Sample $\tilde{\theta}_m \sim \text{Beta}(\beta_{i,r_t,m}^+, \beta_{i,r_t,m}^-)$ for all $m$
         \STATE Select method: $m_i \leftarrow \argmax_m \tilde{\theta}_m$
         \STATE Execute method, observe reward $R_i$
-        \STATE Compute adjusted reward: $\tilde{R}_i \leftarrow R_i \cdot (1 + \lambda \cdot \mathbf{1}[r^*_i = r_t] \cdot \alpha_{i,r_t})$
+        \STATE Compute adjusted reward: $\tilde{R}_i \leftarrow R_i + \lambda \cdot (\alpha_{i,r_t} - 1/R)$
     \ENDFOR
     \STATE Determine winner: $i^* \leftarrow \argmax_i \tilde{R}_i$
     \STATE Update winner's method belief: $\beta_{i^*,r_t,m_{i^*}}^+ \leftarrow \beta_{i^*,r_t,m_{i^*}}^+ + \tilde{R}_{i^*}$
@@ -259,12 +260,21 @@ assuming regimes have comparable values. Thus, identical strategies are not best
 
 This proposition formalizes the ecological principle of competitive exclusion: complete competitors cannot stably coexist. In the context of learner populations, it implies that homogeneous populations are unstable---competitive pressure drives differentiation.
 
-\begin{proposition}[SI Lower Bound---Informal]
+\begin{proposition}[SI Lower Bound---Informal, idealized]
 \label{prop:bound}
-Under NichePopulation dynamics with niche bonus $\lambda > 0$, $R$ equiprobable regimes, and learning rate $\eta$, the expected Specialization Index after $T$ iterations satisfies:
+Consider an \emph{idealized analytical variant} in which the niche bonus enters
+\emph{multiplicatively} as a per-regime reward multiplier $(1 + \lambda \alpha_{r})$
+(used here for tractability; the deployed algorithm uses the additive shaping of
+Eq.~\eqref{eq:niche_bonus}). Under this abstraction, with niche bonus $\lambda > 0$,
+$R$ equiprobable regimes, and learning rate $\eta$, the expected Specialization Index
+after $T$ iterations satisfies:
 \begin{equation}
     \E[\SI] \geq \frac{\lambda}{1 + \lambda} \cdot \left(1 - \frac{1}{R}\right) \cdot \left(1 - e^{-\eta T / R}\right)
 \end{equation}
+The bound is illustrative rather than tight, and it \emph{vanishes at $\lambda = 0$}:
+it therefore does \emph{not} establish the $\lambda = 0$ (competition-only) claim,
+which we support separately by the divergence argument of the deep-dive companion
+\cite{li2026emergent} and the empirical $\lambda$ ablation (Table~\ref{tab:lambda}).
 \end{proposition}
 
 \begin{proof}[Proof Sketch]
@@ -280,7 +290,7 @@ The resulting Specialization Index is:
     \SI^* = 1 - \frac{H(\alpha^*)}{\log R} \geq \frac{\lambda}{1 + \lambda} \cdot \left(1 - \frac{1}{R}\right)
 \end{equation}
 
-\textbf{Empirical validation}: At $\lambda = 0.3$ with $R = 4$, the bound predicts SI $\geq 0.17$. Our experiments under the canonical EG update achieve SI $\approx 0.99$, far above this lower bound, confirming the theoretical prediction while indicating that the bound is highly conservative.
+\textbf{Empirical validation}: At $\lambda = 0.3$ with $R = 4$, the bound predicts SI $\geq 0.17$. Our experiments under the canonical EG update achieve SI $\approx 0.99$, far above this lower bound, confirming the qualitative prediction while indicating that the bound is highly conservative. We emphasise this is a heuristic, order-of-magnitude argument under the idealized multiplicative abstraction, not a tight characterisation of the implemented additive dynamics; the latter's specialization is driven by competitive reinforcement and is established empirically.
 \end{proof}
 
 This proposition provides a quantitative relationship between the niche bonus $\lambda$ and expected specialization. Notably, even moderate values of $\lambda$ produce substantial specialization: at $\lambda = 0.3$ with $R = 4$ regimes, the bound yields SI $\geq 0.17$.
@@ -809,14 +819,14 @@ All figures referenced in the main text are presented here to maximize space for
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.85\linewidth]{figures/fig2_lambda_ablation.pdf}
-    \caption{$\lambda$ ablation across all domains. At $\lambda = 0$ (green shaded region), learners achieve SI $> 0.25$ in all domains, proving that competition alone induces specialization. The niche bonus accelerates but does not cause specialization.}
+    \caption{$\lambda$ ablation across all domains. At $\lambda = 0$ (green shaded region), learners achieve SI $> 0.49$ in all domains, proving that competition alone induces specialization. The niche bonus accelerates but does not cause specialization.}
     \label{fig:lambda}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.95\linewidth]{figures/fig3_method_specialization.pdf}
-    \caption{Method specialization analysis. (a) Method Specialization Index (MSI) and coverage across domains. Weather and Traffic achieve 100\% coverage. (b) Performance improvement from method diversity. Crypto shows highest improvement (+41.6\%) due to high regime diversity.}
+    \caption{Method specialization analysis. (a) Method Specialization Index (MSI) and coverage across domains. Weather and Traffic achieve 100\% coverage. (b) Performance improvement from method diversity. Crypto shows highest improvement (+41.2\%) due to high regime diversity.}
     \label{fig:method}
 \end{figure}
 
@@ -873,6 +883,17 @@ Air Quality & Persistence, Hourly-Avg, Moving-Avg (24-hour), Regime-Avg (EPA cat
 \subsection{Extended Proof of Proposition 2}
 
 \begin{proof}[Full Proof of Proposition 2]
+\emph{Idealization.} For analytical tractability this proof studies the idealized
+\emph{multiplicative} reward-shaping variant $(1 + \lambda \alpha_r)$, not the additive
+rule of Eq.~\eqref{eq:niche_bonus} actually deployed. Under the additive rule with
+uniform $\pi$, the single-agent expected bonus $\sum_r \pi(r)\lambda(\alpha_r - 1/R)$
+is identically zero, so single-agent reward maximisation gives no concentration
+incentive; in the implemented algorithm the concentration arises instead from
+\emph{competitive reinforcement} (only the per-step winner updates its affinity).
+The bound below should therefore be read as an illustrative upper-envelope argument
+for the shaped variant, consistent with---but not a derivation of---the empirical
+behaviour of the additive algorithm.
+
 We derive the SI lower bound through constrained optimization. A learner's expected reward over $T$ iterations with regime distribution $\pi(r) = 1/R$ is:
 \begin{equation}
     \E[R_T] = \sum_{t=1}^T \sum_r \pi(r) \cdot R_0 \cdot (1 + \lambda \alpha_r \cdot \mathbf{1}[r = r^*])
