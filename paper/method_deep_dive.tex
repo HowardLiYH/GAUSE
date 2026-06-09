@@ -111,7 +111,7 @@ University of Pennsylvania\\
 \maketitle
 
 \begin{abstract}
-This document provides an exhaustive, ground-up explanation of the NichePopulation algorithm and the theory of emergent specialization in multi-agent systems. We combine rigorous mathematical treatment with intuitive explanations, worked examples, code implementations, and visualizations. The document is designed for readers with a strong mathematical background who want to understand every detail of how and why agents spontaneously specialize under competitive pressure.
+This document provides an exhaustive, ground-up explanation of the NichePopulation algorithm and the theory of emergent specialization in multi-agent systems. We combine rigorous mathematical treatment with intuitive explanations, worked examples, code implementations, and visualizations. The document is designed for readers with a strong mathematical background who want to understand every detail of how and why agents spontaneously specialize under competitive pressure. The companion paper's central finding---that under bounded capacity and non-stationarity, retention of dormant regimes tracks whether capacity assignment is \emph{independent of current task reward} (reward-chasing allocations, including a learned MoE router, forget; reward-independent ones, including converged competitive exclusion, retain)---is developed in the controls-and-ablations and MARL-comparison sections below.
 
 \textbf{Prerequisites:} Basic probability theory, linear algebra, and familiarity with optimization. All other concepts (information theory, game theory, Bayesian inference) are developed from first principles.
 \end{abstract}
@@ -2311,7 +2311,16 @@ locations) localize the source of the gain:
     competitive/individuality assignment, by contrast, fixes a reward-independent
     regime$\to$agent map whose agent simply \emph{idles} while its niche is dormant
     ($D{=}0$ for that niche), retaining it structurally. This predicts the router
-    failure is \emph{model-agnostic}.
+    failure is \emph{model-agnostic}. Notably, this corroborates---from population
+    dynamics rather than regression theory---the finding of \cite{li2024moecl}
+    that an MoE gate's updates must be \emph{terminated} after sufficient training
+    for continual-learning convergence: freezing the gate is precisely making the
+    assignment reward-independent. The MoE-mitigates-forgetting results in that
+    literature hold when experts are plentiful (or can be added) and routing
+    stabilizes; our bounded-reuse regime ($K \ll R$, gate still learning) is
+    exactly where those provisos fail and isolation breaks down. Competition
+    reaches the required reward-independent assignment emergently, with no
+    freezing schedule to tune.
 
     \emph{Robustness.} Re-running the sweep under a soft interference capacity model
     (graded belief decay under capacity overflow, no eviction) reproduces the
@@ -2342,6 +2351,12 @@ Mixture-of-Experts learned router), spatial coverage proves to be a commodity al
 three mechanisms achieve---so competition's value there is parsimony---whereas
 temporal distributed memory is reproduced by explicit diversity but \emph{not} by
 the reward-driven router, the clearest competition/diversity separation we observe.
+Across all five arms the retention results align on a single axis:
+\emph{assignments independent of current task reward} (fixed random niches,
+intrinsic-reward diversity, converged competitive exclusion) retain dormant
+regimes, while allocations that chase current reward (monolith, learned router)
+forget them. Coverage is a commodity; reward-independent assignment is not, and
+competition is its cheapest emergent source.
 The contribution is a self-organization mechanism with a precise account of its
 scope---an unconditional performance-superiority claim is not made, but
 tightly-scoped ones (bounded capacity, non-stationarity) are.

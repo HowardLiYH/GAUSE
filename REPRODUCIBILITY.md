@@ -36,6 +36,8 @@ NichePopulation/
 ├── experiments/               # Reproducible experiments
 │   ├── _affinity_update.py    # Shared V3/V4 update helper
 │   ├── exp_unified_pipeline.py     # Main 6-domain pipeline
+│   ├── exp_capacity_division.py    # Coverage under bounded capacity (5 arms)
+│   ├── exp_nonstationary_capacity.py  # Retention / forgetting (--soft model)
 │   ├── exp_method_specialization.py
 │   ├── exp_marl_comparison.py
 │   ├── exp_lambda_ablation.py
@@ -47,7 +49,9 @@ NichePopulation/
 ├── results/                   # Experiment outputs
 ├── docs/                      # Reports + research docs
 │   ├── V4_FINAL_REPORT.md
-│   └── V4_EG_RENOVATION_AUDIT.md
+│   ├── V4_EG_RENOVATION_AUDIT.md
+│   ├── AUDIT_REPORT.md
+│   └── ARXIV_SUBMISSION_GUIDE.md
 └── scripts/                   # Data download + figure generation
 ```
 
@@ -82,6 +86,8 @@ python experiments/exp_unified_pipeline.py
 
 | Experiment | Command | Output |
 |------------|---------|--------|
+| Capacity Coverage (fig6) | `python experiments/exp_capacity_division.py` | `results/capacity_division/` |
+| Retention / Forgetting (fig7–8) | `python experiments/exp_nonstationary_capacity.py --soft` | `results/nonstationary_capacity/` |
 | Hypothesis Tests | `python experiments/exp_hypothesis_tests.py` | `results/hypothesis_tests/` |
 | Method Specialization | `python experiments/exp_method_specialization.py` | `results/method_specialization/` |
 | MARL Head-to-Head | `python experiments/exp_marl_comparison.py` | `results/real_marl_comparison/` |

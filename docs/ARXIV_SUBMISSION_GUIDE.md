@@ -73,7 +73,7 @@ echo "Created arxiv_submission.zip"
 2. Select category: **cs.LG** (Machine Learning) or **cs.MA** (Multi-Agent Systems)
 3. Upload `arxiv_submission.zip`
 4. Fill in metadata:
-   - **Title:** Emergent Specialization in Learner Populations: Competition as the Source of Diversity
+   - **Title:** Emergent Specialization in Learner Populations: Reward-Independent Capacity Assignment as a Defense Against Catastrophic Forgetting
    - **Authors:** Yuhao Li
    - **Abstract:** (copy from main.tex)
    - **Comments:** 26 pages (canonical) + 72-page deep-dive companion, 5 figures, code available at https://github.com/HowardLiYH/NichePopulation (release v4.0.0)

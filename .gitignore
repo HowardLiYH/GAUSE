@@ -67,3 +67,6 @@ data/bybit/*.csv
 
 # Temporary folders
 overleaf_upload/
+
+# Submission bundles (regenerate on demand)
+paper/*.zip
