@@ -2251,19 +2251,54 @@ locations) localize the source of the gain:
     controlling for total capacity---a fixed-random capacity-$K$ population, but
     the latter advantage holds only in the tight-capacity regime $K{=}1$--$2$
     (synthetic $+57\%$, $p<10^{-16}$; traffic $+8.7\%$ at $K{=}1$). As $K \to R$,
-    random diversity suffices and the edge vanishes.
-    \item \textbf{Non-stationarity (positive result, temporal)}: when regimes
-    cycle (dormant then reactivating) and agents have finite memory (bounded
-    belief store with LRU eviction), a capacity-$K$ monolith must relearn each
-    reactivated regime, while the population retains dormant-niche expertise as a
-    distributed persistent memory. For $K{<}R$ the population beats the monolith
+    random diversity suffices and the edge vanishes. Tested against a
+    \emph{purpose-built} learned-diversity objective (EOI/CDS-style; all agents
+    rewarded for being the identifiable occupant of a regime, no winner-take-all),
+    the competition-specific edge shrinks further still: competition wins only at
+    $K{=}1$ on the synthetic exclusive-method task ($+18.4\%$, $p{=}0.002$), ties
+    for $K\geq2$ ($p{=}1$), and \emph{loses} on both real domains (traffic
+    $3$--$6\%$, solar $18$--$35\%$ higher error than learned diversity). An
+    explicit diversity reward thus recovers essentially all the coverage benefit;
+    competition's appeal is parsimony, not dominance. A second purpose-built
+    baseline---a Mixture-of-Experts with a \emph{learned gating router} (the
+    standard ML architecture for capacity-limited specialization)---is equally
+    strong on coverage: indistinguishable from competition on the synthetic task at
+    every $K$ ($\leq6\%$, $p{=}1$), though the lightweight competitive rule is more
+    sample-efficient on noisy real data (beats the router on traffic $+5.1\%$ at
+    $K{=}1$). A $K{=}1$ overlap sweep shows competition's edge over the diversity
+    objective grows monotonically with method exclusivity ($-4.8\%$ at separation
+    $0.25$ through $+29.3\%$ at separation $1.5$), pinning the claim's boundary.
+    \item \textbf{Non-stationarity (positive result, temporal): division of labor
+    vs.\ catastrophic forgetting.} This is a continual-learning result
+    \cite{french1999catastrophic,kirkpatrick2017overcoming,parisi2019continual}:
+    when regimes cycle (dormant then reactivating) and agents have finite memory
+    (bounded belief store with LRU eviction), a capacity-$K$ monolith suffers
+    catastrophic forgetting---it must evict and relearn each reactivated regime---
+    whereas the population provides a \emph{structural, population-level} remedy
+    (complementary to weight-regularization or architectural growth within one
+    model): division of labor parks dormant regimes in idle specialists that retain
+    their expertise. For $K{<}R$ the population beats the monolith
     by $+33\%$ overall and $+71\%$ in the post-reactivation window
     ($p\sim10^{-37}$ at $K{=}3$). As in the capacity result we control for total
     memory: this monolith-beating effect is distributed memory (a random-diversity
     population of equal memory also beats the monolith), and the
     competition-specific advantage appears only at $K{=}1$ ($\approx 58\%$ over
-    random diversity, via guaranteed coverage). Even $K{=}1$ agents collectively
-    retain all regimes.
+    random diversity, via guaranteed coverage). Against a learned-diversity
+    (EOI/CDS-style) baseline the residual edge is only a marginal post-reactivation
+    advantage at $K{=}1$ ($0.283$ vs.\ $0.322$, $p{=}0.054$); for $K\geq2$ the
+    explicit diversity objective matches it. \textbf{The learned MoE router,
+    however, fails this task decisively}: a reward-driven gate has no incentive to
+    reserve an idle expert for a dormant regime, so it reuses capacity for active
+    regimes and relearns on reactivation like the monolith. Its post-reactivation
+    error is near the monolith's at tight memory ($0.928$ vs.\ specialized $0.283$
+    at $K{=}1$, $p\sim10^{-35}$; large and significant through $K{=}4$,
+    $p<10^{-12}$), closing only as $K\to R$. Distributed persistent memory is thus
+    the clearest performance separation between coordination-free specialization
+    (and explicit diversity) and a standard reward-driven router. (This is a
+    property of the reward-driven objective: a router with an explicit
+    memory-preservation/load-balancing term could reserve idle experts for dormant
+    regimes; the result says \emph{what} a router would need, not that routing
+    cannot work.) Even $K{=}1$ agents collectively retain all regimes.
 \end{enumerate}
 
 \begin{keypoint}
@@ -2279,10 +2314,15 @@ lever: \emph{bounded per-agent capacity} ($K \ll R$, regime-exclusive methods),
 where it covers a regime space no individual can, beating uncoordinated diversity
 of equal total capacity; and \emph{non-stationarity with finite memory}, where it
 acts as a distributed persistent memory and avoids the monolith's relearning cost
-on reactivated regimes ($+71\%$ post-reactivation). The contribution is a
-self-organization mechanism with a precise account of its scope---an unconditional
-performance-superiority claim is not made, but tightly-scoped ones (bounded
-capacity, non-stationarity) are.
+on reactivated regimes ($+71\%$ post-reactivation). Stress-tested against
+\emph{purpose-built} baselines (an EOI/CDS-style diversity objective and a
+Mixture-of-Experts learned router), spatial coverage proves to be a commodity all
+three mechanisms achieve---so competition's value there is parsimony---whereas
+temporal distributed memory is reproduced by explicit diversity but \emph{not} by
+the reward-driven router, the clearest competition/diversity separation we observe.
+The contribution is a self-organization mechanism with a precise account of its
+scope---an unconditional performance-superiority claim is not made, but
+tightly-scoped ones (bounded capacity, non-stationarity) are.
 \end{keypoint}
 
 \newpage
@@ -2781,7 +2821,11 @@ is what justifies calling EG a \emph{no-regret} algorithm. Together with
 Prop.~\ref{prop:eg_log_ratio}, this gives a complete convergence story:
 log-ratios evolve linearly and deterministically as a function of
 realized wins, while the algorithm's average reward asymptotically
-matches that of the best fixed arm in hindsight.
+matches that of the best fixed arm in hindsight. We emphasise that this
+guarantee is a property of the EG \emph{subroutine} for an arbitrary
+(possibly endogenous) sequence of realized wins; it does \emph{not} by
+itself imply that the coupled, multi-agent winner-take-all system
+specializes---that emergent behavior is established empirically.
 \end{remark}
 
 \subsubsection{Empirical Convergence Times}
@@ -2828,6 +2872,27 @@ This is ecological \textbf{competitive exclusion} in action.
 \subsection{Why Traditional MARL Fails to Produce Diversity}
 
 Standard MARL algorithms like IQL, VDN, QMIX, and MAPPO are designed to optimize collective performance, not diversity. Here we explain why they produce \textbf{homogeneous populations}.
+
+\begin{keypoint}
+\textbf{Scope of the MARL comparison.} IQL/VDN/QMIX/MAPPO are \emph{cooperative,
+shared-objective} baselines, and homogenization is their well-documented failure
+mode---so a low SI confirms an expectation rather than beating methods that try to
+diversify. The appropriate \emph{diversity} comparison class is role/individuality
+MARL: ROMA \cite{wang2020roma}, RODE \cite{wang2021rode}, MAVEN
+\cite{mahajan2019maven}, EOI \cite{jiang2021eoi}, CDS \cite{li2021cds}, and the
+state-of-the-art R3DM \cite{goel2025r3dm}. These purpose-built methods induce
+exactly the division of labor we study---but require an explicit diversity
+objective, a learned identity classifier or dynamics model, and a deep policy
+network. We therefore benchmark our bounded-capacity claims against two purpose-built
+baselines directly: an EOI/CDS-style learned-diversity objective and a
+Mixture-of-Experts learned gating router. Both are strong on spatial coverage
+(competition matches but does not dominate them); the router, however, fails the
+non-stationary distributed-memory task (see the bounded-capacity and
+non-stationarity results). Competition's distinguishing properties are parsimony
+(equivalent coverage from a tabular winner-take-all rule with no diversity
+machinery) and retention (a learned router does not reserve idle capacity for
+dormant regimes, but coordination-free specialists do).
+\end{keypoint}
 
 \subsubsection{Independent Q-Learning (IQL)}
 
@@ -3593,7 +3658,7 @@ After running the algorithm:
     \item \textbf{Individual SI}: Each agent's SI should be high ($>$ 0.5)
     \item \textbf{Population diversity}: Different agents specialize in different regimes
     \item \textbf{Method coverage}: Population uses diverse methods collectively
-    \item \textbf{Performance}: Diverse population outperforms homogeneous baseline
+    \item \textbf{Performance}: A regime-conditioned population beats a fixed-method homogeneous baseline---but this gain is regime-\emph{conditioning}, not population specialization per se (a single conditioned agent matches it; specialization helps only under bounded capacity / non-stationarity).
 \end{enumerate}
 
 \subsection{Experimental Results Summary}

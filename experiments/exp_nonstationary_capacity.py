@@ -119,11 +119,13 @@ class StoreAgent:
         self._renorm()
 
 
-def run(steps, regimes, methods, K, mode, n_agents=None, lam=1.5, seed=0):
+def run(steps, regimes, methods, K, mode, n_agents=None, lam=1.5, beta=1.0,
+        gate_lr=0.2, eps_route=0.1, seed=0):
     rng = np.random.default_rng(seed)
     eta = eg_eta_for_regimes(len(regimes))
     R = len(regimes)
     N = R if n_agents is None else n_agents
+    gate = {r: np.zeros(N) for r in regimes}  # MoE routing logits (regime -> experts)
 
     if mode == "monolith":
         agents = [StoreAgent(regimes, methods, K, rng)]
@@ -146,10 +148,34 @@ def run(steps, regimes, methods, K, mode, n_agents=None, lam=1.5, seed=0):
 
         if mode == "monolith":
             w = agents[0]
+        elif mode == "moe":
+            # Learned gating router: route the regime to an expert (epsilon-greedy),
+            # train the gate on the routed expert's quality, and let the expert
+            # learn/retain the regime in its bounded LRU store (capacity binds).
+            e = int(rng.integers(N)) if rng.random() < eps_route else int(np.argmax(gate[regime]))
+            expert = agents[e]
+            expert.ensure(regime)
+            expert.update_belief(regime, chosen[id(expert)], success=quality[id(expert)] >= 0.5)
+            expert.update_affinity(regime, quality[id(expert)], eta)
+            gate[regime][e] += gate_lr * (quality[id(expert)] - 0.5)
+            w = None  # MoE handles its own learning; readout overridden below
         elif mode == "random":
             for a in agents:
                 if a.competent(regime):
                     a.update_belief(regime, chosen[id(a)], success=quality[id(a)] >= 0.5)
+            w = None
+        elif mode == "diversity":
+            # EOI-style learned diversity (no competition): all agents update affinity
+            # with an intrinsic identifiability reward log p(i|regime); the identified
+            # owner (argmax affinity) learns/retains the regime, giving distributed
+            # memory via an explicit diversity objective rather than competition.
+            denom = sum(a.affinity[regime] for a in agents) or 1.0
+            owner = max(agents, key=lambda a: a.affinity[regime])
+            for a in agents:
+                p_i = a.affinity[regime] / denom
+                a.update_affinity(regime, quality[id(a)] + beta * np.log(p_i + 1e-9), eta)
+            owner.ensure(regime)
+            owner.update_belief(regime, chosen[id(owner)], success=quality[id(owner)] >= 0.5)
             w = None
         else:
             # Competitive exclusion: favor the natural specialist for this regime
@@ -168,9 +194,12 @@ def run(steps, regimes, methods, K, mode, n_agents=None, lam=1.5, seed=0):
             w.update_belief(regime, m, success=quality[id(w)] >= 0.5)
             w.update_affinity(regime, quality[id(w)], eta)
 
-        competent_here = [a for a in agents if a.competent(regime)]
-        served = (max(competent_here, key=lambda a: a.affinity[regime]) if competent_here
-                  else max(agents, key=lambda a: a.affinity[regime]))
+        if mode == "moe":
+            served = agents[int(np.argmax(gate[regime]))]  # route via learned gate
+        else:
+            competent_here = [a for a in agents if a.competent(regime)]
+            served = (max(competent_here, key=lambda a: a.affinity[regime]) if competent_here
+                      else max(agents, key=lambda a: a.affinity[regime]))
         e = errs[served.select(regime)]
         err_all.append(e)
         if is_react:
@@ -193,6 +222,13 @@ def trials(steps, regimes, methods, K, mode, n_trials=20, **kw):
     return np.array([o[0] for o in out]), np.array([o[1] for o in out])
 
 
+def _sem(arr):
+    """Standard error of the mean (for 95% CI = 1.96*SEM error bars)."""
+    arr = np.asarray(arr, dtype=float)
+    arr = arr[~np.isnan(arr)]
+    return float(np.std(arr, ddof=1) / np.sqrt(len(arr))) if len(arr) > 1 else 0.0
+
+
 def main():
     print("#" * 90)
     print("# NON-STATIONARY REGIMES: population as distributed persistent memory vs a")
@@ -205,26 +241,42 @@ def main():
           f"{len(steps)} steps; each regime dormant {R - W} epochs then reactivates.")
     print(f"Post-reactivation probe window: first {PROBE} steps after each reactivation.\n")
 
-    print(f"{'K':>3}{'monolith':>22}{'random-div':>22}{'specialized':>22}")
-    print(f"{'':>3}{'overall / react':>22}{'overall / react':>22}{'overall / react':>22}")
-    print("-" * 90)
+    print(f"{'K':>3}{'monolith':>17}{'random-div':>17}{'EOI-div':>17}{'MoE-gate':>17}{'specialized':>17}")
+    print(f"{'':>3}{'over / react':>17}{'over / react':>17}{'over / react':>17}{'over / react':>17}{'over / react':>17}")
+    print("-" * 105)
     rows = []
     for K in range(1, R + 1):
         mo, mr = trials(steps, regimes, methods, K, "monolith")
         ro, rr = trials(steps, regimes, methods, K, "random")
+        do, dr = trials(steps, regimes, methods, K, "diversity")
+        go, gr = trials(steps, regimes, methods, K, "moe")
         so, sr = trials(steps, regimes, methods, K, "specialized")
         _t, p_all = stats.ttest_ind(so, mo, alternative="less")
         _t, p_re = stats.ttest_ind(sr, mr, alternative="less")
+        _t, p_div_re = stats.ttest_ind(sr, dr, alternative="less")
+        _t, p_moe_re = stats.ttest_ind(sr, gr, alternative="less")
         rows.append({"K": K,
                      "monolith_overall": float(mo.mean()), "monolith_react": float(mr.mean()),
                      "random_overall": float(ro.mean()), "random_react": float(rr.mean()),
+                     "diversity_overall": float(do.mean()), "diversity_react": float(dr.mean()),
+                     "moe_overall": float(go.mean()), "moe_react": float(gr.mean()),
                      "specialized_overall": float(so.mean()), "specialized_react": float(sr.mean()),
-                     "spec_vs_mono_overall_p": float(p_all), "spec_vs_mono_react_p": float(p_re)})
+                     "spec_vs_mono_overall_p": float(p_all), "spec_vs_mono_react_p": float(p_re),
+                     "spec_vs_diversity_react_p": float(p_div_re),
+                     "spec_vs_moe_react_p": float(p_moe_re),
+                     "monolith_overall_sem": _sem(mo), "monolith_react_sem": _sem(mr),
+                     "random_overall_sem": _sem(ro), "random_react_sem": _sem(rr),
+                     "diversity_overall_sem": _sem(do), "diversity_react_sem": _sem(dr),
+                     "moe_overall_sem": _sem(go), "moe_react_sem": _sem(gr),
+                     "specialized_overall_sem": _sem(so), "specialized_react_sem": _sem(sr)})
         print(f"{K:>3}"
-              f"{f'{mo.mean():.3f} / {mr.mean():.3f}':>22}"
-              f"{f'{ro.mean():.3f} / {rr.mean():.3f}':>22}"
-              f"{f'{so.mean():.3f} / {sr.mean():.3f}':>22}")
-    print("-" * 90)
+              f"{f'{mo.mean():.3f}/{mr.mean():.3f}':>17}"
+              f"{f'{ro.mean():.3f}/{rr.mean():.3f}':>17}"
+              f"{f'{do.mean():.3f}/{dr.mean():.3f}':>17}"
+              f"{f'{go.mean():.3f}/{gr.mean():.3f}':>17}"
+              f"{f'{so.mean():.3f}/{sr.mean():.3f}':>17}")
+    print("-" * 105)
+    print("EOI-div = explicit learned-diversity objective; MoE-gate = learned routing of capacity-K experts.")
 
     K = 3
     r3 = next(r for r in rows if r["K"] == K)
@@ -258,9 +310,15 @@ def save_and_plot(rows, R, W, out_dir):
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
     for ax, (suffix, title) in zip(axes, [("overall", "Overall error"),
                                           ("react", "Post-reactivation error")]):
-        ax.plot(ks, [r[f"monolith_{suffix}"] for r in rows], "o-", label="monolith (cap. K)", color="#d62728")
-        ax.plot(ks, [r[f"random_{suffix}"] for r in rows], "s--", label="random diversity", color="#7f7f7f")
-        ax.plot(ks, [r[f"specialized_{suffix}"] for r in rows], "^-", label="specialized (ours)", color="#1f77b4")
+        for key, style, lab, col in [
+                ("monolith", "o-", "monolith (cap. K)", "#d62728"),
+                ("random", "s--", "random diversity", "#7f7f7f"),
+                ("diversity", "D:", "EOI diversity", "#2ca02c"),
+                ("moe", "v-.", "MoE router", "#9467bd"),
+                ("specialized", "^-", "specialized (ours)", "#1f77b4")]:
+            ax.errorbar(ks, [r.get(f"{key}_{suffix}", np.nan) for r in rows],
+                        yerr=[1.96 * r.get(f"{key}_{suffix}_sem", 0.0) for r in rows],
+                        fmt=style, label=lab, color=col, capsize=2, markersize=5)
         ax.set_title(title, fontsize=10)
         ax.set_xlabel("per-agent memory capacity K")
         ax.set_ylabel("prediction error")
