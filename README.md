@@ -150,17 +150,18 @@ Direct comparison against IQL, VDN, QMIX, MAPPO under V4. All methods use 8 lear
 ### Method Distribution Examples
 
 **Crypto Domain:**
-- mean_revert: 47.9% of learners
-- momentum_long: 40.8% of learners
-- trend: 8.3% of learners
-- momentum_short: 2.9% of learners
+- mean_revert: 45.8% of learners
+- momentum_long: 38.3% of learners
+- trend: 10.8% of learners
+- momentum_short: 4.6% of learners
+- naive: 0.4% of learners
 
 **Traffic Domain (best diversity):**
-- rush_hour: 32.1% of learners
-- weekly_pattern: 20.4% of learners
-- exp_smooth: 17.1% of learners
-- persistence: 16.2% of learners
-- hourly_avg: 14.2% of learners
+- rush_hour: 33.8% of learners
+- exp_smooth: 20.4% of learners
+- weekly_pattern: 19.2% of learners
+- hourly_avg: 13.8% of learners
+- persistence: 12.9% of learners
 
 ---
 

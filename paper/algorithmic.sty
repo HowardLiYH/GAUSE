@@ -1,0 +1,59 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{algorithmic}[2026/06/10 v0.1 minimal local stub]
+% Minimal replacement for the `algorithmic` environment, sufficient for this
+% project's pseudocode (\REQUIRE, \ENSURE, \STATE, \FOR/\ENDFOR, \WHILE/\ENDWHILE,
+% \IF/\ELSIF/\ELSE/\ENDIF, \REPEAT/\UNTIL, \LOOP/\ENDLOOP, \RETURN, \COMMENT).
+% Supports the [1] optional argument to number every line.
+
+\newcounter{ALClineno}
+\newif\ifALClineno
+\newdimen\ALCindentunit \ALCindentunit=1.6em
+\newdimen\ALCind
+
+\newcommand{\ALCnl}{%
+  \par\noindent
+  \ifALClineno
+    \refstepcounter{ALClineno}%
+    \makebox[2.4em][r]{\footnotesize\arabic{ALClineno}:}\ %
+  \fi
+  \hspace*{\ALCind}%
+}
+
+\newenvironment{algorithmic}[1][0]{%
+  \setcounter{ALClineno}{0}%
+  \ALCind=0pt\relax
+  \ifnum#1>0\relax\ALClinenotrue\else\ALClinenofalse\fi
+  \begin{list}{}{%
+    \setlength{\leftmargin}{0pt}%
+    \setlength{\rightmargin}{0pt}%
+    \setlength{\itemindent}{0pt}%
+    \setlength{\labelwidth}{0pt}%
+    \setlength{\labelsep}{0pt}%
+    \setlength{\parsep}{0pt}%
+    \setlength{\itemsep}{2pt}%
+  }%
+  \item\relax
+  \def\STATE{\ALCnl}%
+  \def\STATEx{\ALCnl}%
+  \def\REQUIRE{\ALCnl\textbf{Require:} }%
+  \def\ENSURE{\ALCnl\textbf{Ensure:} }%
+  \def\RETURN{\ALCnl\textbf{return} }%
+  \def\PRINT{\ALCnl\textbf{print} }%
+  \def\COMMENT##1{\textit{// ##1}}%
+  \def\FOR##1{\ALCnl\textbf{for} ##1 \textbf{do}\global\advance\ALCind\ALCindentunit}%
+  \def\FORALL##1{\ALCnl\textbf{for all} ##1 \textbf{do}\global\advance\ALCind\ALCindentunit}%
+  \def\ENDFOR{\global\advance\ALCind-\ALCindentunit\ALCnl\textbf{end for}}%
+  \def\WHILE##1{\ALCnl\textbf{while} ##1 \textbf{do}\global\advance\ALCind\ALCindentunit}%
+  \def\ENDWHILE{\global\advance\ALCind-\ALCindentunit\ALCnl\textbf{end while}}%
+  \def\IF##1{\ALCnl\textbf{if} ##1 \textbf{then}\global\advance\ALCind\ALCindentunit}%
+  \def\ELSIF##1{\global\advance\ALCind-\ALCindentunit\ALCnl\textbf{else if} ##1 \textbf{then}\global\advance\ALCind\ALCindentunit}%
+  \def\ELSE{\global\advance\ALCind-\ALCindentunit\ALCnl\textbf{else}\global\advance\ALCind\ALCindentunit}%
+  \def\ENDIF{\global\advance\ALCind-\ALCindentunit\ALCnl\textbf{end if}}%
+  \def\REPEAT{\ALCnl\textbf{repeat}\global\advance\ALCind\ALCindentunit}%
+  \def\UNTIL##1{\global\advance\ALCind-\ALCindentunit\ALCnl\textbf{until} ##1}%
+  \def\LOOP{\ALCnl\textbf{loop}\global\advance\ALCind\ALCindentunit}%
+  \def\ENDLOOP{\global\advance\ALCind-\ALCindentunit\ALCnl\textbf{end loop}}%
+}{%
+  \end{list}%
+}
+\endinput

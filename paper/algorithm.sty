@@ -1,0 +1,13 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{algorithm}[2026/06/10 v0.1 minimal local stub (float-based)]
+% Minimal replacement for the `algorithm` float wrapper, sufficient for this
+% project. Provides a floating `algorithm` environment with a ruled style and
+% numbered captions, accepting standard placement specifiers including [H]
+% (via the float package).
+\RequirePackage{float}
+\floatstyle{ruled}
+\newfloat{algorithm}{tbp}{loa}
+\floatname{algorithm}{Algorithm}
+\providecommand{\listalgorithmname}{List of Algorithms}
+\providecommand{\listofalgorithms}{\listof{algorithm}{\listalgorithmname}}
+\endinput

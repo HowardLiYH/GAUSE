@@ -1,0 +1,68 @@
+{
+  "R": 6,
+  "W": 3,
+  "n_trials": 20,
+  "model": "soft",
+  "rows": [
+    {
+      "K": 1,
+      "monolith_react": 0.905595171683277,
+      "moe_react": 0.39638352410210853,
+      "oracle_fixed_react": 0.25324545308684765,
+      "oracle_fixed_react_sem": 0.000872421096326132,
+      "gause_react": 0.2540382452487718,
+      "gause_react_sem": 0.0011002996219742066,
+      "gause_vs_oracle_p": 0.5723551655818366
+    },
+    {
+      "K": 2,
+      "monolith_react": 0.923982976802989,
+      "moe_react": 0.3279014028480022,
+      "oracle_fixed_react": 0.25336610727336,
+      "oracle_fixed_react_sem": 0.0011353034413689453,
+      "gause_react": 0.255077894299386,
+      "gause_react_sem": 0.00134166194161584,
+      "gause_vs_oracle_p": 0.3300744883273081
+    },
+    {
+      "K": 3,
+      "monolith_react": 0.8490014316471658,
+      "moe_react": 0.3037223091814979,
+      "oracle_fixed_react": 0.2544904870315361,
+      "oracle_fixed_react_sem": 0.0012047484046986583,
+      "gause_react": 0.25533866144959144,
+      "gause_react_sem": 0.0013182901192796696,
+      "gause_vs_oracle_p": 0.6348311268075166
+    },
+    {
+      "K": 4,
+      "monolith_react": 0.7509784201006081,
+      "moe_react": 0.2805147412566059,
+      "oracle_fixed_react": 0.2540186456321436,
+      "oracle_fixed_react_sem": 0.0013463316785416266,
+      "gause_react": 0.25533866144959144,
+      "gause_react_sem": 0.0013182901192796696,
+      "gause_vs_oracle_p": 0.48358855131276357
+    },
+    {
+      "K": 5,
+      "monolith_react": 0.449837777338857,
+      "moe_react": 0.26894224270847233,
+      "oracle_fixed_react": 0.2544082996107339,
+      "oracle_fixed_react_sem": 0.0013396585599330692,
+      "gause_react": 0.25533866144959144,
+      "gause_react_sem": 0.0013182901192796696,
+      "gause_vs_oracle_p": 0.6205992662457704
+    },
+    {
+      "K": 6,
+      "monolith_react": 0.2532204804215083,
+      "moe_react": 0.2639135422945039,
+      "oracle_fixed_react": 0.25296027517992803,
+      "oracle_fixed_react_sem": 0.0008698536147276695,
+      "gause_react": 0.25533866144959144,
+      "gause_react_sem": 0.0013182901192796696,
+      "gause_vs_oracle_p": 0.13210038820374104
+    }
+  ]
+}

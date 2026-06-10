@@ -1,0 +1,74 @@
+{
+  "R": 6,
+  "W": 3,
+  "n_trials": 20,
+  "rows": [
+    {
+      "K": 1,
+      "lf_gause_overall": 0.33051690209038853,
+      "lf_gause_react": 0.3798029037159192,
+      "lf_gause_react_sem": 0.013927877369413078,
+      "lf_monolith_overall": 1.0631571020693267,
+      "lf_monolith_react": 1.0710353932026866,
+      "lf_monolith_react_sem": 0.006906595688694104,
+      "lf_gause_SI": 0.7504790367788223,
+      "lf_gause_coverage": 0.8583333333333334
+    },
+    {
+      "K": 2,
+      "lf_gause_overall": 0.31395760963353536,
+      "lf_gause_react": 0.3600485603663996,
+      "lf_gause_react_sem": 0.01915243891426789,
+      "lf_monolith_overall": 1.0584088965210907,
+      "lf_monolith_react": 1.0727542266513548,
+      "lf_monolith_react_sem": 0.010844363005144051,
+      "lf_gause_SI": 0.7685054428726655,
+      "lf_gause_coverage": 0.8916666666666666
+    },
+    {
+      "K": 3,
+      "lf_gause_overall": 0.3144544659845304,
+      "lf_gause_react": 0.3618334959935076,
+      "lf_gause_react_sem": 0.018697119407451137,
+      "lf_monolith_overall": 1.0524578898793657,
+      "lf_monolith_react": 1.0621547683665629,
+      "lf_monolith_react_sem": 0.008721822208426372,
+      "lf_gause_SI": 0.7687904232469778,
+      "lf_gause_coverage": 0.8916666666666666
+    },
+    {
+      "K": 4,
+      "lf_gause_overall": 0.3144544659845304,
+      "lf_gause_react": 0.3618334959935076,
+      "lf_gause_react_sem": 0.018697119407451137,
+      "lf_monolith_overall": 1.0401987580083687,
+      "lf_monolith_react": 1.0628632544126266,
+      "lf_monolith_react_sem": 0.010712353275857104,
+      "lf_gause_SI": 0.7687904232469778,
+      "lf_gause_coverage": 0.8916666666666666
+    },
+    {
+      "K": 5,
+      "lf_gause_overall": 0.3144544659845304,
+      "lf_gause_react": 0.3618334959935076,
+      "lf_gause_react_sem": 0.018697119407451137,
+      "lf_monolith_overall": 1.0341974345874372,
+      "lf_monolith_react": 1.0688632735309211,
+      "lf_monolith_react_sem": 0.011275798683928404,
+      "lf_gause_SI": 0.7687904232469778,
+      "lf_gause_coverage": 0.8916666666666666
+    },
+    {
+      "K": 6,
+      "lf_gause_overall": 0.3144544659845304,
+      "lf_gause_react": 0.3618334959935076,
+      "lf_gause_react_sem": 0.018697119407451137,
+      "lf_monolith_overall": 1.0629278088171243,
+      "lf_monolith_react": 1.172989437881446,
+      "lf_monolith_react_sem": 0.007512352438923867,
+      "lf_gause_SI": 0.7687904232469778,
+      "lf_gause_coverage": 0.8916666666666666
+    }
+  ],
+  "label_given_gause_react_K1": 0.283
+}
