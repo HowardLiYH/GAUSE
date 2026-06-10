@@ -63,7 +63,8 @@ complementary regime where those provisos fail---\textbf{fixed total capacity,
 experts forced into reuse ($K \ll R$), gate still learning}---and find a sharp
 dissociation governed by a single property: whether capacity assignment is
 \textbf{independent of current task reward}.
-Our instrument is \textbf{NichePopulation}, a deliberately minimal mechanism
+Our instrument is \textbf{GAUSE} (Generalist-averse Affinity Update for
+Specialist Emergence), a deliberately minimal mechanism
 coupling winner-take-all competition with the canonical exponentiated-gradient
 (Hedge / multiplicative-weights) niche update. With no communication, shared
 reward, gate, or diversity objective, the population self-organizes into
@@ -95,7 +96,7 @@ quality; $145{,}294$ records). We position competitive exclusion as the most
 \textbf{parsimonious} known route to reward-independent specialization---competitive
 with explicit diversity objectives, and structurally immune to a failure mode of
 reward-driven routing.
-Code and data: \url{https://github.com/HowardLiYH/NichePopulation}.
+Code and data: \url{https://github.com/HowardLiYH/GAUSE}.
 \end{abstract}
 
 %=============================================================================
@@ -110,11 +111,14 @@ This challenge manifests across numerous domains with significant real-world imp
 
 Existing approaches to coordinating learner populations typically require one of three mechanisms: (1) \textbf{explicit communication channels} that enable learners to share intentions and negotiate roles \cite{foerster2016learning}, (2) \textbf{centralized training} with shared reward functions that encourage cooperative behaviors \cite{lowe2017multi}, or (3) \textbf{handcrafted diversity incentives} such as quality-diversity archives that explicitly maintain behavioral variety \cite{pugh2016quality, mouret2015illuminating}. While these methods have demonstrated success in specific settings, they introduce significant complexity and may not scale to large, decentralized systems where communication is costly or impossible.
 
-Among reward-independent mechanisms, why single out \emph{competition}? Because it is the most parsimonious: random fixed niches retain but cannot guarantee coverage at $K{=}1$; explicit diversity objectives retain but require an auxiliary intrinsic reward; gate-freezing retains but requires deciding \emph{when} to freeze. Competition needs none of these. The intuition is ecological---competitive exclusion drives species with identical niches apart \cite{hardin1960competitive}, as with Darwin's finches, which diversified their beaks under competition for food rather than by communicating \cite{grant2014finches}. When learners compete for limited rewards in regime-switching environments, homogeneous strategies become unstable: learners with identical behaviors compete directly, reducing their expected payoffs, so deviation to a less-contested niche becomes profitable. Our NichePopulation algorithm operationalizes this pressure, and---crucially for retention---the converged assignment is \emph{structural}: a specialist simply idles while its niche is dormant, retaining it with no signal required. Competition itself thus serves as a coordination mechanism, and the coordination it produces is precisely of the reward-independent kind that retention demands.
+Among reward-independent mechanisms, why single out \emph{competition}? Because it is the most parsimonious: random fixed niches retain but cannot guarantee coverage at $K{=}1$; explicit diversity objectives retain but require an auxiliary intrinsic reward; gate-freezing retains but requires deciding \emph{when} to freeze. Competition needs none of these. The intuition is ecological---competitive exclusion drives species with identical niches apart \cite{hardin1960competitive}, as with Darwin's finches, which diversified their beaks under competition for food rather than by communicating \cite{grant2014finches}. When learners compete for limited rewards in regime-switching environments, homogeneous strategies become unstable: learners with identical behaviors compete directly, reducing their expected payoffs, so deviation to a less-contested niche becomes profitable. Our GAUSE algorithm operationalizes this pressure, and---crucially for retention---the converged assignment is \emph{structural}: a specialist simply idles while its niche is dormant, retaining it with no signal required. Competition itself thus serves as a coordination mechanism, and the coordination it produces is precisely of the reward-independent kind that retention demands.
 
 Crucially, we demonstrate that \textbf{strict competitive exclusion (winner-take-all dynamics) is not merely a simplification but the key structural driver of differentiation}: softer competition allows learners to ``hedge'' across niches, destabilizing the clean partition we seek. We prove this formally in Proposition \ref{prop:exclusion}, showing that under winner-take-all dynamics, homogeneous strategies are not Nash equilibria. This stands in contrast to standard multi-agent reinforcement learning (MARL) methods, which optimize shared value functions or critics, inadvertently driving learners toward behavioral homogeneity rather than diversity.
 
-To test this hypothesis, we introduce \textbf{NichePopulation}, a deliberately simple algorithm that induces emergent specialization through three mechanisms:
+To test this hypothesis, we introduce \textbf{GAUSE} (Generalist-averse
+Affinity Update for Specialist Emergence)\footnote{The name also honors
+G.~F.~Gause, whose competitive exclusion principle (1934) the mechanism
+operationalizes.}, a deliberately simple algorithm that induces emergent specialization through three mechanisms:
 \begin{enumerate}
     \item \textbf{Competitive exclusion}: Only the best-performing learner in each iteration receives positive updates, creating winner-take-all dynamics that penalize homogeneous behaviors.
     \item \textbf{Niche affinity tracking}: Learners maintain probability distributions over environmental regimes, developing preferences for conditions where they consistently perform well.
@@ -154,7 +158,7 @@ learner populations, emergent coordination, and continual learning:
     for spatial coverage.
 
     \item \textbf{A coordination-free self-organization mechanism.} We introduce
-    NichePopulation, which couples winner-take-all competition with an
+    GAUSE, which couples winner-take-all competition with an
     exponentiated-gradient niche update to make a population partition into
     one-per-regime specialists \emph{without} communication, shared rewards,
     gates, or diversity incentives---competition alone ($\lambda = 0$) suffices
@@ -190,7 +194,7 @@ The competitive exclusion principle, formalized by Gause \cite{gause1934struggle
 Ensemble methods combine diverse models to improve prediction accuracy \cite{dietterich2000ensemble}. Traditional approaches achieve diversity through random initialization, bagging, or boosting---methods that introduce diversity exogenously. Our work demonstrates that diversity can emerge endogenously through competition, without requiring external mechanisms.
 
 \paragraph{Continual Learning and Catastrophic Forgetting.}
-A capacity-bounded learner trained on a shifting sequence of tasks tends to overwrite earlier knowledge---\emph{catastrophic forgetting} \cite{french1999catastrophic}. The dominant remedies operate within a single model: weight regularization that protects parameters important to old tasks (e.g.\ elastic weight consolidation \cite{kirkpatrick2017overcoming}), rehearsal, or architectural growth such as progressive networks \cite{rusu2016progressive}; see \cite{parisi2019continual} for a review. Our non-stationarity result (Section~\ref{sec:mainresults}) contributes a complementary, \emph{population-level} perspective: when capacity is bounded, an emergent division of labor distributes the task space across specialists so that dormant regimes are retained by idle specialists rather than overwritten---forgetting-resistance as a structural, coordination-free byproduct of competition. Notably, we find a reward-driven Mixture-of-Experts router does \emph{not} achieve this, because optimizing current task reward gives no incentive to reserve capacity for dormant tasks.
+A capacity-bounded learner trained on a shifting sequence of tasks tends to overwrite earlier knowledge---\emph{catastrophic forgetting} \cite{french1999catastrophic}. The dominant remedies operate within a single model: weight regularization that protects parameters important to old tasks (e.g.\ elastic weight consolidation \cite{kirkpatrick2017overcoming}), rehearsal, or architectural growth such as progressive networks \cite{rusu2016progressive}; see \cite{parisi2019continual} for a review. Our non-stationarity result (Section~\ref{sec:meaningfulness}, item 6) contributes a complementary, \emph{population-level} perspective: when capacity is bounded, an emergent division of labor distributes the task space across specialists so that dormant regimes are retained by idle specialists rather than overwritten---forgetting-resistance as a structural, coordination-free byproduct of competition. Notably, we find a reward-driven Mixture-of-Experts router does \emph{not} achieve this, because optimizing current task reward gives no incentive to reserve capacity for dormant tasks.
 
 \paragraph{Mixture-of-Experts in Continual Learning.}
 A recent line of work argues MoE \emph{mitigates} forgetting by isolating tasks in
@@ -239,7 +243,7 @@ For a learner with niche affinity distribution $\alpha \in \Delta^R$ (probabilit
 where $H(\alpha) = -\sum_r \alpha_r \log \alpha_r$ is Shannon entropy. SI = 1 indicates perfect specialization (all probability on one regime); SI = 0 indicates uniform distribution (no specialization).
 \end{definition}
 
-\subsection{The NichePopulation Algorithm}
+\subsection{The GAUSE Algorithm}
 
 Each learner $i$ maintains two learned representations:
 \begin{itemize}
@@ -286,7 +290,7 @@ additive heuristic used in V1--V3 of this paper appear in the companion deep-div
 \cite{li2026emergent}.
 
 \begin{algorithm}[t]
-\caption{NichePopulation}
+\caption{GAUSE}
 \label{alg:niche}
 \begin{algorithmic}[1]
 \REQUIRE Population of $N$ learners, regimes $\mathcal{R}$, methods $\mathcal{M}$, bonus $\lambda$, learning rate $\eta$
@@ -460,181 +464,14 @@ Air Quality & Open-Meteo API & RMSE ($\mu$g/m$^3$) & 2,880 & 4 \\
     \item \textbf{MARL}: IQL, QMIX, and MAPPO with equivalent learner counts and training budgets.
 \end{itemize}
 
-\subsection{Main Results: Coverage and Retention Under Bounded Capacity}
-\label{sec:mainresults}
-
-We open with the paper's central results: the two regimes in which an emergent
-division of labor is a genuine task-accuracy lever, benchmarked against
-purpose-built diversity and routing baselines at equal capacity. (That the
-population reliably \emph{produces} this division of labor, and the audit that
-scopes these claims, are documented in the sections that follow.)
-
-\paragraph{Coverage under bounded capacity.} The
-conditioned monolith of the audit (Section~\ref{sec:meaningfulness}, item 4) has
-unlimited capacity---exactly the regime where a generalist is
-feasible and division of labor is unnecessary. The realistic condition for any
-finite learner is \emph{bounded per-agent capacity}: each agent can master only
-$K$ of the $R$ regimes. We restrict every agent to competence in its top-$K$
-niches and compare four arms at \emph{equal per-agent capacity}: a capacity-$K$
-monolith; a population of $N{=}R$ agents with \emph{fixed random} capacity-$K$
-niches (diversity without competition); a population whose niches are driven by an
-explicit, purpose-built \emph{learned-diversity} objective in the spirit of
-EOI/CDS \cite{jiang2021eoi,li2021cds}, which rewards each agent for being the
-identifiable occupant of a regime (diversity \emph{without} winner-take-all
-competition); and the competitive population. For
-$K{<}R$ the specialized population beats the capacity-matched monolith
-decisively (synthetic $+73\%$ at $K{=}1$; real traffic $+22\%$). Controlling for
-total capacity against the \emph{random}-diversity population, competition adds accuracy
-specifically in the \emph{tight-capacity} regime---$K{=}1$--$2$ (synthetic
-$+57\%$, $p<10^{-16}$; traffic $+8.7\%$, $p<10^{-3}$ at $K{=}1$)---where random
-niche assignment leaves coverage gaps but competitive exclusion guarantees
-coverage. As $K$ grows toward $R$, random diversity already covers the regime
-space and the advantage vanishes (Figure~\ref{fig:capacity}).
-
-The stronger and more honest test is against the \emph{learned-diversity} arm,
-a method explicitly built to spread agents across niches. Here competition's
-advantage narrows sharply: on the synthetic exclusive-method task it beats learned
-diversity only at the tightest capacity $K{=}1$ ($0.249$ vs.\ $0.305$ error,
-$+18.4\%$, $p{=}0.002$), and for $K\geq2$ the two are statistically
-indistinguishable (learned diversity marginally lower, $p{=}1$). On real domains
-the explicit diversity objective is in fact \emph{at least as good} as competition
-at every $K$ (traffic $3$--$6\%$ lower error; solar $18$--$35\%$ lower). A
-purpose-built diversity reward thus recovers essentially all of the coverage
-benefit; competitive exclusion is a \emph{uniquely} better route to coverage only
-in the extreme corner of single-regime capacity with mutually exclusive optimal
-methods. Emergent specialization \emph{is} therefore an accuracy lever under tight
-capacity, but its value over an explicit diversity objective is parsimony---no
-identity classifier, mutual-information term, or diversity coefficient is
-required---rather than blanket superiority.
-
-We add a second, equally strong baseline: a \emph{Mixture-of-Experts with a learned
-gating router}, the ML-standard architecture for capacity-limited specialization
-(a gate trained on task reward routes each regime to one of $N$ capacity-$K$
-experts, which specialize on what they are routed). For \emph{spatial coverage} the
-router is as strong as competition: on the synthetic task the two are
-indistinguishable at every $K$ (within $\leq6\%$, $p{=}1$), since explicit routing
-also achieves coverage. On noisy real data the lightweight competitive rule is
-actually \emph{more} sample-efficient than a learned router---it beats the MoE on
-traffic at $K{=}1$ ($+5.1\%$)---while the router wins on solar. A capacity-$K{=}1$
-overlap sweep pins down exactly when competition helps: its edge over the
-\emph{diversity} objective grows monotonically with method exclusivity (from
-$-4.8\%$ when methods overlap, through $+8.1\%$, $+13.6\%$, $+18.4\%$, to $+29.3\%$
-as the optimal method per regime becomes fully exclusive), confirming that
-competition's coverage benefit is real precisely when capacity is tight \emph{and}
-regimes have near-exclusive optimal methods, and negligible otherwise.
-
-\paragraph{Retention under non-stationarity: division of labor as a defense
-against catastrophic forgetting.} A second, temporal mechanism gives
-specialization an edge, and it is best understood through the lens of
-\emph{continual learning}: a
-capacity-bounded learner that must track shifting regimes suffers
-\emph{catastrophic forgetting}, overwriting knowledge of dormant tasks to
-accommodate active ones \citep{french1999catastrophic,kirkpatrick2017overcoming,
-parisi2019continual}. Whereas the dominant remedies are algorithmic (regularizing
-weights, e.g.\ EWC) or architectural within a single model
-(\citealp{rusu2016progressive}), we show that a \emph{population} provides a
-structural, coordination-free remedy: division of labor distributes the task space
-across specialists so that no individual is forced to overwrite a dormant niche. We
-make regimes \emph{cycle}: a
-sliding window of $W{=}3$ of $R{=}6$ regimes is active each epoch, so every
-regime goes dormant then \emph{reactivates}, and we give each agent a bounded
-belief store of $K$ regimes with least-recently-used eviction (finite memory). A
-capacity-$K$ monolith must evict dormant regimes and \emph{relearn} them on
-reactivation---catastrophic forgetting under capacity pressure; a population
-dedicates an agent per niche that idles---and thus
-\emph{retains} its beliefs---while its regime is dormant. For $K{<}R$ the
-specialized population beats the capacity-matched monolith by $+33\%$ overall and
-$+71\%$ in the window right after each reactivation ($p<10^{-36}$ at $K{=}3$),
-exactly where the monolith's relearning penalty concentrates. As in the coverage result we
-control for total memory: this monolith-beating effect is a \emph{distributed
-memory} property of the population---a random-diversity population of equal total
-memory also retains and beats the monolith---and is not specific to competition.
-The competition-specific advantage again appears only at tight capacity: at
-$K{=}1$ the specialized population beats the equal-memory random-diversity
-population by $\approx 58\%$ by guaranteeing complete coverage. Against the
-stronger \emph{learned-diversity} (EOI/CDS-style) arm the same pattern holds: at
-$K{=}1$ competition retains a marginal post-reactivation edge ($0.283$ vs.\ $0.322$
-error, $p{=}0.054$), but for $K\geq2$ the explicit diversity objective matches it
-(differences $\leq0.01$, not significant). The population is
-essentially flat in $K$ (even $K{=}1$ agents collectively form a complete
-persistent memory), whereas the monolith matches it only at $K{=}R$
-(Figure~\ref{fig:nonstationary}).
-
-\emph{Here the learned MoE router fails decisively.} Unlike on the spatial-coverage
-task above, where the router matched competition, a reward-driven gate has no
-incentive to reserve an idle expert for a \emph{dormant} regime: it reuses scarce
-capacity for the currently active regimes, so on reactivation the responsible expert
-has evicted its beliefs and must relearn---exactly the monolith's failure mode. Its
-post-reactivation error is therefore near the monolith's and far above the
-population's at tight memory ($0.928$ vs.\ specialized $0.283$ at $K{=}1$,
-$p\sim10^{-35}$; the gap remains large and highly significant through $K{=}4$,
-$p<10^{-12}$), closing only as $K\to R$. \emph{Distributed persistent memory is thus
-a genuine, robust advantage of coordination-free specialization (and of explicit
-diversity) that a standard reward-driven router does not reproduce}---the strongest
-performance separation we observe between competition and a purpose-built baseline.
-We note this is a property of \emph{reward-driven} routing specifically: a router
-augmented with an explicit memory-preservation or load-balancing penalty could in
-principle reserve idle experts for dormant regimes, so the result identifies
-\emph{what objective a router would need}, not an inherent limit of routing
-architectures.
-
-\paragraph{Why a reward-driven router forgets (idealized observation).} The
-separation above is not an empirical accident; it follows from a simple asymmetry
-between \emph{reward-driven} capacity allocation and \emph{structural} division of
-labor. We state it informally, under idealizing assumptions matching our setup
-(regimes cycle through dormant intervals; each expert has finite capacity for $K$
-regimes; the gate is updated only from the realized reward of the routed expert).
-
-\begin{observation}[Dormant regimes receive no protective signal]
-\label{obs:router}
-Let regime $r$ be dormant for an interval during which an expert $e$ that holds
-$r$ receives $D$ learning updates from \emph{other} (active) regimes. Under a hard
-capacity-$K$ store with least-recently-used eviction, $e$ retains $r$'s beliefs only
-if fewer than $K$ distinct regimes are used in the interval, so $r$ is evicted once
-$D$ spans $\ge K$ distinct regimes; under a soft interference model with per-update
-decay rate $\rho>0$, the retained strength of $r$ decays as $(1-\rho)^{D}\!\to 0$.
-Crucially, a dormant regime emits \emph{no steps and hence no reward gradient}, so
-the gate term $\Delta\,\mathrm{gate}[r][e]\propto(q_e-\tfrac12)$ is zero throughout
-the dormant interval: the router receives \emph{no signal that would lead it to
-reserve $e$ for $r$}. Reactivation therefore incurs the full relearning cost with
-probability $\to 1$ as the dormancy length grows.
-\end{observation}
-
-By contrast, a converged competitive (or individuality) assignment fixes a
-regime-to-agent map $a(\cdot)$ that is \emph{reward-independent at steady state}:
-the agent $a(r)$ simply idles while $r$ is dormant, applying \emph{no} foreign
-updates to its own store ($D=0$ for its niche), so its retained strength is
-preserved structurally---no signal required. The asymmetry is the crux: routing and
-capacity protection are both reward-driven, but the quantity that would need
-protecting (a dormant niche) is exactly the one that emits no reward. This predicts
-that the router's failure should be \emph{model-agnostic}---present under both hard
-eviction and graded interference---which we confirm next.
-
-\paragraph{Robustness to the capacity model.} A natural worry is that the
-forgetting result is an artifact of the discrete LRU eviction rule. We re-run the
-non-stationarity sweep under a \emph{soft} capacity model with no eviction at all:
-each learning update bleeds pseudo-counts out of an agent's other held regimes at a
-rate that grows with capacity overflow (the interference account of catastrophic
-forgetting; Appendix~\ref{app:soft}, Fig.~\ref{fig:nonstationary_soft}). The
-qualitative picture is unchanged: the monolith still forgets dormant regimes
-(post-reactivation error $0.85$--$0.92$ at tight memory $K\le3$, declining toward
-the population only as $K\to R$) while the specialized
-population retains them ($\approx 0.25$, a $+70\%$ gap, $p\sim10^{-40}$), and the
-reward-driven router remains significantly worse than the population
-($+36\%$ at $K{=}1$, $p\sim10^{-8}$; $+16\%$ at $K{=}3$, $p\sim10^{-7}$). As
-Observation~\ref{obs:router} predicts, the router degrades more \emph{gracefully}
-under graded interference than under hard eviction but never closes the gap until
-$K\to R$, confirming the separation is a property of reward-driven routing rather
-than of any particular forgetting mechanism.
-
-\subsection{Emergent Specialization Across Domains}
+\subsection{Main Results: Cross-Domain Specialization}
 
 Table \ref{tab:main_results} presents our primary findings. Emergent specialization occurs consistently across all six domains with extremely large effect sizes.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Cross-domain specialization results. All NichePopulation vs. Homogeneous comparisons are significant at $p < 0.001$ after Bonferroni correction ($\alpha = 0.05/6 = 0.0083$).}
+\caption{Cross-domain specialization results. All GAUSE vs. Homogeneous comparisons are significant at $p < 0.001$ after Bonferroni correction ($\alpha = 0.05/6 = 0.0083$).}
 \label{tab:main_results}
 \begin{tabular}{lccccc}
 \toprule
@@ -770,12 +607,12 @@ not an artifact of the affinity-update implementation.
 
 \subsection{Comparison with MARL Baselines}
 
-We compare NichePopulation against established MARL methods (Table \ref{tab:marl}).
+We compare GAUSE against established MARL methods (Table \ref{tab:marl}).
 
 \begin{table}[t]
 \centering
 \small
-\caption{MARL baseline comparison (V4 head-to-head re-run). NichePopulation
+\caption{MARL baseline comparison (V4 head-to-head re-run). GAUSE
 induces one-per-regime specialization that standard MARL does not produce by
 default---MARL optimizes shared objectives and homogenizes.
 SI is computed from the converged per-learner state distribution (Niche:
@@ -787,7 +624,7 @@ and 5{,}000 training episodes; results averaged over 10 trials.}
 \toprule
 \textbf{Method} & \textbf{Crypto} & \textbf{Commodities} & \textbf{Weather} & \textbf{Traffic} \\
 \midrule
-\textbf{NichePopulation (Ours)} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} \\
+\textbf{GAUSE (Ours)} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} \\
 IQL  & 0.008 & 0.007 & 0.016 & 0.011 \\
 VDN  & 0.009 & 0.007 & 0.015 & 0.011 \\
 QMIX & 0.009 & 0.007 & 0.014 & 0.011 \\
@@ -796,17 +633,17 @@ MAPPO & 0.000 & 0.000 & 0.000 & 0.000 \\
 \end{tabular}
 \end{table}
 
-\textbf{NichePopulation reaches the maximum SI in every domain.} Under the V4 (EG) affinity update with 5{,}000 training episodes, every NichePopulation trial converges to a fully one-hot specialization per learner, yielding mean SI $= 1.000$ in all four domains. MARL methods, by contrast, learn near-identical value functions or policies across learners (Niche SI $\geq 100\times$ MARL SI), demonstrating that the standard MARL objective does not induce learner diversity even when given an order of magnitude more training. We therefore omit a ``ratio'' headline: the gap is qualitative, not just quantitative.
+\textbf{GAUSE reaches the maximum SI in every domain.} Under the V4 (EG) affinity update with 5{,}000 training episodes, every GAUSE trial converges to a fully one-hot specialization per learner, yielding mean SI $= 1.000$ in all four domains. MARL methods, by contrast, learn near-identical value functions or policies across learners (Niche SI $\geq 100\times$ MARL SI), demonstrating that the standard MARL objective does not induce learner diversity even when given an order of magnitude more training. We therefore omit a ``ratio'' headline: the gap is qualitative, not just quantitative.
 
-\textbf{MARL methods also produce competitive but lower task rewards on rare regimes.} On six rare-regime evaluation slices (crypto-volatile, weather-extreme, commodities-volatile, traffic morning-rush / evening-rush / transition), NichePopulation's best-of-population reward exceeds the closest MARL method (IQL) by $+5.1\%$ to $+8.3\%$ per regime ($+6.7\%$ averaged), and exceeds QMIX by $+8.4\%$ to $+14.0\%$ per regime ($+11.1\%$ averaged). The improvement is consistent across all four domains; complete per-method numbers are saved to \texttt{results/real\_marl\_comparison/results.json}.
+\textbf{MARL methods also produce competitive but lower task rewards on rare regimes.} On six rare-regime evaluation slices (crypto-volatile, weather-extreme, commodities-volatile, traffic morning-rush / evening-rush / transition), GAUSE's best-of-population reward exceeds the closest MARL method (IQL) by $+5.1\%$ to $+8.3\%$ per regime ($+6.7\%$ averaged), and exceeds QMIX by $+8.4\%$ to $+14.0\%$ per regime ($+11.1\%$ averaged). The improvement is consistent across all four domains; complete per-method numbers are saved to \texttt{results/real\_marl\_comparison/results.json}.
 
 \textbf{MARL methods do not naturally induce specialization.} Despite their sophistication, QMIX, MAPPO, and IQL optimize for shared task objectives rather than learner diversity. Learners learn similar value functions and converge to similar behaviors. This homogenization is precisely what our approach avoids through competitive exclusion.
 
-\textbf{These are cooperative, not diversity, baselines.} We caution against over-reading the SI gap in Table~\ref{tab:marl}. IQL/VDN/QMIX/MAPPO are \emph{shared-objective} methods whose homogenization is expected; showing they do not specialize is confirmatory, not a victory over methods that \emph{try} to. The appropriate diversity comparison is the role/individuality MARL family (ROMA, RODE, MAVEN, EOI, CDS, R3DM; see Related Work), which is explicitly designed to induce heterogeneity. Rather than leave that class to future work, we benchmark our \emph{bounded-capacity} claims (Section~\ref{sec:mainresults}) directly against two purpose-built baselines: an EOI/CDS-style learned-diversity objective and a Mixture-of-Experts \emph{learned gating router} (the standard ML architecture for capacity-limited specialization). The honest findings are: (i) for \emph{spatial coverage}, both are \emph{strong}---they match our competitive population for $K\geq2$ (the router even at $K{=}1$)---so competition's value there is parsimony and sample-efficiency on noisy real data, not raw superiority; but (ii) for \emph{temporal distributed memory} under non-stationarity, the reward-driven router \emph{fails} (it relearns dormant regimes like the monolith, $p\sim10^{-35}$), a separation that coordination-free specialization and explicit diversity both achieve. Competition is thus competitive with diversity-targeting methods on coverage and distinctly better than a learned router at retention.
+\textbf{These are cooperative, not diversity, baselines.} We caution against over-reading the SI gap in Table~\ref{tab:marl}. IQL/VDN/QMIX/MAPPO are \emph{shared-objective} methods whose homogenization is expected; showing they do not specialize is confirmatory, not a victory over methods that \emph{try} to. The appropriate diversity comparison is the role/individuality MARL family (ROMA, RODE, MAVEN, EOI, CDS, R3DM; see Related Work), which is explicitly designed to induce heterogeneity. Rather than leave that class to future work, we benchmark our \emph{bounded-capacity} claims (Section~\ref{sec:meaningfulness}, items 5--6) directly against two purpose-built baselines: an EOI/CDS-style learned-diversity objective and a Mixture-of-Experts \emph{learned gating router} (the standard ML architecture for capacity-limited specialization). The honest findings are: (i) for \emph{spatial coverage}, both are \emph{strong}---they match our competitive population for $K\geq2$ (the router even at $K{=}1$)---so competition's value there is parsimony and sample-efficiency on noisy real data, not raw superiority; but (ii) for \emph{temporal distributed memory} under non-stationarity, the reward-driven router \emph{fails} (it relearns dormant regimes like the monolith, $p\sim10^{-35}$), a separation that coordination-free specialization and explicit diversity both achieve. Competition is thus competitive with diversity-targeting methods on coverage and distinctly better than a learned router at retention.
 
 \textbf{Fairness of comparison.} To ensure fair comparison, all MARL baselines used published hyperparameters from their original papers \cite{rashid2018qmix, yu2022surprising, tan1993multi} and received equivalent computational budgets: identical learner counts ($N = 8$), training episodes ($T = 5{,}000$), and seeded environments. We did not perform hyperparameter tuning for MARL methods.
 
-\paragraph{Computational footprint.} NichePopulation is deliberately lightweight: a tabular affinity/belief update rather than neural value functions. This makes wall-clock and memory comparisons with deep MARL apples-to-oranges, but it underscores that the diversity we obtain requires no heavy machinery (sub-second per 500 iterations, $\sim$1 MB), with interpretable specialist assignments (each learner has a clear primary niche with human-readable affinity distributions).
+\paragraph{Computational footprint.} GAUSE is deliberately lightweight: a tabular affinity/belief update rather than neural value functions. This makes wall-clock and memory comparisons with deep MARL apples-to-oranges, but it underscores that the diversity we obtain requires no heavy machinery (sub-second per 500 iterations, $\sim$1 MB), with interpretable specialist assignments (each learner has a clear primary niche with human-readable affinity distributions).
 
 \subsection{Note on Traffic ($R = 6$) Under V3 vs.\ V4}
 \label{sec:traffic_analysis}
@@ -910,7 +747,168 @@ locations) localize the source of the performance gap:
     monolith.
 \end{itemize}
 
-\paragraph{Synthesis.} Taken together: NichePopulation reliably produces
+\subsection{Main Results: Coverage and Retention Under Bounded Capacity}
+\label{sec:mainresults}
+
+\paragraph{Coverage under bounded capacity.} The
+conditioned monolith of the audit (Section~\ref{sec:meaningfulness}, item 4) has
+unlimited capacity---exactly the regime where a generalist is
+feasible and division of labor is unnecessary. The realistic condition for any
+finite learner is \emph{bounded per-agent capacity}: each agent can master only
+$K$ of the $R$ regimes. We restrict every agent to competence in its top-$K$
+niches and compare four arms at \emph{equal per-agent capacity}: a capacity-$K$
+monolith; a population of $N{=}R$ agents with \emph{fixed random} capacity-$K$
+niches (diversity without competition); a population whose niches are driven by an
+explicit, purpose-built \emph{learned-diversity} objective in the spirit of
+EOI/CDS \cite{jiang2021eoi,li2021cds}, which rewards each agent for being the
+identifiable occupant of a regime (diversity \emph{without} winner-take-all
+competition); and the competitive population. For
+$K{<}R$ the specialized population beats the capacity-matched monolith
+decisively (synthetic $+73\%$ at $K{=}1$; real traffic $+22\%$). Controlling for
+total capacity against the \emph{random}-diversity population, competition adds accuracy
+specifically in the \emph{tight-capacity} regime---$K{=}1$--$2$ (synthetic
+$+57\%$, $p<10^{-16}$; traffic $+8.7\%$, $p<10^{-3}$ at $K{=}1$)---where random
+niche assignment leaves coverage gaps but competitive exclusion guarantees
+coverage. As $K$ grows toward $R$, random diversity already covers the regime
+space and the advantage vanishes (Figure~\ref{fig:capacity}).
+
+The stronger and more honest test is against the \emph{learned-diversity} arm,
+a method explicitly built to spread agents across niches. Here competition's
+advantage narrows sharply: on the synthetic exclusive-method task it beats learned
+diversity only at the tightest capacity $K{=}1$ ($0.249$ vs.\ $0.305$ error,
+$+18.4\%$, $p{=}0.002$), and for $K\geq2$ the two are statistically
+indistinguishable (learned diversity marginally lower, $p{=}1$). On real domains
+the explicit diversity objective is in fact \emph{at least as good} as competition
+at every $K$ (traffic $3$--$6\%$ lower error; solar $18$--$35\%$ lower). A
+purpose-built diversity reward thus recovers essentially all of the coverage
+benefit; competitive exclusion is a \emph{uniquely} better route to coverage only
+in the extreme corner of single-regime capacity with mutually exclusive optimal
+methods. Emergent specialization \emph{is} therefore an accuracy lever under tight
+capacity, but its value over an explicit diversity objective is parsimony---no
+identity classifier, mutual-information term, or diversity coefficient is
+required---rather than blanket superiority.
+
+We add a second, equally strong baseline: a \emph{Mixture-of-Experts with a learned
+gating router}, the ML-standard architecture for capacity-limited specialization
+(a gate trained on task reward routes each regime to one of $N$ capacity-$K$
+experts, which specialize on what they are routed). For \emph{spatial coverage} the
+router is as strong as competition: on the synthetic task the two are
+indistinguishable at every $K$ (within $\leq6\%$, $p{=}1$), since explicit routing
+also achieves coverage. On noisy real data the lightweight competitive rule is
+actually \emph{more} sample-efficient than a learned router---it beats the MoE on
+traffic at $K{=}1$ ($+5.1\%$)---while the router wins on solar. A capacity-$K{=}1$
+overlap sweep pins down exactly when competition helps: its edge over the
+\emph{diversity} objective grows monotonically with method exclusivity (from
+$-4.8\%$ when methods overlap, through $+8.1\%$, $+13.6\%$, $+18.4\%$, to $+29.3\%$
+as the optimal method per regime becomes fully exclusive), confirming that
+competition's coverage benefit is real precisely when capacity is tight \emph{and}
+regimes have near-exclusive optimal methods, and negligible otherwise.
+
+\paragraph{Retention under non-stationarity: division of labor as a defense
+against catastrophic forgetting.} A second, temporal mechanism gives
+specialization an edge, and it is best understood through the lens of
+\emph{continual learning}: a
+capacity-bounded learner that must track shifting regimes suffers
+\emph{catastrophic forgetting}, overwriting knowledge of dormant tasks to
+accommodate active ones \citep{french1999catastrophic,kirkpatrick2017overcoming,
+parisi2019continual}. Whereas the dominant remedies are algorithmic (regularizing
+weights, e.g.\ EWC) or architectural within a single model
+(\citealp{rusu2016progressive}), we show that a \emph{population} provides a
+structural, coordination-free remedy: division of labor distributes the task space
+across specialists so that no individual is forced to overwrite a dormant niche. We
+make regimes \emph{cycle}: a
+sliding window of $W{=}3$ of $R{=}6$ regimes is active each epoch, so every
+regime goes dormant then \emph{reactivates}, and we give each agent a bounded
+belief store of $K$ regimes with least-recently-used eviction (finite memory). A
+capacity-$K$ monolith must evict dormant regimes and \emph{relearn} them on
+reactivation---catastrophic forgetting under capacity pressure; a population
+dedicates an agent per niche that idles---and thus
+\emph{retains} its beliefs---while its regime is dormant. For $K{<}R$ the
+specialized population beats the capacity-matched monolith by $+33\%$ overall and
+$+71\%$ in the window right after each reactivation ($p<10^{-36}$ at $K{=}3$),
+exactly where the monolith's relearning penalty concentrates. As in item 5 we
+control for total memory: this monolith-beating effect is a \emph{distributed
+memory} property of the population---a random-diversity population of equal total
+memory also retains and beats the monolith---and is not specific to competition.
+The competition-specific advantage again appears only at tight capacity: at
+$K{=}1$ the specialized population beats the equal-memory random-diversity
+population by $\approx 58\%$ by guaranteeing complete coverage. Against the
+stronger \emph{learned-diversity} (EOI/CDS-style) arm the same pattern holds: at
+$K{=}1$ competition retains a marginal post-reactivation edge ($0.283$ vs.\ $0.322$
+error, $p{=}0.054$), but for $K\geq2$ the explicit diversity objective matches it
+(differences $\leq0.01$, not significant). The population is
+essentially flat in $K$ (even $K{=}1$ agents collectively form a complete
+persistent memory), whereas the monolith matches it only at $K{=}R$
+(Figure~\ref{fig:nonstationary}).
+
+\emph{Here the learned MoE router fails decisively.} Unlike on the spatial-coverage
+task (item 5), where the router matched competition, a reward-driven gate has no
+incentive to reserve an idle expert for a \emph{dormant} regime: it reuses scarce
+capacity for the currently active regimes, so on reactivation the responsible expert
+has evicted its beliefs and must relearn---exactly the monolith's failure mode. Its
+post-reactivation error is therefore near the monolith's and far above the
+population's at tight memory ($0.928$ vs.\ specialized $0.283$ at $K{=}1$,
+$p\sim10^{-35}$; the gap remains large and highly significant through $K{=}4$,
+$p<10^{-12}$), closing only as $K\to R$. \emph{Distributed persistent memory is thus
+a genuine, robust advantage of coordination-free specialization (and of explicit
+diversity) that a standard reward-driven router does not reproduce}---the strongest
+performance separation we observe between competition and a purpose-built baseline.
+We note this is a property of \emph{reward-driven} routing specifically: a router
+augmented with an explicit memory-preservation or load-balancing penalty could in
+principle reserve idle experts for dormant regimes, so the result identifies
+\emph{what objective a router would need}, not an inherent limit of routing
+architectures.
+
+\paragraph{Why a reward-driven router forgets (idealized observation).} The
+separation above is not an empirical accident; it follows from a simple asymmetry
+between \emph{reward-driven} capacity allocation and \emph{structural} division of
+labor. We state it informally, under idealizing assumptions matching our setup
+(regimes cycle through dormant intervals; each expert has finite capacity for $K$
+regimes; the gate is updated only from the realized reward of the routed expert).
+
+\begin{observation}[Dormant regimes receive no protective signal]
+\label{obs:router}
+Let regime $r$ be dormant for an interval during which an expert $e$ that holds
+$r$ receives $D$ learning updates from \emph{other} (active) regimes. Under a hard
+capacity-$K$ store with least-recently-used eviction, $e$ retains $r$'s beliefs only
+if fewer than $K$ distinct regimes are used in the interval, so $r$ is evicted once
+$D$ spans $\ge K$ distinct regimes; under a soft interference model with per-update
+decay rate $\rho>0$, the retained strength of $r$ decays as $(1-\rho)^{D}\!\to 0$.
+Crucially, a dormant regime emits \emph{no steps and hence no reward gradient}, so
+the gate term $\Delta\,\mathrm{gate}[r][e]\propto(q_e-\tfrac12)$ is zero throughout
+the dormant interval: the router receives \emph{no signal that would lead it to
+reserve $e$ for $r$}. Reactivation therefore incurs the full relearning cost with
+probability $\to 1$ as the dormancy length grows.
+\end{observation}
+
+By contrast, a converged competitive (or individuality) assignment fixes a
+regime-to-agent map $a(\cdot)$ that is \emph{reward-independent at steady state}:
+the agent $a(r)$ simply idles while $r$ is dormant, applying \emph{no} foreign
+updates to its own store ($D=0$ for its niche), so its retained strength is
+preserved structurally---no signal required. The asymmetry is the crux: routing and
+capacity protection are both reward-driven, but the quantity that would need
+protecting (a dormant niche) is exactly the one that emits no reward. This predicts
+that the router's failure should be \emph{model-agnostic}---present under both hard
+eviction and graded interference---which we confirm next.
+
+\paragraph{Robustness to the capacity model.} A natural worry is that the
+forgetting result is an artifact of the discrete LRU eviction rule. We re-run the
+non-stationarity sweep under a \emph{soft} capacity model with no eviction at all:
+each learning update bleeds pseudo-counts out of an agent's other held regimes at a
+rate that grows with capacity overflow (the interference account of catastrophic
+forgetting; Appendix~\ref{app:soft}, Fig.~\ref{fig:nonstationary_soft}). The
+qualitative picture is unchanged: the monolith still forgets dormant regimes
+(post-reactivation error $0.85$--$0.92$ at tight memory $K\le3$, declining toward
+the population only as $K\to R$) while the specialized
+population retains them ($\approx 0.25$, a $+70\%$ gap, $p\sim10^{-40}$), and the
+reward-driven router remains significantly worse than the population
+($+36\%$ at $K{=}1$, $p\sim10^{-8}$; $+16\%$ at $K{=}3$, $p\sim10^{-7}$). As
+Observation~\ref{obs:router} predicts, the router degrades more \emph{gracefully}
+under graded interference than under hard eviction but never closes the gap until
+$K\to R$, confirming the separation is a property of reward-driven routing rather
+than of any particular forgetting mechanism.
+
+\paragraph{Synthesis.} Taken together: GAUSE reliably produces
 \emph{coordination-free division of labor} (organization), and on domains with
 genuine regime structure its niches \emph{track performance-relevant regimes}.
 With slack capacity and stationary regimes, the measurable task-accuracy benefit
@@ -918,7 +916,7 @@ of regime awareness is attributable to regime-conditioning rather than to
 population specialization per se. Under bounded per-agent capacity, however,
 competition contributes one genuine, well-controlled accuracy mechanism:
 \emph{guaranteed coverage} of a regime space no individual can hold, which
-manifests \emph{spatially} (coverage, $K\ll R$) and \emph{temporally} (retention,
+manifests \emph{spatially} (item 5, $K\ll R$) and \emph{temporally} (item 6,
 retaining dormant niches across non-stationary cycles). Both monolith comparisons
 also reflect a distributed-capacity advantage that any population---even
 uncoordinated random diversity---shares; the competition-specific contribution is
@@ -977,7 +975,7 @@ Our findings suggest a design principle for learner populations: \textbf{competi
     regime-conditioned agent matches or beats the specialized population. The
     accuracy benefit of specialization appears under two realistic constraints:
     \emph{bounded per-agent capacity} ($K \ll R$, where the population covers a
-    regime space no individual can; Section~\ref{sec:mainresults}) and
+    regime space no individual can; Section~\ref{sec:meaningfulness}, item 5) and
     \emph{non-stationarity with finite memory} (where the population is a
     distributed persistent memory that avoids the monolith's relearning cost;
     Section~\ref{sec:mainresults}). Two caveats bound this claim. First, the per-agent capacity limit
@@ -992,7 +990,7 @@ Our findings suggest a design principle for learner populations: \textbf{competi
     random diversity, the residual \emph{spatial}-coverage gap is confined to the
     single-regime-capacity corner ($K{=}1$ with exclusive optimal methods): for
     $K\geq2$, and on real domains, these baselines match or exceed competition
-    (Section~\ref{sec:mainresults}). Competitive exclusion is
+    (Section~\ref{sec:meaningfulness}, items 5--6). Competitive exclusion is
     therefore best understood as a \emph{parsimonious} mechanism for
     coordination-free coverage---competitive with, not dominant over, methods that
     optimize diversity or routing explicitly. The one performance dimension where
@@ -1033,7 +1031,7 @@ Our findings suggest a design principle for learner populations: \textbf{competi
 \section{Conclusion}
 %=============================================================================
 
-We have demonstrated that \textbf{competition alone is sufficient} to induce emergent specialization in learner populations. Drawing from ecological niche theory, we introduced NichePopulation, a simple algorithm that achieves remarkable specialization through competitive exclusion and niche affinity tracking.
+We have demonstrated that \textbf{competition alone is sufficient} to induce emergent specialization in learner populations. Drawing from ecological niche theory, we introduced GAUSE, a simple algorithm that achieves remarkable specialization through competitive exclusion and niche affinity tracking.
 
 Our key findings, validated across six real-world domains with 145,294 total records:
 
@@ -1043,12 +1041,12 @@ Our key findings, validated across six real-world domains with 145,294 total rec
     \item \textbf{Division of labor}: Populations use 86\% of available methods.
     \item \textbf{MARL contrast}: standard MARL (IQL/VDN/QMIX/MAPPO) optimizes shared objectives and homogenizes (SI $\le 0.02$), so it does not produce role diversity by default; competitive exclusion does. We frame this as a qualitative difference in mechanism, not a performance victory.
     \item \textbf{Canonical update}: The affinity rule is the standard exponentiated-gradient (Hedge / multiplicative-weights) update on the regime simplex---simplex-preserving without clamping---whose small-$\eta$ limit recovers the replicator dynamics of evolutionary game theory. (We do not claim Hedge's adversarial-regret bound transfers to the coupled winner-take-all system.)
-    \item \textbf{Scope, established by controls}: SI measures organization; under a battery of controls (Section~\ref{sec:meaningfulness}) the emergent niches \emph{track} performance-relevant regimes where genuine structure exists (traffic, solar). With slack capacity and stationary regimes, the task-accuracy benefit of regime awareness is attributable to regime-conditioning rather than to population specialization per se. Specialization becomes a genuine---though tightly scoped---accuracy lever only under \emph{bounded per-agent capacity} and \emph{non-stationarity with finite memory}, where a population covers and retains a regime space no capacity-limited individual can. We therefore position NichePopulation primarily as a self-organization mechanism, with a controlled, conditional performance result rather than a blanket superiority claim.
+    \item \textbf{Scope, established by controls}: SI measures organization; under a battery of controls (Section~\ref{sec:meaningfulness}) the emergent niches \emph{track} performance-relevant regimes where genuine structure exists (traffic, solar). With slack capacity and stationary regimes, the task-accuracy benefit of regime awareness is attributable to regime-conditioning rather than to population specialization per se. Specialization becomes a genuine---though tightly scoped---accuracy lever only under \emph{bounded per-agent capacity} and \emph{non-stationarity with finite memory}, where a population covers and retains a regime space no capacity-limited individual can. We therefore position GAUSE primarily as a self-organization mechanism, with a controlled, conditional performance result rather than a blanket superiority claim.
 \end{itemize}
 
 Our theoretical contributions---three propositions establishing conditions for emergent specialization---provide a foundation for understanding when and why diversity emerges from competition. The practical implication is profound: in learner populations requiring coordination without communication, \textbf{competition can serve as a coordination mechanism}.
 
-\paragraph{Reproducibility.} All code, data (145,294 real records from 6 domains), and experiment configurations are available at: \url{https://github.com/HowardLiYH/NichePopulation}. We provide detailed documentation for reproduction.
+\paragraph{Reproducibility.} All code, data (145,294 real records from 6 domains), and experiment configurations are available at: \url{https://github.com/HowardLiYH/GAUSE}. We provide detailed documentation for reproduction.
 
 %=============================================================================
 \bibliographystyle{plainnat}
@@ -1067,7 +1065,7 @@ All figures referenced in the main text are presented here to maximize space for
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.95\linewidth]{figures/fig1_cross_domain_si.pdf}
-    \caption{Specialization Index across six real-world domains. Under the V4 (canonical EG) affinity update, NichePopulation (blue) achieves SI $\approx 0.99$ on average, dramatically exceeding Homogeneous (magenta, SI $\approx 0.002$) and Random (orange, SI $\approx 0.13$) baselines. All comparisons are statistically significant at $p < 0.001$. Earlier figures based on the V3 heuristic showed SI $\approx 0.75$; see the deep-dive companion for the V3 $\to$ V4 transition.}
+    \caption{Specialization Index across six real-world domains. Under the V4 (canonical EG) affinity update, GAUSE (blue) achieves SI $\approx 0.99$ on average, dramatically exceeding Homogeneous (magenta, SI $\approx 0.002$) and Random (orange, SI $\approx 0.13$) baselines. All comparisons are statistically significant at $p < 0.001$. Earlier figures based on the V3 heuristic showed SI $\approx 0.75$; see the deep-dive companion for the V3 $\to$ V4 transition.}
     \label{fig:cross_domain}
 \end{figure}
 
@@ -1088,7 +1086,7 @@ All figures referenced in the main text are presented here to maximize space for
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.85\linewidth]{figures/fig4_marl_comparison.pdf}
-    \caption{NichePopulation vs.\ MARL baselines (IQL, VDN, QMIX, MAPPO). Under the V4 (EG) affinity update with 5{,}000 training episodes, NichePopulation reaches $\mathrm{SI} = 1.000$ in every domain while every MARL baseline stays below $0.02$ ($\geq 100\times$ gap). Standard MARL methods optimize for task performance rather than diversity, leading to learner homogenization.}
+    \caption{GAUSE vs.\ MARL baselines (IQL, VDN, QMIX, MAPPO). Under the V4 (EG) affinity update with 5{,}000 training episodes, GAUSE reaches $\mathrm{SI} = 1.000$ in every domain while every MARL baseline stays below $0.02$ ($\geq 100\times$ gap). Standard MARL methods optimize for task performance rather than diversity, leading to learner homogenization.}
     \label{fig:marl}
 \end{figure}
 
@@ -1102,14 +1100,14 @@ All figures referenced in the main text are presented here to maximize space for
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.98\linewidth]{figures/fig6_capacity_division.pdf}
-    \caption{Bounded-capacity division of labor (Section~\ref{sec:mainresults}). Each agent masters only $K$ of $R$ regimes. The specialized population (blue) beats the capacity-matched monolith (red) for $K<R$ on the synthetic regime-champion task and on real traffic; controlling for total capacity against a random-diversity population (grey) the advantage is concentrated in the tight-capacity regime ($K{=}1$--$2$). Against a purpose-built EOI/CDS-style learned-diversity objective (green) and a Mixture-of-Experts learned router (purple), competition wins only at $K{=}1$ on the synthetic exclusive-method task; both purpose-built baselines match it for $K\geq2$ (the router matches even at $K{=}1$), confirming that spatial coverage is achievable by several mechanisms. Solar ($R{=}3$, overlapping methods) shows no advantage for competition---an honest null.}
+    \caption{Bounded-capacity division of labor (Section~\ref{sec:meaningfulness}, item 5). Each agent masters only $K$ of $R$ regimes. The specialized population (blue) beats the capacity-matched monolith (red) for $K<R$ on the synthetic regime-champion task and on real traffic; controlling for total capacity against a random-diversity population (grey) the advantage is concentrated in the tight-capacity regime ($K{=}1$--$2$). Against a purpose-built EOI/CDS-style learned-diversity objective (green) and a Mixture-of-Experts learned router (purple), competition wins only at $K{=}1$ on the synthetic exclusive-method task; both purpose-built baselines match it for $K\geq2$ (the router matches even at $K{=}1$), confirming that spatial coverage is achievable by several mechanisms. Solar ($R{=}3$, overlapping methods) shows no advantage for competition---an honest null.}
     \label{fig:capacity}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.98\linewidth]{figures/fig7_nonstationary.pdf}
-    \caption{Non-stationarity with finite memory (Section~\ref{sec:mainresults}). Regimes cycle (dormant then reactivating) and each agent has a bounded belief store with LRU eviction. The capacity-bounded monolith (red) must relearn each reactivated regime---its post-reactivation error stays high until $K{=}R$---while the specialized population (blue) retains dormant-niche expertise as a distributed persistent memory (flat in $K$). The gap is largest in the post-reactivation window ($+71\%$ at $K{=}3$). A learned-diversity objective (green, EOI/CDS-style) attains the same distributed memory; competition retains only a marginal post-reactivation edge at $K{=}1$. In contrast, the Mixture-of-Experts learned router (purple) \emph{fails} to retain dormant regimes---its post-reactivation error tracks the monolith's at tight memory (it reuses capacity for active regimes), separating only as $K\to R$.}
+    \caption{Non-stationarity with finite memory (Section~\ref{sec:meaningfulness}, item 6). Regimes cycle (dormant then reactivating) and each agent has a bounded belief store with LRU eviction. The capacity-bounded monolith (red) must relearn each reactivated regime---its post-reactivation error stays high until $K{=}R$---while the specialized population (blue) retains dormant-niche expertise as a distributed persistent memory (flat in $K$). The gap is largest in the post-reactivation window ($+71\%$ at $K{=}3$). A learned-diversity objective (green, EOI/CDS-style) attains the same distributed memory; competition retains only a marginal post-reactivation edge at $K{=}1$. In contrast, the Mixture-of-Experts learned router (purple) \emph{fails} to retain dormant regimes---its post-reactivation error tracks the monolith's at tight memory (it reuses capacity for active regimes), separating only as $K\to R$.}
     \label{fig:nonstationary}
 \end{figure}
 

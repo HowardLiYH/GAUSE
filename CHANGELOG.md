@@ -57,7 +57,7 @@ objective, no freezing schedule).
   Coverage and Retention Under Bounded Capacity" section; all cross-references
   updated; catastrophic-forgetting framing with CL citations (French 1999,
   Kirkpatrick 2017, Parisi 2019, Rusu 2016).
-- **New explainer document**: `paper/niche_population_explainer.tex` (13 pp,
+- **New explainer document**: `paper/gause_explainer.tex` (17 pp,
   AutoAgent-style full-system walkthrough).
 
 ### Repo hygiene

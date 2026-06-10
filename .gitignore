@@ -51,6 +51,7 @@ htmlcov/
 *.log
 
 # LaTeX build artifacts
+.latex-aux/
 *.aux
 *.bbl
 *.blg
