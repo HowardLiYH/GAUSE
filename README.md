@@ -71,6 +71,21 @@ Five capacity-allocation mechanisms compared at matched per-agent capacity K (ea
 
 Reproduce: `python experiments/exp_capacity_division.py` and `python experiments/exp_nonstationary_capacity.py --soft`.
 
+### 🧪 Closing the Design Space (v4.1): Function Approximation, a Hybrid Router, Drift, Sizing, and the Label-Free Variant
+
+Six further experiments stress-test the reward-independence story across architectures, fixes, failure modes, and the harder dropped-label setting:
+
+| Experiment | Script | Headline finding |
+|---|---|---|
+| Function-approx CL (gradient-trained MLP experts, permuted-digits, R=5) | `exp_function_approx_cl.py` | Router forgetting is **architecture-agnostic**: at E=R, GAUSE post-reactivation test error 0.218 vs MoE router 0.576 (**+62% lower**, p ~ 10⁻⁹); the router does not improve with more experts |
+| Hybrid router **+ reservation term** | `exp_hybrid_router.py` | Reservation recovers most retention at K≥2 (**+48% at K=3**, p ~ 10⁻¹¹) but **cannot help at K=1** (no spare slot); GAUSE retains even at K=1 — reward-independence of *protection* is the operative property |
+| Intra-regime concept drift | `exp_intra_regime_drift.py` | **Stale specialists** quantified: standard GAUSE overall error 0.90 (worse than a relearning K=3 monolith, 0.35); a lightweight staleness trigger recovers most of it (0.43, ~53% lower) |
+| Off-diagonal population sizing | `exp_population_sizing.py` | Scarce agents (N<R) under-cover, governed by **N not N·K**; surplus agents (N≫R) idle harmlessly (redundant = N−R). Rule: **provision N ≳ R** |
+| Oracle fixed-assignment skyline | `exp_oracle_fixed.py` | GAUSE recovers the hand-assigned skyline **without being given it**: within **0.030** at K=1 (0.283 vs 0.253 floor), statistically indistinguishable by K=3 |
+| Class-incremental (**label-free**) GAUSE | `exp_latent_regime.py` | The central retention result **survives dropping the regime label**: SI 0.75, coverage 0.86, post-reactivation **0.38 vs 1.07** for a label-free forgetting monolith (+65%), reactivation detected from input similarity alone |
+
+Reproduce: `python experiments/exp_function_approx_cl.py` (needs `torch`), then `exp_hybrid_router.py`, `exp_intra_regime_drift.py`, `exp_population_sizing.py`, `exp_oracle_fixed.py`, `exp_latent_regime.py`.
+
 ### Cross-Domain Experimental Results (Unified Pipeline — 30 Trials Each, V4)
 
 All experiments run with **identical configuration** across all 6 domains:
@@ -288,6 +303,12 @@ GAUSE/
 │   ├── exp_unified_pipeline.py       # ⭐ Main 6-domain pipeline (V4)
 │   ├── exp_capacity_division.py      # ⭐ Coverage under bounded capacity (5 arms + overlap sweep)
 │   ├── exp_nonstationary_capacity.py # ⭐ Retention / catastrophic forgetting (5 arms; --soft model)
+│   ├── exp_function_approx_cl.py     # ⭐ Architecture-agnostic forgetting (gradient-trained MLP experts)
+│   ├── exp_hybrid_router.py          # Reward-driven router + reservation term
+│   ├── exp_intra_regime_drift.py     # Stale-specialist drift + staleness trigger
+│   ├── exp_oracle_fixed.py           # Oracle fixed-assignment skyline
+│   ├── exp_latent_regime.py          # Class-incremental (label-free) GAUSE
+│   ├── exp_population_sizing.py      # Off-diagonal N≠R coverage/retention sweep
 │   ├── exp_method_specialization.py  # Method specialization (V4)
 │   ├── exp_marl_comparison.py        # MARL head-to-head (V4)
 │   ├── exp_lambda_ablation.py        # λ ablation (V4)
@@ -302,7 +323,11 @@ GAUSE/
 ├── 📁 results/                       # Experiment outputs
 │   ├── unified_pipeline/             # Main pipeline outputs (V4)
 │   ├── capacity_division/            # Coverage results (results.json + overlap sweep)
-│   ├── nonstationary_capacity/       # Retention results (results.json + results_soft.json)
+│   ├── nonstationary_capacity/       # Retention results (+ oracle-fixed, latent-regime JSON)
+│   ├── function_approx_cl/           # Gradient-trained MLP experts (CL benchmark)
+│   ├── hybrid_router/                # Reward-driven router + reservation term
+│   ├── intra_regime_drift/           # Drift + staleness trigger
+│   ├── population_sizing/            # Off-diagonal N≠R sweep
 │   ├── v4_v3_comparison_matched_rate/  # V3 vs V4 ablation
 │   ├── real_marl_comparison/         # MARL head-to-head outputs
 │   └── method_specialization/        # Method specialization outputs
@@ -366,6 +391,14 @@ python experiments/exp_capacity_division.py
 # Headline: retention under non-stationarity (5 arms, fig7; --soft adds the
 # interference-model robustness check, fig8)
 python experiments/exp_nonstationary_capacity.py --soft
+
+# Closing the design space (v4.1):
+python experiments/exp_function_approx_cl.py   # architecture-agnostic forgetting (needs torch)
+python experiments/exp_hybrid_router.py        # router + reservation term
+python experiments/exp_intra_regime_drift.py   # stale specialists + staleness trigger
+python experiments/exp_oracle_fixed.py         # oracle fixed-assignment skyline
+python experiments/exp_latent_regime.py        # class-incremental (label-free) GAUSE
+python experiments/exp_population_sizing.py    # off-diagonal N≠R sizing
 
 # Method specialization (Table 2 in the paper, V4)
 python experiments/exp_method_specialization.py
@@ -477,6 +510,7 @@ Five publication-quality figures in `results/figures/`:
 - ✅ **Catastrophic-forgetting framing** with continual-learning citations; engagement with MoE-CL theory (ICLR'25, arXiv:2406.16437) — gate-freezing ⇔ reward-independent assignment.
 - ✅ **Paper restructure**: new title (*Reward-Independent Capacity Assignment as a Defense Against Catastrophic Forgetting*); coverage + retention promoted to Main Results; 95% CI error bars on figs 6–8; honest-claim softening in the intro.
 - ✅ **New explainer document**: `paper/gause_explainer.pdf` (17 pp) — full-system walkthrough of architecture (with diagrams), mechanisms, the reward-independence principle, experiments, and potential applications.
+- ✅ **Six design-space experiments** added (`exp_function_approx_cl.py`, `exp_hybrid_router.py`, `exp_intra_regime_drift.py`, `exp_oracle_fixed.py`, `exp_latent_regime.py`, `exp_population_sizing.py`): the router's forgetting is **architecture-agnostic** (gradient-trained MLP experts, +62% at E=R); a **reservation term** recovers retention only with spare capacity (reward-independence of *protection* is the operative property); **intra-regime drift** quantifies stale specialists and a staleness-trigger remedy; an **oracle fixed-assignment skyline** shows GAUSE recovers the hand-assigned partition without being given it (within 0.030 at K=1); a **class-incremental (label-free)** variant retains (0.38 vs 1.07) with the regime label removed; and a **population-sizing** sweep yields the rule *provision N ≳ R*.
 
 ### v4.0.0 (2026-06-04) — Exponentiated-Gradient Canonical Renovation ⭐⭐⭐
 

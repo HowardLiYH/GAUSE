@@ -76,7 +76,7 @@ echo "Created arxiv_submission.zip"
    - **Title:** Emergent Specialization in Learner Populations: Reward-Independent Capacity Assignment as a Defense Against Catastrophic Forgetting
    - **Authors:** Yuhao Li
    - **Abstract:** (copy from main.tex)
-   - **Comments:** 26 pages (canonical) + 72-page deep-dive companion, 5 figures, code available at https://github.com/HowardLiYH/NichePopulation (release v4.0.0)
+   - **Comments:** 26 pages (canonical) + 72-page deep-dive companion, 5 figures, code available at https://github.com/HowardLiYH/GAUSE (release v4.0.0)
 5. Choose license: **CC BY 4.0** (recommended for maximum visibility)
 6. Submit
 
@@ -126,8 +126,8 @@ echo "Created arxiv_submission.zip"
 
 ## 🔗 Related Links
 
-- **Code repository:** https://github.com/HowardLiYH/NichePopulation
-- **v4.0.0 release** (PDFs attached): https://github.com/HowardLiYH/NichePopulation/releases/tag/v4.0.0
+- **Code repository:** https://github.com/HowardLiYH/GAUSE
+- **v4.0.0 release** (PDFs attached): https://github.com/HowardLiYH/GAUSE/releases/tag/v4.0.0
 - **arXiv submission portal:** https://arxiv.org/submit
 - **arXiv help:** https://info.arxiv.org/help/submit.html
 

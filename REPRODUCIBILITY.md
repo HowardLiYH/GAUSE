@@ -8,8 +8,8 @@ This document provides complete instructions to reproduce all results in the pap
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/HowardLiYH/NichePopulation.git
-cd NichePopulation
+git clone https://github.com/HowardLiYH/GAUSE.git
+cd GAUSE
 
 # 2. Install dependencies
 pip install -r requirements.txt
@@ -180,5 +180,5 @@ docker run emergent-specialization python experiments/exp_unified_pipeline.py
 For questions about reproducibility:
 - **Author**: Yuhao Li
 - **Email**: li88@sas.upenn.edu
-- **Repository**: https://github.com/HowardLiYH/NichePopulation
-- **v4.0.0 Release**: https://github.com/HowardLiYH/NichePopulation/releases/tag/v4.0.0
+- **Repository**: https://github.com/HowardLiYH/GAUSE
+- **v4.0.0 Release**: https://github.com/HowardLiYH/GAUSE/releases/tag/v4.0.0
