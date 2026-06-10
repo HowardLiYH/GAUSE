@@ -1,6 +1,6 @@
-# 🧬 Emergent Specialization in Learner Populations
+# 🧬 GAUSE: Emergent Specialization in Learner Populations
 
-### Competition-Driven Niche Partitioning
+### Generalist-averse Affinity Update for Specialist Emergence
 
 <div align="center">
 
@@ -22,7 +22,9 @@
 
 ## 📖 Abstract
 
-We present a population-based learning system where learners **spontaneously specialize** to different environmental regimes without explicit supervision. Drawing from ecological niche theory, we introduce **competitive exclusion with niche affinity** that creates evolutionary pressure for strategy space partitioning.
+**GAUSE** (Generalist-averse Affinity Update for Specialist Emergence)<sup>†</sup> is a population-based learning system where learners **spontaneously specialize** to different environmental regimes without explicit supervision. Drawing from ecological niche theory, it couples **competitive exclusion with niche affinity** to create evolutionary pressure for strategy-space partitioning.
+
+<sub>† The name also honors G. F. Gause, whose competitive exclusion principle (1934) the mechanism operationalizes.</sub>
 
 **Core Thesis (v4.1):** Under bounded per-agent capacity and non-stationarity, **retention of dormant-regime knowledge tracks a single property: whether capacity assignment is independent of current task reward.** Reward-chasing allocations (a capacity-bounded monolith, a learned Mixture-of-Experts router) forget dormant regimes and relearn them on reactivation; reward-independent assignments (fixed random niches, an EOI/CDS-style intrinsic-diversity objective, converged competitive exclusion) retain them. Competition is the most **parsimonious** route to reward-independent specialization: no gate to train, no diversity objective to tune, no freezing schedule to pick — the assignment is the equilibrium the dynamics converge to. Supporting claim (unchanged): competition alone, without explicit diversity incentives, suffices to induce emergent specialization (mean SI = 0.65 at λ = 0).
 
@@ -59,7 +61,7 @@ Five capacity-allocation mechanisms compared at matched per-agent capacity K (ea
 | MoE learned router | current task reward | 0.928 | ❌ |
 | Random fixed niches | none (frozen) | 0.603 | ⚠️ (coverage gaps) |
 | EOI/CDS-style diversity | intrinsic identity reward | 0.322 | ✅ |
-| **NichePopulation (ours)** | converged identity | **0.283** | ✅ |
+| **GAUSE (ours)** | converged identity | **0.283** | ✅ |
 
 - **Retention tracks reward-independence five-for-five.** The specialized population beats the capacity-matched monolith by **+33% overall / +71% post-reactivation** (p < 10⁻³⁶ at K=3); the reward-driven router fails like the monolith (p ~ 10⁻³⁵ vs. ours at K=1).
 - **Why:** a dormant regime emits no reward gradient, so a reward-driven gate gets **no signal** to reserve capacity for it (idealized Observation in the paper). A converged specialist simply idles through dormancy and retains its niche structurally.
@@ -109,7 +111,7 @@ All experiments run with **identical configuration** across all 6 domains:
 
 ### Task Performance Metrics (Illustrative)
 
-> ⚠️ The illustrative metrics below come from `experiments/exp_task_performance.py`, which is a synthetic Monte-Carlo with hardcoded per-domain base rates and does **not** exercise the NichePopulation algorithm. They are retained here only as a rough visualization. The honest task-level performance numbers are in the Method Specialization table below (which **does** run the real algorithm).
+> ⚠️ The illustrative metrics below come from `experiments/exp_task_performance.py`, which is a synthetic Monte-Carlo with hardcoded per-domain base rates and does **not** exercise the GAUSE algorithm. They are retained here only as a rough visualization. The honest task-level performance numbers are in the Method Specialization table below (which **does** run the real algorithm).
 
 ### Method Specialization Experiment (V4)
 
@@ -137,13 +139,13 @@ Direct comparison against IQL, VDN, QMIX, MAPPO under V4. All methods use 8 lear
 
 | Method | Crypto | Commodities | Weather | Traffic |
 |---|---|---|---|---|
-| **NichePopulation (Ours)** | **1.000** | **1.000** | **1.000** | **1.000** |
+| **GAUSE (Ours)** | **1.000** | **1.000** | **1.000** | **1.000** |
 | IQL  | 0.008 | 0.007 | 0.016 | 0.011 |
 | VDN  | 0.009 | 0.007 | 0.015 | 0.011 |
 | QMIX | 0.009 | 0.007 | 0.014 | 0.011 |
 | MAPPO | 0.000 | 0.000 | 0.000 | 0.000 |
 
-**Key Finding:** NichePopulation reaches the maximum SI (= 1.000) in every domain while every MARL baseline stays at ≤ 0.02 — a **≥ 100× qualitative gap**. On rare-regime task rewards, NichePopulation also beats the closest MARL method (IQL) by +5.1% to +8.3% per regime (+6.7% averaged).
+**Key Finding:** GAUSE reaches the maximum SI (= 1.000) in every domain while every MARL baseline stays at ≤ 0.02 — a **≥ 100× qualitative gap**. On rare-regime task rewards, GAUSE also beats the closest MARL method (IQL) by +5.1% to +8.3% per regime (+6.7% averaged).
 
 ### Method Distribution Examples
 
@@ -268,11 +270,11 @@ Each domain has 5 prediction methods. Learners learn which method works best for
 ## 🏗️ Architecture
 
 ```
-NichePopulation/
+GAUSE/
 ├── 📁 src/                           # Core implementation
-│   ├── agents/                       # ⭐ Core algorithm
-│   │   └── niche_population.py       # NicheAgent + NichePopulation
-│   │                                 #   (V4 EG default; V3 legacy)
+│   ├── agents/                       # ⭐ Core algorithm (GAUSE)
+│   │   └── niche_population.py       # NicheAgent + NichePopulation class
+│   │                                 #   (implements GAUSE; V4 EG default, V3 legacy)
 │   ├── domains/                      # Multi-domain data adapters
 │   │   ├── crypto.py / commodities.py
 │   │   ├── weather.py / solar.py
@@ -306,7 +308,7 @@ NichePopulation/
 ├── 📁 paper/                         # LaTeX paper sources
 │   ├── main.tex                      # Canonical paper (35 pages, v4.1 reframed)
 │   ├── method_deep_dive.tex          # Deep-dive companion (76 pages)
-│   ├── niche_population_explainer.tex # System explainer (13 pages, AutoAgent-style)
+│   ├── gause_explainer.tex           # System explainer (17 pages, AutoAgent-style)
 │   └── references.bib
 ├── 📁 docs/                          # Reports + research docs
 │   ├── V4_FINAL_REPORT.md            # Comprehensive V4 renovation report
@@ -327,8 +329,8 @@ NichePopulation/
 
 ```bash
 # Clone repository
-git clone https://github.com/HowardLiYH/NichePopulation.git
-cd NichePopulation
+git clone https://github.com/HowardLiYH/GAUSE.git
+cd GAUSE
 
 # Create conda environment
 conda create -n emergent python=3.10
@@ -473,7 +475,7 @@ Five publication-quality figures in `results/figures/`:
 - ✅ **Soft interference capacity model** (`--soft`): the dissociation survives removing LRU eviction entirely (not an artifact of discrete eviction).
 - ✅ **Catastrophic-forgetting framing** with continual-learning citations; engagement with MoE-CL theory (ICLR'25, arXiv:2406.16437) — gate-freezing ⇔ reward-independent assignment.
 - ✅ **Paper restructure**: new title (*Reward-Independent Capacity Assignment as a Defense Against Catastrophic Forgetting*); coverage + retention promoted to Main Results; 95% CI error bars on figs 6–8; honest-claim softening in the intro.
-- ✅ **New explainer document**: `paper/niche_population_explainer.pdf` (13 pp) — full-system walkthrough of architecture, mechanisms, the reward-independence principle, and experiments.
+- ✅ **New explainer document**: `paper/gause_explainer.pdf` (17 pp) — full-system walkthrough of architecture (with diagrams), mechanisms, the reward-independence principle, experiments, and potential applications.
 
 ### v4.0.0 (2026-06-04) — Exponentiated-Gradient Canonical Renovation ⭐⭐⭐
 
@@ -485,12 +487,12 @@ Five publication-quality figures in `results/figures/`:
   - Mean SI: 0.747 → **0.992**
   - Mean Cohen's d vs. homogeneous: ≈23 → **≈73**
   - Mean SI at λ = 0: 0.329 → **0.650**
-  - NichePop vs. MARL SI gap: 4.3× → **≥100×** (1.000 vs. ≤ 0.02)
+  - GAUSE vs. MARL SI gap: 4.3× → **≥100×** (1.000 vs. ≤ 0.02)
   - Traffic (R = 6): 0.573 (lowest) → **0.995** (no longer outlier)
 - ✅ **Tests**: 19/19 passing in `tests/test_eg_update.py`.
 - ✅ **All experiments converted to V4**; V3 retained behind `update_rule="v3_additive"` for ablation/comparison.
 - ✅ **Reports**: `docs/V4_FINAL_REPORT.md`, `docs/V4_EG_RENOVATION_AUDIT.md`.
-- ✅ **Release**: tagged [`v4.0.0`](https://github.com/HowardLiYH/NichePopulation/releases/tag/v4.0.0) with `main.pdf` and `method_deep_dive.pdf` attached.
+- ✅ **Release**: tagged [`v4.0.0`](https://github.com/HowardLiYH/GAUSE/releases/tag/v4.0.0) with `main.pdf` and `method_deep_dive.pdf` attached.
 
 ### v3.0.0 (2026-01-16) - Learner Populations Reframing ⭐
 
@@ -507,7 +509,7 @@ Five publication-quality figures in `results/figures/`:
 
 - ✅ **4 Real Data Domains**: Crypto, Commodities, Weather, Solar
 - ✅ **175K+ real records** across all domains
-- ✅ **MARL Comparison**: NichePopulation beats IQL by 2-4x
+- ✅ **MARL Comparison**: GAUSE beats IQL by 2-4x
 - ✅ **5 Publication Figures** generated
 - ✅ **3 Theoretical Propositions** with proof sketches
 - ✅ **Limitations Section** for honest assessment
@@ -540,13 +542,13 @@ Five publication-quality figures in `results/figures/`:
 ## 📚 Citation
 
 ```bibtex
-@misc{li2026emergent,
-  title     = {Emergent Specialization in Learner Populations:
+@misc{li2026gause,
+  title     = {{GAUSE}: Emergent Specialization in Learner Populations ---
                Reward-Independent Capacity Assignment as a Defense
                Against Catastrophic Forgetting},
   author    = {Li, Yuhao},
   year      = {2026},
-  howpublished = {\url{https://github.com/HowardLiYH/NichePopulation}},
+  howpublished = {\url{https://github.com/HowardLiYH/GAUSE}},
   note      = {arXiv preprint}
 }
 ```
@@ -563,6 +565,6 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 **⭐ Star this repo if you find it useful!**
 
-[Report Bug](https://github.com/HowardLiYH/NichePopulation/issues) • [Request Feature](https://github.com/HowardLiYH/NichePopulation/issues)
+[Report Bug](https://github.com/HowardLiYH/GAUSE/issues) • [Request Feature](https://github.com/HowardLiYH/GAUSE/issues)
 
 </div>

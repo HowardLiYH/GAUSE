@@ -1,0 +1,14 @@
+# latexmk configuration for paper/ — keeps build artifacts out of sight.
+#
+# All intermediate files (.aux, .log, .out, .toc, .bbl, .blg, .fls,
+# .fdb_latexmk, ...) are written to the hidden .latex-aux/ directory;
+# only the final PDF lands in paper/. Usage stays the same:
+#
+#   latexmk -pdf main.tex
+#   latexmk -pdf method_deep_dive.tex
+#   latexmk -pdf gause_explainer.tex
+
+$pdf_mode = 1;
+$bibtex_use = 2;
+$emulate_aux = 1;
+$aux_dir = '.latex-aux';

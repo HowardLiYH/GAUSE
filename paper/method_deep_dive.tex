@@ -111,7 +111,10 @@ University of Pennsylvania\\
 \maketitle
 
 \begin{abstract}
-This document provides an exhaustive, ground-up explanation of the NichePopulation algorithm and the theory of emergent specialization in multi-agent systems. We combine rigorous mathematical treatment with intuitive explanations, worked examples, code implementations, and visualizations. The document is designed for readers with a strong mathematical background who want to understand every detail of how and why agents spontaneously specialize under competitive pressure. The companion paper's central finding---that under bounded capacity and non-stationarity, retention of dormant regimes tracks whether capacity assignment is \emph{independent of current task reward} (reward-chasing allocations, including a learned MoE router, forget; reward-independent ones, including converged competitive exclusion, retain)---is developed in the controls-and-ablations and MARL-comparison sections below.
+This document provides an exhaustive, ground-up explanation of the GAUSE
+(Generalist-averse Affinity Update for Specialist Emergence)\footnote{The name
+also honors G.~F.~Gause, whose competitive exclusion principle (1934) the
+mechanism operationalizes.} algorithm and the theory of emergent specialization in multi-agent systems. We combine rigorous mathematical treatment with intuitive explanations, worked examples, code implementations, and visualizations. The document is designed for readers with a strong mathematical background who want to understand every detail of how and why agents spontaneously specialize under competitive pressure. The companion paper's central finding---that under bounded capacity and non-stationarity, retention of dormant regimes tracks whether capacity assignment is \emph{independent of current task reward} (reward-chasing allocations, including a learned MoE router, forget; reward-independent ones, including converged competitive exclusion, retain)---is developed in the controls-and-ablations and MARL-comparison sections below.
 
 \textbf{Prerequisites:} Basic probability theory, linear algebra, and familiarity with optimization. All other concepts (information theory, game theory, Bayesian inference) are developed from first principles.
 \end{abstract}
@@ -2166,7 +2169,7 @@ Despite the challenges of real data, our algorithm achieves strong specializatio
 \caption{SI on Real Data vs. Random Baseline (30 trials, $\lambda = 0.3$)}
 \begin{tabular}{l|cc|c|c}
 \toprule
-Domain & NichePopulation SI & Random SI & Cohen's d & $p$-value \\
+Domain & GAUSE SI & Random SI & Cohen's d & $p$-value \\
 \midrule
 Crypto & 0.991 $\pm$ 0.024 & 0.132 $\pm$ 0.032 & 58.29 & $< 10^{-80}$ \\
 Commodities & 0.990 $\pm$ 0.020 & 0.132 $\pm$ 0.032 & 70.48 & $< 10^{-80}$ \\
@@ -2333,7 +2336,7 @@ locations) localize the source of the gain:
 \end{enumerate}
 
 \begin{keypoint}
-\textbf{Honest synthesis.} NichePopulation reliably produces coordination-free
+\textbf{Honest synthesis.} GAUSE reliably produces coordination-free
 division of labor (organization), and on domains with genuine regime structure its
 niches track performance-relevant regimes. With slack individual capacity:
 (i) SI measures organization, not structure-dependence; (ii) the measurable
@@ -2387,7 +2390,7 @@ This is the heart of the algorithm. We now describe how agents compete and why t
 \subsection{One Iteration}
 
 \begin{algorithm}[H]
-\caption{One Iteration of NichePopulation}
+\caption{One Iteration of GAUSE}
 \begin{algorithmic}[1]
 \STATE \textbf{Sample regime}: $r_t \sim \pi(\cdot)$
 \FOR{each agent $i = 1, \ldots, N$}
@@ -2751,7 +2754,7 @@ At $\lambda = 0$:
     (0.5, 0.951)
 };
 \addplot[red, dashed] coordinates {(0, 0.13) (0.5, 0.13)};
-\legend{NichePopulation, Random Baseline}
+\legend{GAUSE, Random Baseline}
 \node at (axis cs:0.05,0.72) [anchor=west] {Competition alone still strong};
 \end{axis}
 \end{tikzpicture}
@@ -2977,10 +2980,10 @@ where $r_t(\theta_i) = \frac{\pi_{\theta_i}(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t
 
 \begin{table}[h]
 \centering
-\caption{MARL vs. NichePopulation: Key Differences}
+\caption{MARL vs. GAUSE: Key Differences}
 \begin{tabular}{l|cc}
 \toprule
-Aspect & MARL (IQL/QMIX/MAPPO) & NichePopulation \\
+Aspect & MARL (IQL/QMIX/MAPPO) & GAUSE \\
 \midrule
 Update rule & All agents update & \textbf{Only winner updates} \\
 Reward structure & Shared team reward & Individual competitive reward \\
@@ -2994,17 +2997,17 @@ Resulting population & Homogeneous & Diverse specialists \\
 \begin{intuition}
 In MARL, all agents are pulling in the same direction (maximize team reward).
 
-In NichePopulation, agents are \textbf{competing for limited slots}. If Agent A wins in Bull regime, Agent B must find another regime to win in. This creates diversity as a byproduct of competition.
+In GAUSE, agents are \textbf{competing for limited slots}. If Agent A wins in Bull regime, Agent B must find another regime to win in. This creates diversity as a byproduct of competition.
 \end{intuition}
 
 \subsection{Empirical MARL Comparison Results}
 
 \begin{table}[h]
 \centering
-\caption{SI Comparison: NichePopulation vs. MARL Baselines (10 trials per domain)}
+\caption{SI Comparison: GAUSE vs. MARL Baselines (10 trials per domain)}
 \begin{tabular}{l|cccc|c}
 \toprule
-Domain & IQL SI & VDN SI & QMIX SI & MAPPO SI & NichePopulation SI \\
+Domain & IQL SI & VDN SI & QMIX SI & MAPPO SI & GAUSE SI \\
 \midrule
 Crypto & 0.008 & 0.009 & 0.009 & 0.000 & \textbf{1.000} \\
 Commodities & 0.007 & 0.007 & 0.007 & 0.000 & \textbf{1.000} \\
@@ -3017,7 +3020,7 @@ Traffic & 0.011 & 0.011 & 0.011 & 0.000 & \textbf{1.000} \\
 \end{table}
 
 \begin{keypoint}
-NichePopulation reaches effectively maximal specialization (SI $=1.000$), while
+GAUSE reaches effectively maximal specialization (SI $=1.000$), while
 MARL baselines remain near-zero ($\leq 0.02$). The gap is qualitative, not just
 incremental.
 \end{keypoint}
@@ -3034,7 +3037,7 @@ One might argue: ``MARL agents are homogeneous but still perform well.''
 \end{itemize}
 
 \begin{example}[Rare Regime Resilience --- Empirical Validation with Real MARL Training]
-We trained actual MARL algorithms (IQL, VDN, QMIX, MAPPO) and NichePopulation on a regime-switching task, then evaluated rare-regime performance. This uses \textbf{real RL training}, not simulated behavior.
+We trained actual MARL algorithms (IQL, VDN, QMIX, MAPPO) and GAUSE on a regime-switching task, then evaluated rare-regime performance. This uses \textbf{real RL training}, not simulated behavior.
 
 \textbf{Experimental Setup:}
 \begin{itemize}
@@ -3068,7 +3071,7 @@ Solar & Low (20\%) & 0.920 & 0.909 & 0.921 & 0.927 & \textbf{0.930} \\
 \end{tabular}
 \end{center}
 
-\textbf{NichePopulation Improvement vs Each MARL Method:}
+\textbf{GAUSE Improvement vs Each MARL Method:}
 \begin{center}
 \begin{tabular}{lcccc}
 \toprule
@@ -3086,7 +3089,7 @@ Solar & +1.2\% & $-0.1$\% & $-0.8$\% & $-1.0$\% \\
 \end{tabular}
 \end{center}
 
-\textbf{NichePopulation specialist SI per domain} (the rare-regime probe stores
+\textbf{GAUSE specialist SI per domain} (the rare-regime probe stores
 only the Niche specialist SI; for MARL SI see the headline comparison above,
 where IQL/VDN/QMIX $\approx 0.01$ and MAPPO $= 0.00$ across domains):
 \begin{center}
@@ -3109,10 +3112,10 @@ method-discriminative.
 \textbf{Key findings} (honest, structure-dependent):
 \begin{itemize}
     \item \textbf{Large gains where structure exists}: in the four high-structure
-    rare regimes (weather, commodities, crypto, traffic) NichePopulation beats
+    rare regimes (weather, commodities, crypto, traffic) GAUSE beats
     every MARL method by $+11.4\%$ to $+50.1\%$.
     \item \textbf{No advantage where structure is absent}: in air quality and
-    solar---the low oracle-gap domains---NichePopulation is statistically tied
+    solar---the low oracle-gap domains---GAUSE is statistically tied
     with (or marginally below) MARL, and the population fails to form a
     specialist (SI $\approx 0.08$ for air quality). This is consistent with the
     oracle diagnostic: no exploitable regime structure means no specialization
@@ -3136,7 +3139,7 @@ Our algorithm has four main hyperparameters:
 
 \begin{table}[h]
 \centering
-\caption{NichePopulation Hyperparameters}
+\caption{GAUSE Hyperparameters}
 \begin{tabular}{l|c|c|p{6cm}}
 \toprule
 Parameter & Symbol & Default & Description \\
@@ -3483,10 +3486,10 @@ In our context:
 % ============================================================================
 \part{The Complete Algorithm}
 
-\section{NichePopulation: Pseudocode}
+\section{GAUSE: Pseudocode}
 
 \begin{algorithm}[H]
-\caption{NichePopulation Algorithm}
+\caption{GAUSE Algorithm}
 \label{alg:niche-population}
 \begin{algorithmic}[1]
 \REQUIRE Population of $N$ agents, regimes $\mathcal{R}$, methods $\mathcal{M}$, bonus $\lambda$, learning rates $\eta$, iterations $T$
@@ -3522,13 +3525,13 @@ In our context:
 
 \subsection{Core Simulation Function}
 
-\begin{lstlisting}[caption={Core NichePopulation Simulation (from exp\_unified\_pipeline.py)}]
+\begin{lstlisting}[caption={Core GAUSE Simulation (from exp\_unified\_pipeline.py)}]
 import math
 import numpy as np
 
 def run_niche_population(regimes, regime_probs, n_agents, n_iterations,
                           niche_bonus, seed):
-    """Run NichePopulation simulation (V4 EG update)."""
+    """Run GAUSE simulation (V4 EG update)."""
     rng = np.random.default_rng(seed)
 
     # Initialize niche affinities (uniform)
@@ -3705,7 +3708,7 @@ After running the algorithm:
 \caption{Experimental Results Across Domains (30 trials each)}
 \begin{tabular}{l|ccc|c}
 \toprule
-Domain & NichePopulation SI & Homogeneous SI & Cohen's $d$ & $p$-value \\
+Domain & GAUSE SI & Homogeneous SI & Cohen's $d$ & $p$-value \\
 \midrule
 Crypto & 0.991 $\pm$ 0.024 & 0.002 $\pm$ 0.000 & 58.29 & $<10^{-80}$ \\
 Commodities & 0.990 $\pm$ 0.020 & 0.002 $\pm$ 0.000 & 70.48 & $<10^{-80}$ \\
@@ -3842,7 +3845,7 @@ Outperforms MARL & Niche SI $=1.000$ vs MARL SI $\le 0.02$ & $\ge 100\times$ SI 
 \node[concept, fill=red!10] (game) at (2.5, 2.5) {Game Theory\\(Nash Eq.)};
 \node[concept, fill=yellow!10] (bayes) at (-2, 1) {Bayesian\\Inference};
 \node[concept, fill=orange!10] (ts) at (7, 1) {Thompson\\Sampling};
-\node[concept, fill=purple!10] (algo) at (2.5, 0) {NichePopulation\\Algorithm};
+\node[concept, fill=purple!10] (algo) at (2.5, 0) {GAUSE\\Algorithm};
 \node[concept, fill=cyan!10] (si) at (2.5, -2) {Specialization\\Index (SI)};
 
 % Arrows
@@ -3879,7 +3882,7 @@ $d>50$ and $p<10^{-80}$ throughout.
 
 \subsection{Q5: How does this compare to MARL?}
 
-\textbf{A:} Standard MARL (IQL, VDN, QMIX, MAPPO) produces homogeneous populations because all agents optimize the same objective. NichePopulation's winner-take-all creates diversity as a byproduct of competition.
+\textbf{A:} Standard MARL (IQL, VDN, QMIX, MAPPO) produces homogeneous populations because all agents optimize the same objective. GAUSE's winner-take-all creates diversity as a byproduct of competition.
 
 \subsection{Q6: Does the specialization actually improve task performance?}
 

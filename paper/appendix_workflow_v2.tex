@@ -1,6 +1,6 @@
 % ============================================================================
 % APPENDIX: ULTRA-DETAILED ALGORITHM WORKFLOW (V2 - REORDERED)
-% NichePopulation: A Complete Visual and Numerical Guide
+% GAUSE: A Complete Visual and Numerical Guide
 % ============================================================================
 % This version reorders content for better pedagogical flow:
 % - Definitions BEFORE usage
@@ -11,7 +11,7 @@
 \section{Algorithm Workflow: Complete Visual Guide}
 \label{sec:workflow}
 
-This appendix provides an exhaustive, self-contained walkthrough of the NichePopulation algorithm. After reading this section, you will fully understand every step of the algorithm and how specialization emerges from competition.
+This appendix provides an exhaustive, self-contained walkthrough of the GAUSE algorithm. After reading this section, you will fully understand every step of the algorithm and how specialization emerges from competition.
 
 % ============================================================================
 % SECTION 1: WHAT IS SPECIALIZATION? (DEFINITIONS FIRST)
@@ -99,7 +99,7 @@ H(\alpha) &= -0.82 \log(0.82) - 3 \times 0.06 \log(0.06) \\
 
 \subsection{The Key Mechanism: Competition Creates Diversity}
 
-The NichePopulation algorithm induces specialization through three interlocking mechanisms:
+The GAUSE algorithm induces specialization through three interlocking mechanisms:
 
 \paragraph{Mechanism 1: Winner-Take-All Competition.}
 
@@ -275,7 +275,7 @@ Now that we understand the goal (specialization), the mechanism (competition), a
     \node [left=0.5cm of winupdate, green!50!black] {\textbf{P5}};
 
     \end{tikzpicture}
-    \caption{NichePopulation algorithm flowchart. P0=Initialization, P1=Context, P2=Selection (Thompson Sampling), P3=Execution, P4=Competition (scoring), P5=Winner-only update. Blue=init, Purple=compute, Green=winner update, Red=loser path. Loop repeats $T=500$ times.}
+    \caption{GAUSE algorithm flowchart. P0=Initialization, P1=Context, P2=Selection (Thompson Sampling), P3=Execution, P4=Competition (scoring), P5=Winner-only update. Blue=init, Purple=compute, Green=winner update, Red=loser path. Loop repeats $T=500$ times.}
     \label{fig:workflow}
 \end{figure}
 
