@@ -5,6 +5,7 @@
 % ============================================================================
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern} % scalable Type1 CM fonts (robust to microtype font expansion)
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{mathtools}
 \usepackage{bm}
@@ -4116,6 +4117,56 @@ inactive and it is not recruited elsewhere), so $s_{a_r}(r)$ is unchanged and
 $> \varepsilon$ at $t_1$: $r$ is retained.
 \end{proof}
 
+\begin{proposition}[Reallocation rate---the necessity claim is not vacuous]
+\label{prop:realloc_rate}
+The forgetting direction above is stated for ``a dormancy window long enough that
+$\ge K$ other regimes are served.'' We sharpen it into a rate, so the necessity
+half is a quantitative statement rather than a restatement of the class definition.
+During dormancy of length $T$, let $U_T$ count the distinct regimes other than $r$
+that the holder of $r$ is made to learn, and let $p>0$ be the per-step probability
+of learning a not-yet-held such regime. For a reward-driven allocator in
+$\mathcal{A}$, $U_T$ is non-decreasing with independent positive increments, so the
+time to $U_T\ge K$ is a sum of $K$ geometric$(p)$ waiting times (negative-binomial),
+a.s.\ finite; hence
+\[
+  \Pr[r\text{ retained}] \;=\; \Pr[U_T<K]
+  \;\le\; \binom{T}{K-1}(1-p)^{\,T-K+1} \;\xrightarrow[T\to\infty]{}\; 0,
+\]
+and $\Pr[\text{reallocation}]\to 1$ (under the soft model the retained strength is
+$\le s_0\,\kappa^{\,U_T}\to0$). For a reward-independent allocator $A_t[r]$ does not
+depend on the active stream, so $U_T\equiv 0$ for $r$'s owner and
+$\Pr[\text{reallocation}]=0$ for every $T$.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+The waiting time to the $K$-th distinct foreign regime is negative-binomial$(K,p)$,
+giving the displayed tail; LRU evicts $r$ on $\{U_T\ge K\}$ and the soft case follows
+from the once-per-update decay. The reward-independent case is immediate: by
+hypothesis no foreign update touches $r$'s owner, so $U_T=0$ and the store is
+preserved exactly. \end{proof}
+
+\noindent\emph{Model vs.\ experiment.} The tail bound assumes an i.i.d.\ stream of
+active regimes, whereas the experiments use a \emph{deterministic} sliding window of
+$W$ regimes per epoch. The idealization is conservative, not flattering: under the
+deterministic schedule a dormant regime faces $W$ active competitors every epoch, so
+$U_T$ grows at least as fast as under the i.i.d.\ model and the eviction event
+$\{U_T\ge K\}$ arrives no later. The i.i.d.\ analysis therefore \emph{upper-bounds}
+the true retention probability of the reward-driven arm.
+
+\begin{remark}[On the register of ``Principle'']
+We are deliberate that the \emph{sufficiency} direction is, within $\mathcal{A}$ as
+defined, close to analytic---``reward-independent and covering'' nearly restates
+``an idle owner sits on each dormant regime.'' We therefore do not rest the
+contribution on the definition. Its content is (a) the \emph{necessity} direction,
+which is the genuine, model-driven part (a reward-driven assignment is provably
+\emph{forced} to forget by the no-signal lemma plus the memory model, at the rate of
+Proposition~\ref{prop:realloc_rate}), and (b) the empirical dissociation across
+mechanisms that could behave otherwise---including the out-of-class hybrid router,
+which partially retains exactly when its protection becomes reward-independent, and
+the oracle skyline below. Read this way the statement is an organizing principle whose
+force is the rate bound and the experiments, not the taxonomy.
+\end{remark}
+
 \begin{keypoint}
 The proposition explains the five-arm dissociation exactly. The two
 \emph{reward-chasing} arms (monolith, learned MoE router) fail condition (i) and
@@ -4135,6 +4186,68 @@ a gate augmented with an explicit memory-preservation or dormant-regime
 reservation term lies outside $\mathcal{A}$ and could retain. The proposition
 says \emph{what} such a mechanism would need (a reward-independent, covering
 assignment), and shows competition supplies it for free.
+\end{remark}
+
+\begin{remark}[Scope: the regime label is given (task-incremental)]
+\label{rem:task_incremental}
+The setting throughout is \emph{task-incremental}: every mechanism---the monolith,
+the MoE router, the diversity arms, and competitive exclusion---is handed the
+current regime label $r_t$, which indexes both the winner-take-all comparator and
+the gate update $\Delta\,\mathrm{gate}[r_t][\cdot]$. The dissociation is therefore
+\emph{not} an information asymmetry: GAUSE sees no regime that the router is denied;
+both receive the same $r_t$, and what differs is only whether the induced assignment
+chases current reward (forced to forget by Proposition~\ref{prop:realloc_rate}) or is
+reward-independent. This bounds the claim to ``given task identity.'' The hard,
+unsolved part of real non-stationarity---inferring \emph{which} regime is active
+without a label (\emph{class-incremental})---is assumed solved. The natural route to
+removing the assumption is that the competence beliefs $\mathrm{Beta}(\beta^+_{i,r,m},
+\beta^-_{i,r,m})$ already form a per-regime likelihood $p(\text{obs}\mid r)$, so the
+quality-based winner is itself an implicit regime estimate; the open problem is a
+stable correspondence between emergent win-clusters and latent regimes (online
+competitive clustering / EM). We do not leave this as theory: a label-free variant
+that carries each agent's niche affinity over the observable \emph{method} space (the
+method an agent plays being observable, and method $r$ being the signature of regime
+$r$) makes GAUSE class-incremental in practice. With the regime label removed from
+every arm it still self-organizes against the hidden regimes (specialization index
+$0.75$, coverage $0.86$) and retains---post-reactivation error $0.38$ at $K{=}1$,
+flat in $K$, versus $1.07$ for a label-free capacity-bounded monolith that
+forgets---detecting reactivation purely from input similarity. The modest gap to the
+label-given value ($0.38$ vs.\ $0.283$) is the measurable price of inference; the
+imperfect coverage ($0.86<1$) is the honest signature of unsupervised partition
+recovery. We are explicit about scope: the method-space proxy is exact \emph{by
+construction} here---regime $r$ is uniquely signalled by method $r$, a clean
+one-to-one correspondence, and the played method is observable---so this removes the
+\emph{label} but not the assumption that a low-dimensional observable signature
+separates the regimes. On feature-rich data with overlapping or non-identifiable
+methods the proxy breaks and latent recovery becomes a genuine online-clustering
+problem; the experiment is thus a proof of concept that the competitive dynamics
+\emph{can} self-supervise the partition when a separating signal exists, not evidence
+that they will on arbitrary inputs.
+\end{remark}
+
+\begin{remark}[The honest competitor: an oracle fixed assignment is a skyline GAUSE matches]
+\label{rem:oracle}
+Because the labels are given, the strongest member of the reward-independent,
+covering class is not random diversity but an \emph{oracle fixed assignment}: pin
+agent $i$ to a covering niche by hand---at $K{=}1$ the identity permutation
+$i\mapsto$ regime $i$---with no learning of \emph{where} to specialize. It satisfies
+(i) and (ii) of Proposition~\ref{prop:reward_independence} by construction and pays
+zero discovery cost, so it is the retention \emph{skyline}, and the natural question
+is why one needs emergent competition at all. The answer, measured on the
+non-stationary sweep (hard LRU, $R{=}6$, $W{=}3$): GAUSE matches it \emph{without
+being handed the assignment}. At $K{=}1$ the oracle floor is $0.253$ (the intrinsic
+noise level) versus GAUSE's $0.283$---a $0.030$ gap, the price of \emph{discovering}
+the covering permutation; by $K{=}3$ the gap is $0.006$ ($0.260$ vs.\ $0.254$, Welch
+$p\approx0.05$, indistinguishable), while the reward-driven arms remain at
+$0.72$--$0.91$. The match is not an artifact of hard eviction either: under the soft
+interference model GAUSE and the oracle are indistinguishable at \emph{every} $K$
+(differences $\le0.002$, $p>0.13$). So competition does not beat hand-assignment given
+the labels---it cannot, the oracle is a skyline---but it recovers the oracle partition automatically,
+with no pre-commitment, and (unlike a hand-designed permutation) degrades gracefully
+off the $N\approx R$ diagonal. This is the honest reading of the contribution: the
+value is \emph{automatic, correctly-scoped recovery} of the oracle assignment, and
+the latent-regime extension of Remark~\ref{rem:task_incremental} is what would let it
+be recovered without the label too.
 \end{remark}
 
 \section{Connection to No Free Lunch Theorem}

@@ -15,7 +15,7 @@
 \usetikzlibrary{positioning, arrows.meta, calc, shapes.misc, backgrounds, fit}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usepackage{tcolorbox}
+\usepackage[most]{tcolorbox}
 \tcbuselibrary{skins}
 \usepackage{titlesec}
 \usepackage{tocloft}
@@ -47,7 +47,7 @@
 \setcounter{tocdepth}{2}
 
 % --- Boxed abstract (rounded, light blue) ---
-\newtcolorbox{abstractbox}{enhanced, colback=absbg, colframe=headblue!45,
+\newtcolorbox{abstractbox}{enhanced, breakable, colback=absbg, colframe=headblue!45,
   boxrule=0.6pt, arc=8pt, left=14pt, right=14pt, top=8pt, bottom=10pt}
 
 % --- Design/recipe callout box ---
@@ -56,6 +56,7 @@
 
 \newtheorem{observation}{Observation}
 \newtheorem{principle}{Principle}
+\newtheorem{proposition}{Proposition}
 
 \newcommand{\SI}{\mathrm{SI}}
 \newcommand{\E}{\mathbb{E}}
@@ -116,17 +117,39 @@ separates mechanisms that survive non-stationarity from mechanisms that do not:
 across five capacity-allocation arms (capacity-bounded monolith, learned
 Mixture-of-Experts router, fixed random niches, an EOI/CDS-style intrinsic
 diversity objective, and emergent competition), every reward-chasing allocation
-forgets dormant regimes and every reward-independent assignment retains them
-($+71\%$ lower post-reactivation error, $p\sim10^{-35}$; robust to swapping
-hard eviction for soft interference). Empirical results across six real-world
+forgets dormant regimes, while every reward-independent assignment retains the
+regimes it covers---and competition is the cheapest arm to secure both
+reward-independence and guaranteed coverage at once ($+71\%$ lower
+post-reactivation error versus the reward-driven router, robust to swapping hard
+eviction for soft interference). We are careful about scope and rigor: the
+comparison is \emph{task-incremental} (every arm, GAUSE included, sees the regime
+label, so it is information-symmetric); we benchmark against the honest ceiling---an
+\emph{oracle fixed assignment} given both the labels and a perfect covering
+permutation---which GAUSE recovers without being handed the assignment (within
+$0.030$ at $K{=}1$, indistinguishable for $K\ge3$). Crucially,
+the central retention result survives \emph{dropping the label}: a class-incremental
+variant that infers the active regime from competence alone self-organizes against
+the hidden regimes and retains ($0.38$ post-reactivation vs.\ $1.07$ for a
+label-free forgetting monolith), detecting reactivation from input similarity with
+no regime identity supplied. Empirical results across six real-world
 domains (145{,}294 records) and controlled synthetic tasks show that the
 framework reliably self-organizes into one-per-regime specialists (mean SI
-$=0.65$ from competition alone), matches purpose-built diversity and routing
-baselines on spatial coverage with none of their machinery, and is structurally
-immune to a failure mode of reward-driven routing. We close with a survey of
-application domains---elastic memory for agentic AI, regime-switching finance,
-edge sensing, robot fleets, and serving infrastructure---where the mechanism's
-parsimony and retention guarantee are most valuable. Code and data:
+$=0.65$ from competition alone) and matches purpose-built diversity and routing
+baselines on spatial coverage with none of their machinery. Four further
+experiments close the design space: the router's forgetting reappears with
+\emph{gradient-trained neural experts} on a standard continual-learning benchmark
+($+62\%$ lower post-reactivation test error for GAUSE, confirming the failure is
+architecture-agnostic); a \emph{hybrid} router with an explicit reservation term
+recovers retention only when spare capacity exists, isolating
+reward-independence of \emph{protection} as the operative property; an
+\emph{intra-regime drift} experiment quantifies the converse risk---stale
+specialists---and a lightweight staleness trigger that recovers most of it; and a
+population-sizing sweep shows surplus agents idle harmlessly while scarce agents
+under-cover. We close with an evidence-tiered survey of application
+domains---regime-switching finance and edge sensing (validated data families),
+elastic memory for agentic AI and mixture-of-experts systems (mechanism-level
+evidence), and further candidates---where the mechanism's parsimony and retention
+guarantee are most valuable. Code and data:
 \url{https://github.com/HowardLiYH/GAUSE}.
 \end{abstractbox}
 
@@ -219,12 +242,24 @@ network's updates must be \emph{terminated} for continual-learning convergence.
 
 In summary, this work makes the following key contributions:
 
-\textbf{1) A reward-independence principle for retention.} We identify
-reward-independence of capacity assignment as the property governing whether a
-capacity-bounded system retains dormant-task knowledge under non-stationarity,
-verify it five-for-five across allocation mechanisms, and explain it with an
-idealized observation: dormant tasks emit no protective reward signal, so only
-structural assignments can reserve capacity for them.
+\textbf{1) Catastrophic forgetting reframed as a signal-availability problem.}
+Our most portable contribution is a lens, not an algorithm. Under bounded capacity,
+the quantity that most needs protecting---a dormant regime's knowledge---is exactly
+the one emitting no reward, so the protective signal is structurally correlated with
+the activity signal. Any allocator that protects capacity using current reward is
+therefore \emph{blind} to dormant regimes by construction. We turn this observation
+into a scoped \textbf{reward-independence principle}
+(Principle~\ref{prin:ria}): within the class of mechanisms whose only protection is
+the assignment itself, reward-independence is \emph{necessary} for retention, and
+reward-independence \emph{plus persistent coverage} is \emph{sufficient}. We verify
+the prediction across five allocation mechanisms, confirm it transfers to
+\emph{gradient-trained neural experts} on a standard continual-learning benchmark
+(the failure is architecture-agnostic), and stress-test it with a \emph{hybrid}
+reward-driven router carrying an explicit reservation term, which retains exactly
+when its protection becomes reward-independent. The GAUSE algorithm is then one
+instantiation that reaches a reward-independent, fully-covering assignment
+\emph{for free}, where prior art needs a hand-tuned freeze schedule or an auxiliary
+diversity reward.
 
 \textbf{2) A coordination-free specialization mechanism.} GAUSE couples
 winner-take-all competition with an exponentiated-gradient niche update and
@@ -234,16 +269,38 @@ SI $\approx 0.99$ and one-per-regime coverage.
 
 \textbf{3) Honest benchmarking against purpose-built baselines.} Rather than
 compare only to cooperative MARL (which does not try to specialize), we compare
-to an EOI/CDS-style learned-diversity objective and a learned MoE router at
-matched capacity. Spatial coverage proves to be a commodity all three achieve;
-competition's value there is parsimony. Retention is not a commodity: the
-reward-driven router fails it decisively.
+to an EOI/CDS-style learned-diversity objective, a learned MoE router, and a
+hybrid router with a memory-preservation term, all at matched capacity. Spatial
+coverage proves to be a commodity all arms achieve; competition's value there is
+parsimony. Retention is not a commodity: the reward-driven router fails it
+decisively, in both tabular and gradient-trained form.
 
 \textbf{4) A meaningfulness audit.} We show that the Specialization Index
 certifies \emph{organization}, not exploitable structure (it is invariant to
 regime-label shuffling and inflatable by the learning rate), and we localize
 exactly when division of labor improves task accuracy---under bounded capacity
-and non-stationarity---and when it does not.
+and non-stationarity---and when it does not. The audit extends to the mechanism's
+own failure modes: under \emph{intra-regime drift} the converged assignment pins
+stale specialists (worse than a relearning monolith) until a staleness trigger
+re-opens competition, and scarce populations ($N<R$) under-cover regardless of
+per-agent capacity.
+
+\textbf{5) Matching the oracle ceiling without the assignment.} Since every arm is
+handed the regime label, the honest competitor is an \emph{oracle fixed assignment}
+given both the labels and a perfect covering permutation---the retention skyline. We
+show GAUSE recovers it without being handed the assignment: within $0.030$ of the
+floor at $K{=}1$ and statistically indistinguishable for $K\ge3$, and
+indistinguishable at \emph{every} $K$ under the soft memory model. Competition's
+value is automatic, pre-commitment-free recovery of the oracle partition, not
+beating it.
+
+\textbf{6) The retention result survives dropping the label (class-incremental).}
+All of the above is task-incremental (the regime label is given). We then remove it:
+a variant that infers the active regime from competence alone still self-organizes
+against the \emph{hidden} regimes (SI $0.75$, coverage $0.86$) and retains
+($0.38$ post-reactivation vs.\ $1.07$ for a label-free forgetting monolith),
+detecting reactivation purely from input similarity---turning the hardest open
+question from a promissory note into a demonstrated, if still imperfect, result.
 
 %==============================================================================
 \section{Related Work}
@@ -743,7 +800,9 @@ discretized.
 
 \subsection{The Five Capacity-Allocation Arms}
 
-All experiments compare five mechanisms at matched per-agent capacity $K$:
+All experiments compare five mechanisms at matched per-agent capacity $K$,
+together with one privileged \emph{oracle skyline} (arm 6) that we use as an
+upper reference rather than as a competing mechanism:
 
 \begin{enumerate}[itemsep=2pt]
     \item \textbf{Monolith}: one agent with capacity $K$ serves everything.
@@ -761,11 +820,35 @@ All experiments compare five mechanisms at matched per-agent capacity $K$:
     \emph{identity} signal, not task reward.
     \item \textbf{GAUSE (ours)}: winner-take-all competition;
     allocation is an emergent, converged identity.
+    \item \textbf{Oracle fixed assignment (skyline)}: $N{=}R$ agents pinned to a
+    hand-designed \emph{covering} assignment---at $K{=}1$ the identity permutation
+    (agent $i \mapsto$ regime $i$), with no learning of \emph{where} to specialize.
+    This arm is reward-independent and perfectly covering \emph{by construction} and
+    pays zero discovery cost, so it marks the best achievable retention; it is
+    privileged because it is handed both the regime labels and the assignment.
 \end{enumerate}
 
 This five-arm design is deliberate: the arms differ in \emph{what signal drives
 capacity assignment}, which is exactly the axis the next section's principle
-predicts should matter.
+predicts should matter. The oracle skyline adds the natural sixth question---if
+the labels are known, why not simply hand-assign?---which we answer directly in
+Section~\ref{sec:principle} and Table~\ref{tab:retention}.
+
+\paragraph{What each arm observes (and why the comparison is fair).} All six
+arms receive the same information at each step: the current regime label $r_t$
+and the per-method quality signal. This is the \emph{task-incremental} continual-learning
+setting (task identity known), not the harder \emph{class-incremental} one (task
+identity must be inferred). We make this explicit because it bounds the claim and
+keeps the comparison information-symmetric: the dissociation below is \emph{not} an
+artifact of GAUSE seeing the regime while the router must infer it---the MoE gate,
+the monolith, and every other arm are handed exactly the same $r_t$. What differs
+across arms is solely \emph{what each does with that label}: whether the
+capacity assignment it induces chases current reward or is reward-independent.
+GAUSE's contribution is therefore scoped precisely: \emph{given} task identity, a
+self-organized reward-independent assignment retains where reward-chasing ones
+forget. Removing the oracle label---inferring $r_t$ from the competence beliefs
+themselves, which already form a per-regime likelihood---is the natural next step
+and we return to it in Section~\ref{sec:conclusion}.
 
 %==============================================================================
 \section{The Reward-Independence Principle}
@@ -779,6 +862,7 @@ $e$ holding $r$ receives $D$ learning updates from other, active regimes.
 Figure~\ref{fig:timeline} illustrates the mechanism.
 
 \begin{observation}[Dormant regimes receive no protective signal]
+\label{obs}
 Under the hard capacity model, $e$ retains $r$ only if fewer than $K$ distinct
 regimes are used during the interval; under the soft model, $r$'s retained
 strength decays as $(1-\rho)^D \to 0$. Crucially, a dormant regime emits no
@@ -846,7 +930,7 @@ relearning cost at reactivation. \textbf{Bottom:} a converged GAUSE
 specialist holds its niche by identity, applies no foreign updates to its own
 store during dormancy, and is immediately competent on reactivation. Measured
 post-reactivation errors for all five arms appear in
-Table~\ref{tab:fivearm} and Figure~\ref{fig:nonstat}.}
+Table~\ref{tab:retention} and Figure~\ref{fig:nonstat}.}
 \label{fig:timeline}
 \end{figure}
 
@@ -859,10 +943,117 @@ its niche), and retains it structurally---no signal required.
 
 \begin{principle}[Reward-independent assignment]
 \label{prin:ria}
-Under bounded per-agent capacity and non-stationarity, a capacity-allocation
-mechanism retains dormant-task knowledge if and only if its regime-to-learner
-assignment is independent of current task reward.
+Consider capacity-allocation mechanisms whose \emph{only} means of protecting a
+dormant regime's knowledge is the regime-to-learner assignment itself---that is,
+mechanisms with no auxiliary memory-preservation, rehearsal, or capacity-reservation
+term (the monolith, the vanilla learned router, fixed/learned/competitive niches all
+lie in this class). Within this class, under bounded per-agent capacity and
+non-stationarity:
+\begin{enumerate}[label=(\roman*), itemsep=1pt, topsep=2pt]
+\item \textbf{(Necessity)} reward-independence of the assignment is \emph{necessary}
+for retention: any allocation that reassigns capacity as a function of current task
+reward reallocates a dormant regime's capacity with probability $\to 1$ as the
+dormancy interval grows, because that regime emits no reward
+(Observation~\ref{obs}); and
+\item \textbf{(Sufficiency)} reward-independence \emph{together with persistent
+coverage}---every recurring regime keeps an assigned learner---is \emph{sufficient}
+for retention: the assigned learner idles through dormancy and preserves its store.
+\end{enumerate}
 \end{principle}
+
+\noindent\textbf{Scope of the principle (two honest caveats).}
+\emph{Reward-independence alone is not sufficient.} Persistent coverage is a separate
+requirement: \emph{fixed random} niches are reward-independent yet can leave a
+recurring regime unowned at $K{=}1$, so they retain only the regimes they happen to
+cover (this is why random diversity retains only \emph{partially} in
+Table~\ref{tab:fivearm} and Table~\ref{tab:retention}). Competition's advantage among
+the reward-independent arms is precisely that winner-take-all exclusion
+\emph{guarantees} coverage---it is the cheapest mechanism that satisfies both
+conjuncts at once. \emph{Reward-dependence is not necessary for forgetting in
+general.} The necessity claim is scoped to the assignment-only class: a reward-driven
+router \emph{augmented} with an explicit memory-preservation or capacity-reservation
+term lies outside the class and could in principle retain while still routing by
+reward. We test exactly this hybrid (Section~\ref{sec:closing},
+Figure~\ref{fig:hybrid_ex}) and confirm it: a router with a reservation term recovers
+most of the lost retention when spare capacity exists. Our results therefore identify
+\emph{what extra objective a reward-driven router needs}---reward-\emph{independent}
+protection of capacity---not an inherent limit of routing.
+
+\noindent\textbf{On the status of the ``Principle.''} We are deliberate about
+register. Within the assignment-only class as \emph{defined}, the sufficiency
+direction is close to analytic---``reward-independent and covering'' is nearly the
+definition of ``keeps a learner idling on each dormant regime.'' We therefore do
+not rest the contribution on the definition. Its force is twofold and empirical:
+(i) the necessity direction is a quantitative claim about a \emph{rate}, which we
+make precise and prove below (Proposition~\ref{prop:realloc}) rather than assert,
+and (ii) real mechanisms that \emph{could} behave otherwise line up with the
+prediction six-for-six (Table~\ref{tab:fivearm}), including the hybrid router, which
+sits \emph{outside} the class and partially retains exactly when its protection
+becomes reward-independent. The principle is best read as an organizing observation
+whose content is carried by the dissociation and the rate bound, not by the
+taxonomy.
+
+\subsection{A Probabilistic Dormancy Model: the Necessity Claim Is Not Vacuous}
+\label{sec:dormancy}
+
+The necessity direction asserts that a reward-driven allocator reallocates a
+dormant regime's capacity ``with probability $\to 1$.'' We make this a theorem
+under an explicit model rather than leave it as intuition.
+
+\paragraph{Model.} Fix capacity $K<R$ and the hard (LRU) store. Let regime $r$ go
+dormant at time $0$. During dormancy the active regimes arrive as an i.i.d.\
+stream; let $U_t$ be the number of \emph{distinct} regimes other than $r$ that have
+been served and learned by the learner holding $r$ up to time $t$. A reward-driven
+allocator (monolith, or MoE gate with $\epsilon$-greedy routing) directs each
+active step to the learner that currently maximizes routed quality; because $r$
+emits no step, its gate logit receives the null update
+$\Delta\,\mathrm{gate}[r][e]\propto(q_e-\tfrac12)=0$ throughout dormancy
+(Observation~\ref{obs}), so the assignment of $r$ is driven \emph{only} by the
+competing active regimes. A reward-independent allocator never conditions the
+assignment on this stream at all.
+
+\begin{proposition}[Reallocation rate]
+\label{prop:realloc}
+Let $p>0$ be the per-step probability that the learner holding $r$ is made to learn
+a distinct not-yet-held active regime, and let $T$ be the dormancy length.
+\begin{enumerate}[label=(\roman*), itemsep=1pt, topsep=2pt]
+\item \textbf{(Reward-driven)} Under LRU eviction, $r$ is evicted as soon as $K$
+distinct other regimes are learned, i.e.\ once $U_T\ge K$. Since $U_T$ is
+non-decreasing with independent positive increments, $\Pr[r\text{ retained}]
+=\Pr[U_T<K]\le (1-p)^{\,T-K+1}\!\cdot\binom{T}{K-1}\to 0$ as $T\to\infty$; under the
+soft model the retained strength decays as $(1-\rho)^{U_T}\to 0$ with $\rho$ the
+per-update interference rate. In both cases $\Pr[\text{reallocation}]\to 1$.
+\item \textbf{(Reward-independent)} If the assignment of $r$ does not depend on the
+active stream---the learner owning $r$ applies $D=0$ foreign updates to its own
+store while $r$ is dormant---then $\Pr[\text{reallocation}]=0$ for all $T$, and the
+store for $r$ is preserved exactly.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+(i) The number of dormancy steps before the $K$-th distinct foreign regime is
+learned is a sum of $K$ geometric$(p)$ waiting times (a negative-binomial), which
+is a.s.\ finite; hence $\Pr[U_T\ge K]\to 1$ and the displayed tail bound follows
+from the negative-binomial CDF. LRU evicts $r$ on that event; the soft-model
+statement is immediate from the multiplicative decay applied once per foreign
+update. (ii) By hypothesis no foreign update touches $r$'s store, so its
+pseudo-counts---and therefore the learner's competence on $r$---are unchanged at
+reactivation. \end{proof}
+
+The two cases are genuinely different functions of $T$ (one $\to1$, the other
+$\equiv 0$), so the necessity claim is not true by relabeling: it is a statement
+that any allocator whose assignment is a function of the active (reward-bearing)
+stream inherits the eviction rate of part (i), while only an allocator that makes
+the assignment a function of \emph{identity} escapes to part (ii). GAUSE reaches
+the part-(ii) condition at convergence without being told to freeze.
+
+\noindent\emph{Model vs.\ experiment.} The bound assumes an i.i.d.\ stream of active
+regimes, whereas our experiments use a \emph{deterministic} sliding window of $W$
+regimes per epoch. The idealization is conservative: under the deterministic
+schedule a dormant regime is guaranteed to see $W$ active competitors every epoch,
+so $U_T$ grows at least as fast as under the i.i.d.\ model and the eviction event
+$\{U_T\ge K\}$ arrives no later---the i.i.d.\ analysis therefore upper-bounds the
+true retention probability rather than flattering it.
 
 \subsection{The Five-Arm Dissociation}
 
@@ -873,33 +1064,44 @@ Section~\ref{sec:capacity}, verified in full by the experiments
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{llcc}
+\begin{tabular}{llccc}
 \toprule
 \textbf{Arm} & \textbf{Assignment signal} & \textbf{Reward-indep.?} &
-\textbf{Retains?} \\
+\textbf{Covers?} & \textbf{Retains?} \\
 \midrule
-Monolith & current active regime & no & no \\
-MoE router & current task reward & no & no \\
-Random diversity & none (frozen) & yes & yes \\
-Learned diversity & intrinsic identity reward & yes & yes \\
-GAUSE & converged identity & yes & yes \\
+Monolith & current active regime & no & --- & no \\
+MoE router & current task reward & no & --- & no \\
+Random diversity & none (frozen) & yes & not guaranteed & partial \\
+Learned diversity & intrinsic identity reward & yes & yes & yes \\
+GAUSE & converged identity & yes & yes (guaranteed) & yes \\
+\midrule
+Oracle fixed (skyline) & hand-assigned (given labels) & yes & yes (by design) & yes \\
 \bottomrule
 \end{tabular}
-\caption{The five-arm dissociation predicted by Principle~\ref{prin:ria}.
-Retention tracks reward-independence of the assignment signal five-for-five;
-it does not track specialization, population size, or learning sophistication.}
+\caption{The five-arm dissociation predicted by Principle~\ref{prin:ria}, plus
+the oracle fixed-assignment skyline (last row, privileged: given the labels
+\emph{and} the assignment).
+Retention requires \emph{both} conjuncts of the principle: reward-independence of
+the assignment \emph{and} persistent coverage. The two reward-driven arms fail the
+first conjunct and forget. Among the reward-independent arms, fixed random niches
+satisfy reward-independence but not guaranteed coverage, so they retain only the
+regimes they happen to own (\emph{partial}); the learned-diversity and competitive
+arms satisfy both and retain in full. Retention thus tracks the conjunction---not
+specialization, population size, or learning sophistication.}
 \label{tab:fivearm}
 \end{table}
 
-Five for five, retention tracks reward-independence---not specialization, not
-population size, not learning sophistication. Among the retaining arms,
-competition is the most parsimonious: random diversity retains but cannot
-guarantee coverage at $K = 1$ (unowned regimes are possible); learned diversity
-retains but requires the auxiliary intrinsic-reward machinery; gate-freezing
-(the prescription of recent MoE continual-learning theory \cite{li2024moecl})
-retains but requires
-deciding \emph{when} to freeze. Competition needs none of these---the
-reward-independent assignment is the equilibrium the dynamics converge to.
+The pattern matches the principle exactly: every arm whose assignment chases current
+reward (monolith, router) forgets, and every reward-independent arm retains the
+regimes it covers. Coverage---the second conjunct---is what separates the
+reward-independent arms from one another. Among them, competition is the most
+parsimonious: random diversity is reward-independent but leaves coverage to chance
+(unowned regimes are possible at $K=1$, hence only partial retention); learned
+diversity covers and retains but requires the auxiliary intrinsic-reward machinery;
+gate-freezing (the prescription of recent MoE continual-learning theory
+\cite{li2024moecl}) retains but requires deciding \emph{when} to freeze. Competition
+needs none of these---winner-take-all exclusion is the equilibrium that delivers
+reward-independence \emph{and} guaranteed coverage at once.
 
 \subsection{Relation to MoE Continual-Learning Theory}
 
@@ -946,31 +1148,16 @@ Holm--Bonferroni robustness checks for sweep families.
 
 \subsection{Results on Emergent Self-Organization}
 
-Under the default configuration, every domain converges to near-perfect
-organization (mean SI $= 0.992$; all domains $> 0.98$;
-Figure~\ref{fig:crossdomain}), versus $\le 0.02$ for
-all cooperative MARL baselines---a qualitative, not quantitative, gap. The
-critical ablation sets $\lambda = 0$: competition alone yields mean SI $= 0.65$
-(every domain $> 0.49$), $5.1\times$ the random baseline, confirming that the
-niche bonus accelerates but does not cause specialization. Populations use
-$86\%$ of the method inventory on average; division of labor extends to
-\emph{how} agents predict, not just \emph{where}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.78\textwidth]{figures/fig1_cross_domain_si.pdf}
-\caption{Emergent self-organization across the six real-world domains:
-GAUSE reaches SI $\approx 0.99$ everywhere, while homogeneous and
-random baselines stay near zero. We treat this organization result as a
-diagnostic, not a headline---the audit (Section~\ref{sec:audit}) shows what SI
-does and does not certify.}
-\label{fig:crossdomain}
-\end{figure}
-
-We treat these SI results as a diagnostic, not a headline. A battery of
-controls shows SI is invariant to regime-label shuffling and inflatable by the
-learning rate: high SI certifies organization, not exploitable structure. The
-performance-relevant results follow.
+Under the default configuration every domain converges to near-perfect
+organization (mean SI $= 0.992$; all domains $> 0.98$), versus $\le 0.02$ for all
+cooperative MARL baselines---a qualitative, not quantitative, gap (per-domain bars
+in Appendix~\ref{app:perdomain}). The critical ablation sets $\lambda = 0$:
+competition alone yields mean SI $= 0.65$ (every domain $> 0.49$), $5.1\times$ the
+random baseline, confirming that the niche bonus accelerates but does not cause
+specialization. Populations use $86\%$ of the method inventory on average. We treat
+SI as a \emph{diagnostic, not a headline}: it is invariant to regime-label shuffling
+and inflatable by the learning rate (Section~\ref{sec:audit}), so high SI certifies
+organization, not exploitable structure. The performance-relevant results follow.
 
 \subsection{Results on Coverage Under Bounded Capacity}
 
@@ -1020,12 +1207,21 @@ Monolith & $1.015$ & no \\
 MoE router & $0.928$ & no \\
 Random diversity & $0.603$ & partially (coverage gaps) \\
 Learned diversity & $0.322$ & yes \\
-GAUSE & $\mathbf{0.283}$ & yes \\
+GAUSE & $0.283$ & yes \\
+\midrule
+\textit{Oracle fixed (skyline)} & \textit{0.253} & \textit{yes (given labels)} \\
 \bottomrule
 \end{tabular}
 \caption{Post-reactivation error at $K{=}1$ under the hard (LRU) capacity
-model. The two reward-driven arms cluster at the top (forgetting); the three
-reward-independent arms retain, with GAUSE best.}
+model. The two reward-driven arms cluster at the top (forgetting); the
+reward-independent arms retain---fixed random niches only partially, because at
+$K{=}1$ they may leave a regime uncovered, while learned diversity and GAUSE
+cover and retain in full. The italicized last row is the oracle fixed-assignment
+\emph{skyline}: handed both the labels and a perfect covering permutation, it
+needs no discovery and marks the irreducible floor ($0.253$, the noise level).
+GAUSE comes within $0.030$ of this skyline at $K{=}1$ \emph{without being given
+the assignment}, and is statistically indistinguishable from it by $K{=}3$
+(detail in Section~\ref{sec:oracle}; oracle skyline in Figure~\ref{fig:nonstat}).}
 \label{tab:retention}
 \end{table}
 
@@ -1041,34 +1237,122 @@ complete persistent memory.
 \centering
 \includegraphics[width=\textwidth]{figures/fig7_nonstationary.pdf}
 \caption{Retention under non-stationarity (hard LRU model, 95\% CIs): overall
-and post-reactivation error versus capacity $K$ for the five arms. The
-reward-driven arms (monolith, MoE router) pay a persistent forgetting penalty
-that closes only as $K \to R$; the reward-independent arms are flat in $K$.}
+and post-reactivation error versus capacity $K$ for the five mechanism arms plus
+the oracle fixed-assignment \emph{skyline} (black dashed). The reward-driven arms
+(monolith, MoE router) pay a persistent forgetting penalty that closes only as
+$K \to R$; the reward-independent arms are flat in $K$ and track the oracle floor,
+with GAUSE (blue) recovering the privileged skyline without being given the
+assignment (Section~\ref{sec:oracle}).}
 \label{fig:nonstat}
 \end{figure}
 
+\subsection{The Honest Competitor: an Oracle Fixed Assignment}
+\label{sec:oracle}
+
+A reader who has followed the setup will object that, since every arm is handed
+the regime label $r_t$, the trivial baseline is not random diversity but an
+\emph{oracle fixed assignment}: pin agent $i$ to a covering niche by hand---at
+$K{=}1$ the identity permutation agent $i \mapsto$ regime $i$---with no learning of
+\emph{where} to specialize. This arm is reward-independent and perfectly covering
+\emph{by construction}, pays zero discovery cost, and so is the strongest possible
+member of the retaining class. The natural question is then sharp: \emph{if I know
+$R$ and the labels, why do I need emergent competition at all---why not just
+hand-assign?}
+
+We answer it directly by running the arm (the black dashed skyline in
+Figure~\ref{fig:nonstat}). The oracle is
+a \emph{skyline}, not a competitor: it cannot be beaten on retention because it
+already has everything (labels, a perfect partition, no learning to do). The
+result is that GAUSE \emph{matches it without the assignment}. At $K{=}1$ the
+oracle floor is $0.253$ (the intrinsic noise level) and GAUSE reaches $0.283$---a
+$0.030$ gap that is the measurable price of \emph{discovering} the covering
+permutation from scratch rather than being told it. By $K{=}3$ the gap closes to
+$0.006$ (GAUSE $0.260$ vs.\ oracle $0.254$), statistically indistinguishable
+(Welch $p\approx0.05$), and both sit at the floor while the reward-driven arms are
+still forgetting ($0.906$ and $0.719$). So the honest reading is: the value of
+emergent competition is \emph{not} that it beats hand-assignment given the
+labels---it cannot---but that it (i) recovers essentially all of the oracle's
+retention automatically, with no pre-commitment to a partition, and (ii) degrades
+gracefully off the $N\approx R$ diagonal where a hand-designed permutation is no
+longer available (Section~\ref{sec:closing}). Competition buys you the oracle's
+assignment when you are unwilling or unable to design it yourself; the latent-regime
+result (Section~\ref{sec:latent}) is what lets it do so without the label too.
+The GAUSE$\approx$oracle match is also not an artifact of the eviction rule: under
+the soft interference model the two are indistinguishable at \emph{every} $K$
+(differences $\le0.002$, $p>0.13$; at $K{=}1$, oracle $0.253$ vs.\ GAUSE $0.254$),
+even tighter than under hard LRU.
+
 \subsection{Ablation: Robustness to the Memory Model}
 
-Re-running the entire sweep under the soft interference model (no eviction at
-all) reproduces the dissociation (Figure~\ref{fig:soft}): the monolith still
-forgets (post-reactivation
-error $0.85$--$0.92$ at $K \le 3$), the specialized population still retains
-($\approx 0.25$, a $+70\%$ gap, $p\sim10^{-40}$), and the router remains
-significantly worse than the population ($+36\%$ at $K{=}1$, $p\sim10^{-8}$;
-$+16\%$ at $K{=}3$). As the Observation predicts, the router degrades more
-gracefully under graded interference than under hard eviction---but never closes
-the gap until $K \to R$. The separation is a property of reward-driven
-allocation, not of any particular forgetting mechanism.
+To confirm the dissociation is not an artifact of discrete LRU eviction, we re-run
+the entire sweep under the soft interference model (no eviction; graded decay).
+The picture is unchanged---the monolith forgets, the population retains
+($\approx 0.25$, a $+70\%$ gap, $p\sim10^{-40}$), and the reward-driven router
+stays significantly worse than the population ($+36\%$ at $K{=}1$; $+16\%$ at
+$K{=}3$), degrading more gracefully but never closing the gap until $K\to R$. Full
+sweep and figure in Appendix~\ref{app:soft}; the separation is a property of
+reward-driven allocation, not of any particular forgetting mechanism.
+
+\subsection{Dropping the Oracle Label: Class-Incremental GAUSE}
+\label{sec:latent}
+
+Every result so far is task-incremental: each arm is handed the regime label
+$r_t$. The deepest question a reviewer can ask is whether the central
+retention claim survives when that label is removed---the genuinely hard
+\emph{class-incremental} setting, where which regime is active must be inferred. We
+test it directly. The key realization is that the label is not actually needed: in
+this environment regime $r$ is signalled by method $r$ being best, and \emph{which
+method an agent played is observable}. So we let each agent carry its niche
+affinity over the \emph{method} space---a proxy for the latent regime---instead of
+over regimes. An agent learns ``I am the $M_3$ specialist'' without ever being told
+``this is regime $R_3$.'' Because winner-take-all selects on realized quality, the
+agent whose specialty method matches the active regime wins: the winner \emph{is}
+the implicit regime estimate, and the true regime is used only to score retention,
+never to drive any arm.
+
+The result (Figure~\ref{fig:latent}) is that the dissociation survives label
+removal. Label-free GAUSE self-organizes against the \emph{hidden} regimes
+(specialization index $0.75$, coverage $0.86$---imperfect, with occasional
+collisions, which is the honest signature of unsupervised recovery) and retains:
+its post-reactivation error is $0.38$ at $K{=}1$ and flat in $K$, versus $1.07$ for
+a label-free capacity-bounded monolith that forgets ($+65\%$, the same separation
+the labelled experiment shows). The price of dropping the label is real but
+modest---$0.38$ label-free versus $0.283$ label-given---and far smaller than the
+gap to the forgetting baseline. Reactivation is detected purely from input
+similarity: when a dormant regime returns, its method works again and the intact
+specialist wins, with no label and no change-point detector. This converts the
+class-incremental extension from a promissory note into a demonstrated result, and
+is the strongest evidence that retention is a property of reward-independent
+self-organization rather than of privileged access to the regime identity.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/fig8_nonstationary_soft.pdf}
-\caption{Robustness to the capacity model: the full non-stationary sweep
-re-run under the soft interference-decay model (no eviction). The
-reward-independence dissociation survives intact, ruling out an artifact of
-discrete LRU eviction.}
-\label{fig:soft}
+\includegraphics[width=\textwidth]{figures/fig14_latent_regime.pdf}
+\caption{Class-incremental (label-free) GAUSE, with the regime label
+\emph{removed} from every arm ($R{=}6$, $W{=}3$, hard LRU, 95\% CIs).
+\textbf{Left:} post-reactivation error---label-free GAUSE ($\approx0.38$, flat in
+$K$) retains while a label-free monolith forgets ($\approx1.07$); the dotted line
+is the label-given GAUSE reference ($0.283$), the modest price of inference.
+\textbf{Right:} the population recovers the latent regimes from competence alone
+(specialization index $0.75$ and coverage $0.86$ at $K{=}1$, rising slightly with
+$K$)---imperfect but clearly structured, the honest signature of unsupervised
+partition discovery.}
+\label{fig:latent}
 \end{figure}
+
+\emph{What this does and does not show (read this).} The method-space proxy is exact
+\emph{by construction} here: in our synthetic stream regime $r$ is signalled by
+method $r$ being uniquely best, a clean one-to-one correspondence, and the played
+method is observable. So this experiment removes the \emph{label} but not the
+assumption that a low-dimensional, observable signature separates the regimes---it
+is honest class-incremental inference only to the extent that such a signature
+exists. The part that must generalize is precisely this: on real, feature-rich data
+with overlapping or non-identifiable methods the proxy is no longer exact, and
+recovering the latent regimes becomes a genuine online clustering problem (the open
+correspondence question of Section~\ref{sec:conclusion}). We therefore read
+Figure~\ref{fig:latent} as a proof of concept that the competitive dynamics
+\emph{can} self-supervise the partition when a separating signal is present, not as
+evidence that they will on arbitrary inputs.
 
 \subsection{Ablation: The Honest Audit}
 \label{sec:audit}
@@ -1084,6 +1368,91 @@ is a task-accuracy lever \emph{specifically} under bounded capacity and
 non-stationarity, not in general. We consider this audit as much a contribution
 as the positive results: it states exactly where the mechanism's value lives.
 
+\subsection{Closing the Design Space: Function Approximation, a Hybrid Router,
+Drift, and Population Sizing}
+\label{sec:closing}
+
+Four further experiments close the gaps a careful reader will press on: is the
+router's failure an artifact of tabular learners, can a reward-driven router be
+\emph{fixed}, what happens when a regime returns \emph{changed}, and what happens
+when the population size leaves the $N\approx R$ diagonal?
+
+\textbf{The router's forgetting is architecture-agnostic
+(Figure~\ref{fig:funcapprox_ex}).} Replacing the tabular learners with
+\emph{gradient-trained neural experts} (MLPs trained by SGD) on permuted-digits---a
+standard continual-learning benchmark of $R{=}5$ pixel-permutation tasks, with the
+number of experts $E$ as the capacity analog---reproduces the dissociation in full. At
+$E{=}R$ the reward-driven MoE router's post-reactivation test error is $0.576$ versus
+GAUSE's $0.218$ ($+62\%$ lower, $p\sim10^{-9}$), and the router does \emph{not} improve
+with more experts (its still-learning gate keeps reallocating capacity to active tasks).
+The forgetting is thus a property of reward-driven assignment, not of the tabular
+substrate---the evidence the agentic-AI / MoE application narrative needs.
+
+\textbf{A hybrid router with a reservation term
+(Figure~\ref{fig:hybrid_ex}).} Keeping the reward-driven gate but adding an explicit
+reservation---once the gate commits a regime to an expert, that expert pins the
+regime's beliefs even while dormant---recovers most of the lost retention \emph{when
+there is spare capacity}: at $K{=}3$ the post-reactivation error falls from the vanilla
+router's $0.719$ to $0.374$ ($+48\%$, $p\sim10^{-11}$), approaching GAUSE ($0.260$). But
+the fix \emph{cannot} help at $K{=}1$ ($0.928$, identical to vanilla): a single hard
+slot cannot both serve the active regime and reserve a dormant one, whereas the
+$N{=}R$ competitive population retains even at $K{=}1$ ($0.283$) by distributing memory
+across idle specialists. Reward-\emph{independence of the protection} is the operative
+property; competition obtains it for free, with no reservation bookkeeping and no
+spare-capacity requirement.
+
+\textbf{Intra-regime drift: when retention backfires
+(Figure~\ref{fig:drift_ex}).} Finally we stress the win-only EG update directly: we let
+each regime's optimal method \emph{drift} on every reactivation. Standard GAUSE pays for
+its stability---a converged specialist holds its niche by identity and serves it with
+stale beliefs, giving an overall error of $0.90$, \emph{worse} than a $K{=}3$ monolith
+($0.35$) that is forced to relearn and stays current. This is the predicted ``stale
+specialist'' failure, now quantified. A lightweight \emph{staleness trigger} (reset a
+niche whose owner is confidently underperforming---drift, not noise---and soften its
+affinity to re-open competition) recovers most of it ($0.43$ overall, $\sim53\%$ lower);
+the residual post-drift penalty is the irreducible relearning cost. Reward-independent
+retention is an asset under dormancy and a liability under drift, and a cheap trigger
+restores adaptivity without sacrificing the dormancy benefit.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig11_function_approx_cl.pdf}
+\caption{Function-approximation continual learning with gradient-trained MLP experts
+(permuted-digits, $R{=}5$). The reward-driven router (purple) forgets dormant tasks and
+does not improve with more experts $E$; GAUSE (blue) retains them ($+62\%$ lower
+post-reactivation error at $E{=}R$). The router's failure is architecture-agnostic.}
+\label{fig:funcapprox_ex}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig9_hybrid_router.pdf}
+\caption{Hybrid arm: reward-driven routing \emph{plus} a reservation term. It recovers
+most retention with spare capacity ($+48\%$ at $K{=}3$) but cannot help at $K{=}1$;
+the competitive population retains even at $K{=}1$. Reward-independence of protection
+is the operative property.}
+\label{fig:hybrid_ex}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig10_intra_regime_drift.pdf}
+\caption{Intra-regime concept drift. Standard GAUSE (blue) pins a stale specialist
+(overall error $0.90$, worse than a relearning monolith); a staleness trigger (green)
+recovers most of it ($0.43$). Reward-independent retention helps under dormancy and
+hurts under drift.}
+\label{fig:drift_ex}
+\end{figure}
+
+\textbf{Population sizing off the $N\approx R$ diagonal.} Sweeping $N$ on the
+retention protocol characterizes both off-diagonal regimes (full sweep and figure in
+Appendix~\ref{app:popsize}). The deployment-relevant summary: with \emph{scarce}
+agents ($N<R$) coverage is governed by $N$, not by total capacity $N\!\cdot\!K$
+(winner-take-all gives each agent one primary niche, so a larger $K$ does \emph{not}
+rescue coverage); with \emph{abundant} agents ($N\gg R$) coverage saturates and
+exactly $N-R$ agents idle harmlessly. The rule is therefore \emph{provision
+$N\gtrsim R$}---surplus is harmless, deficit forgets.
+
 %==============================================================================
 \section{Potential Applications}
 \label{sec:applications}
@@ -1096,6 +1465,23 @@ remarkably common. This section surveys the application domains where we
 believe the mechanism---and especially its retention guarantee---has the most
 leverage. Table~\ref{tab:apps} summarizes the mapping; a deployment recipe
 follows at the end of the section.
+
+\noindent\textbf{Evidence status (read this first).} The discussion below is
+\emph{prospective}, and we are explicit about how far our evidence reaches. Two
+domains---\emph{quantitative finance} (crypto, commodities) and \emph{distributed
+sensing} (solar, weather, air quality)---use data drawn from the same families as
+our validation domains, so the self-organization and bounded-capacity results
+transfer most directly there. The agentic-AI / MoE memory case sits one tier below:
+our function-approximation experiment (Section~\ref{sec:closing}) shows the router's
+forgetting and GAUSE's retention with \emph{gradient-trained neural experts} on a
+standard continual-learning benchmark, so the mechanism-level prediction is no longer
+an analogy---but we have not deployed it inside a production-scale MoE or agent
+framework, so the systems claim remains untested. The remaining domains (robot
+fleets, cloud serving, clinical monitoring) are \emph{conjectures}: they satisfy the
+three structural conditions on paper, but we have run no experiments in them. We
+present the full survey because the mechanism's preconditions are domain-agnostic,
+but the reader should treat everything past the first two subsections as a research
+agenda, with the MoE case the only one backed by direct mechanism-level evidence.
 
 \begin{table}[h]
 \centering
@@ -1127,29 +1513,6 @@ traffic-driven) allocator suffers and a reward-independent population
 structurally avoids.}
 \label{tab:apps}
 \end{table}
-
-\subsection{Elastic Memory for Agentic AI and Mixture-of-Experts Systems}
-
-The most direct application is the one our theory engages: \textbf{capacity
-allocation inside AI systems themselves}. Modern agent frameworks accumulate
-skills, tools, and episodic memories; MoE-based models allocate experts to
-input distributions; and both face the same economics---bounded capacity, a
-long tail of rarely-activated competences, and usage statistics that
-concentrate on the recent past. Any eviction or routing policy driven by
-recency or current utility (LRU caches, usage-weighted distillation, gates
-trained on task loss) is a reward-chasing allocator in our taxonomy, and
-Principle~\ref{prin:ria} predicts exactly its failure: the skill you need
-\emph{next quarter} is the one producing no usage signal \emph{today}.
-A GAUSE layer offers a coordination-free alternative: let skill
-modules or experts \emph{compete} for task families during training or
-fine-tuning, let identities converge, and then rely on the converged
-assignment---rather than a still-learning gate---to decide who holds what.
-This realizes the gate-freezing prescription of MoE continual-learning theory
-\cite{li2024moecl} without choosing a freezing schedule, because convergence
-of the competition \emph{is} the freeze. Concretely: expert pools in
-continually-pretrained LLMs, skill libraries in agent frameworks, and
-retrieval indices that must not evict rare-but-critical entries are all
-candidates.
 
 \subsection{Quantitative Finance: Regime-Switching Strategy Pools}
 
@@ -1194,50 +1557,33 @@ update schedule will overwrite it. Our solar, weather, and air-quality domains
 are direct evidence that the mechanism organizes correctly on exactly this
 kind of data.
 
-\subsection{Multi-Robot Systems and Task Allocation}
+\subsection{Other Candidate Domains}
 
-Warehouse fleets, agricultural robots, and search-and-rescue teams need
-division of labor, and the standard solutions are auction protocols or
-centrally trained role policies---machinery with communication and training
-costs. Winner-take-all competition over task types offers a degenerate-free
-alternative: robots that happen to win deliveries in zone A accumulate
-affinity for zone A, the fleet partitions the floor, and the partition is
-maintained without any further message passing. The capacity bound is
-physical (battery, gripper config, local map memory), and the dormancy story
-is operational: a robot fleet that reallocates all capacity to today's task
-mix forgets the skills (or maps, or calibrations) for the seasonal peak, the
-rare spill response, the annual inventory. A converged niche structure keeps
-those specialists ready at the cost of some idle time---exactly the trade our
-non-stationary experiments quantify.
-
-\subsection{Cloud Serving and Elastic Infrastructure}
-
-Autoscaling systems allocate workers by current traffic---reward-chasing in
-its purest form---and the known pathology is the \textbf{cold-start penalty}
-on bursty, rare workload classes: by the time the rare workload returns, no
-warm worker (no JIT-compiled path, no loaded model, no populated cache)
-remains. Mapping our arms onto serving: pure autoscaling is the monolith; a
-learned request router over specialized worker pools is the MoE arm; static
-over-provisioning per class is random diversity (retains but wastes); and a
-GAUSE-style pool---workers compete for request classes, converged
-specialists are pinned regardless of current traffic share---achieves
-retention with coverage. The overlap-sweep result gives the design guidance:
-the more the workload classes differ in what serves them well (exclusive
-methods), the larger the payoff from competitive specialization.
-
-\subsection{Clinical Monitoring and Rare-Condition Models}
-
-Patient-monitoring ensembles face a stark version of the dormancy problem:
-common presentations dominate the data stream, and models updated on
-aggregate performance drift toward the majority, degrading exactly on the
-rare conditions where model value is highest. Treating patient subpopulations
-or condition classes as regimes, an ensemble trained under competitive
-exclusion dedicates members to rare presentations and---critically---retains
-them even when months pass between occurrences. The honest audit transfers
-too: in deployments where one model genuinely dominates everywhere (no regime
-structure), the population adds nothing, and our structure diagnostic
-(Section~\ref{sec:audit}) gives a practical test for whether specialization
-will pay before committing to it.
+The remaining domains in Table~\ref{tab:apps} share the same three
+preconditions but we have run no experiments in them; we keep them brief and
+explicitly conjectural. \textbf{Agentic-AI / MoE memory} is the case our theory
+engages most directly: agent skill libraries and MoE expert pools both face
+bounded capacity and a long tail of rarely-invoked competences, and any
+recency- or utility-driven eviction (LRU caches, usage-weighted distillation,
+gates trained on task loss) is a reward-chasing allocator that
+Principle~\ref{prin:ria} predicts will overwrite the skill needed \emph{next
+quarter} because it emits no usage signal \emph{today}; letting experts compete
+and then pinning the converged assignment realizes the gate-freezing
+prescription of MoE continual-learning theory \cite{li2024moecl} without a
+freeze schedule. This case is backed by our function-approximation
+continual-learning experiment (Section~\ref{sec:closing}), which is the one
+piece of evidence here that goes beyond analogy. \textbf{Multi-robot fleets}
+(zones/task-types as regimes; battery, gripper, and local-map budgets as
+capacity) could partition a floor through win-driven affinity with no message
+passing, keeping seldom-used skills warm. \textbf{Cloud serving} maps cleanly
+onto our arms---autoscaling is the monolith, a learned request router is the MoE
+arm, static over-provisioning is random diversity---and a competitive worker
+pool would pin warm specialists for bursty rare workload classes against the
+cold-start penalty. \textbf{Clinical monitoring} treats patient subpopulations
+or rare conditions as regimes, dedicating ensemble members to rare presentations
+that aggregate-performance updates would otherwise drown out. In all four, the
+structure diagnostic (Section~\ref{sec:audit}) is the prerequisite test: if one
+model dominates everywhere, the population adds nothing.
 
 \subsection{When Not to Use It}
 
@@ -1251,6 +1597,26 @@ retention is free and reward-driven routing is a fine choice. The mechanism's
 value concentrates precisely where all three conditions bind, which the
 applications above are selected to satisfy.
 
+\noindent\textbf{Two failure modes the mechanism does not yet handle.} Beyond
+those scope limits, the converged assignment has two known blind spots that a
+deployer must weigh. \emph{(a) Within-niche drift.} The EG affinity update moves
+identity only on \emph{wins} (positive evidence of fit), so a specialist does not
+spontaneously relinquish a niche it is silently getting worse at: if a regime's optimal
+method \emph{drifts} while the specialist idles, the converged assignment pins a stale
+specialist in place. We now test this (Section~\ref{sec:closing},
+Figure~\ref{fig:drift_ex}): under drift, standard GAUSE's overall error ($0.90$) is
+\emph{worse} than a relearning monolith's ($0.35$), and a lightweight staleness trigger
+that re-opens competition recovers most of it ($0.43$). The remedy works but leaves a
+residual relearning cost, and we have not characterized drift rate or detection
+threshold in general---so drift remains a deployment risk to weigh. \emph{(b)
+Off-diagonal population sizing.} Our clean one-per-regime equilibrium and coverage
+guarantee are \emph{proved} for $N \approx R$; the off-diagonal behavior we now
+\emph{measure} (Section~\ref{sec:closing}, Figure~\ref{fig:popsize_ex}). Scarce agents
+($N<R$) leave regimes uncovered---and crucially, coverage tracks $N$ rather than total
+capacity $N\!\cdot\!K$, so a bigger per-agent budget does not help---while abundant
+agents ($N\gg R$) idle harmlessly. The remaining gap is theoretical (no proof of the
+off-diagonal equilibrium) and mechanistic (letting scarce agents fill $K>1$ slots).
+
 \begin{designbox}
 \textbf{Deployment recipe.} (1) Define regimes: a discrete, recurring
 partition of the input stream (volatility bands, workload classes, seasonal
@@ -1263,8 +1629,22 @@ assignment, not the gate, decides who holds what. (6) Re-open competition only
 when the regime inventory itself changes.
 \end{designbox}
 
+\noindent\textbf{Honest accounting of what ``no machinery'' means.} We claim
+competition needs no gate, no freezing schedule, and no diversity coefficient, and
+that is true---but the recipe makes clear that effort is \emph{relocated}, not
+eliminated. Steps (1)--(3) still demand the practitioner supply a discrete regime
+partition, a cross-learner-comparable quality signal, and a capacity budget $K$;
+these are real design decisions, and on a novel domain the regime partition can be as
+hard to get right as a gate. Step (6) is, in particular, a \emph{freeze trigger}:
+pinning the assignment until the regime inventory changes is exactly a freeze, except
+that the condition is ``inventory changed'' rather than ``step count exceeded.''
+Competition's genuine advantage is that the freeze happens \emph{automatically and at
+the right time} (when competition converges) rather than on a schedule the
+practitioner must tune---not that the notion of freezing has disappeared.
+
 %==============================================================================
 \section{Conclusion and Future Work}
+\label{sec:conclusion}
 %==============================================================================
 
 We presented GAUSE, a minimal framework in which winner-take-all
@@ -1275,7 +1655,10 @@ is that its converged assignment is \emph{reward-independent}: specialists hold
 niches by identity, idle through dormancy, and thereby retain what reward-driven
 allocators---including the standard learned MoE router---systematically forget.
 Across five capacity-allocation mechanisms, retention tracks
-reward-independence of assignment five-for-five; across six real-world domains
+reward-independence of assignment five-for-five, and an oracle fixed-assignment
+skyline---handed both the labels and a perfect covering permutation---confirms the
+ceiling: GAUSE recovers it to within $0.030$ at $K{=}1$ and indistinguishably for
+$K\ge3$ without being given the assignment. Across six real-world domains
 and controlled synthetic tasks, competition matches purpose-built diversity and
 routing baselines on spatial coverage with none of their machinery, and
 separates from them decisively on retention ($+71\%$ post-reactivation,
@@ -1284,21 +1667,115 @@ with slack capacity and stationary regimes, a regime-conditioned monolith
 suffices; division of labor pays specifically when capacity binds and the world
 shifts.
 
-Several directions remain promising. First, a function-approximation
-demonstration: the reward-independence principle predicts the router's failure
-is architecture-agnostic, and validating it with gradient-trained experts on a
-standard continual-learning benchmark would convert the prediction into
-evidence. Second, hybrid allocators: a router augmented with an explicit
-memory-preservation or load-balancing term could in principle reserve idle
-experts for dormant regimes---our results specify \emph{what objective such a
-router would need}, and testing one would complete the design space. Third,
-scaling the population: decentralized competition over hundreds of regimes,
-where the one-per-regime equilibrium must coexist with agent churn and partial
-observability. Finally, deployment in the application domains of
-Section~\ref{sec:applications}---trading-strategy
-pools, sensor networks, and expert pools inside large models---where the
-parsimony of competition (no gate to train, no schedule to freeze, no diversity
-coefficient to tune) is most valuable.
+Section~\ref{sec:closing} closes four of the gaps this document is explicit about.
+\textbf{(i)} A function-approximation demonstration confirms the router's failure is
+architecture-agnostic: with gradient-trained MLP experts on permuted-digits, the
+reward-driven router forgets while GAUSE retains ($+62\%$ lower post-reactivation error
+at $E{=}R$), converting the central prediction---and the agentic-AI/MoE application
+story---from analogy into evidence. \textbf{(ii)} A hybrid allocator (a reward-driven
+router \emph{plus} a reservation term) recovers most of the lost retention when spare
+capacity exists but not at $K{=}1$, confirming that reward-\emph{independence of
+protection} is the operative property and that competition obtains it for free.
+\textbf{(iii)} An intra-regime drift experiment quantifies the stale-specialist risk
+(standard GAUSE worse than a relearning monolith under drift) and shows a lightweight
+staleness trigger recovers most of it. \textbf{(iv)} A population-sizing sweep
+characterizes both sides of the $N\approx R$ diagonal: surplus agents idle harmlessly,
+while scarce agents under-cover in proportion to $N$ (not $N\!\cdot\!K$), yielding the
+deployment rule \emph{provision $N\gtrsim R$}.
+
+Several directions remain. \textbf{First}, drift handling beyond our trigger:
+characterizing drift rate, detection threshold, and the dormancy--drift interaction,
+since a residual relearning cost remains. \textbf{Second}, the \emph{theory} of
+off-diagonal population sizing: we now measure that scarce agents ($N<R$) under-cover
+(coverage tracks $N$, not $N\!\cdot\!K$) and abundant agents ($N\gg R$) idle harmlessly
+(Section~\ref{sec:closing}), but a proof of the off-diagonal equilibrium, a mechanism
+letting scarce agents exploit $K>1$, and scaling decentralized competition over hundreds
+of regimes with churn and partial observability all remain open.
+\textbf{Third}, removing the oracle regime label---which we now \emph{demonstrate}
+rather than defer (Section~\ref{sec:latent}). Letting each agent carry its niche
+affinity over the observable method space (a proxy for the latent regime) makes
+GAUSE class-incremental: it self-organizes against the hidden regimes (SI $0.75$,
+coverage $0.86$) and retains ($0.38$ post-reactivation at $K{=}1$ versus $1.07$ for
+a label-free forgetting monolith), detecting reactivation purely from input
+similarity. What remains open is scaling label-free recovery to many overlapping
+regimes and to real, feature-rich observations, and closing the modest
+inference gap to the label-given ceiling ($0.38$ vs.\ $0.283$); the correspondence
+between emergent win-clusters and a stable latent labeling (online
+competitive-clustering / EM) is the theoretical core of that program.
+\textbf{Finally}, deployment in the application domains of
+Section~\ref{sec:applications}---trading-strategy pools, sensor networks, and expert
+pools inside large models---where the parsimony of competition (an automatic,
+correctly-timed freeze rather than a tuned schedule, and no diversity coefficient) is
+most valuable.
+
+%==============================================================================
+\appendix
+%==============================================================================
+
+\section{Per-Domain Self-Organization}
+\label{app:perdomain}
+
+Figure~\ref{fig:crossdomain} reports the Specialization Index across all six
+real-world domains (the summary cited in Section~\ref{sec:experiments}). We treat
+this as a diagnostic, not a headline: SI certifies organization, not exploitable
+structure (Section~\ref{sec:audit}).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.78\textwidth]{figures/fig1_cross_domain_si.pdf}
+\caption{Emergent self-organization across the six real-world domains:
+GAUSE reaches SI $\approx 0.99$ everywhere, while homogeneous and random
+baselines stay near zero.}
+\label{fig:crossdomain}
+\end{figure}
+
+\section{Robustness: Soft (Interference) Memory Model}
+\label{app:soft}
+
+Re-running the entire non-stationary sweep under the soft interference model (no
+eviction at all; every learning update on the active regime decays the
+pseudo-counts of the agent's other held regimes) reproduces the dissociation
+(Figure~\ref{fig:soft}): the monolith still forgets (post-reactivation error
+$0.85$--$0.92$ at $K\le3$), the specialized population still retains ($\approx0.25$,
+a $+70\%$ gap, $p\sim10^{-40}$), and the router remains significantly worse than the
+population ($+36\%$ at $K{=}1$, $p\sim10^{-8}$; $+16\%$ at $K{=}3$). The router
+degrades more gracefully under graded interference than under hard eviction but never
+closes the gap until $K\to R$: the separation is a property of reward-driven
+allocation, not of any particular forgetting mechanism.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/fig8_nonstationary_soft.pdf}
+\caption{Robustness to the capacity model: the full non-stationary sweep re-run
+under the soft interference-decay model (no eviction). The reward-independence
+dissociation survives intact, ruling out an artifact of discrete LRU eviction.}
+\label{fig:soft}
+\end{figure}
+
+\section{Population Sizing Off the $N\approx R$ Diagonal}
+\label{app:popsize}
+
+Our equilibrium and coverage arguments assume $N\approx R$; sweeping $N$ on the
+retention protocol ($R{=}6$) characterizes both off-diagonal regimes
+(Figure~\ref{fig:popsize_ex}). With \emph{scarce} agents ($N<R$), coverage is capped
+and governed by $N$, not by total capacity $N\!\cdot\!K$: winner-take-all gives each
+agent one primary niche, so at $N{=}3$ coverage is only $\approx0.4$--$0.5$ and
+post-reactivation error stays high \emph{even at $K{=}2$}, where total capacity would
+in principle suffice---the spare slot goes unused. With \emph{abundant} agents
+($N\gg R$) coverage saturates, exactly $N-R$ agents idle, and retention does not
+regress. The deployment rule is therefore: provision $N\gtrsim R$ (surplus is
+harmless, deficit forgets), and do not expect a larger $K$ to substitute for more
+agents when agents are scarce.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/fig12_population_sizing.pdf}
+\caption{Population sizing off the $N\approx R$ diagonal ($R{=}6$). Below $N{=}R$,
+coverage (left) tracks $N$ rather than the feasibility ceiling $\min(1,N\!K/R)$ and
+retention (right) degrades; for $N\geq R$ coverage saturates and surplus agents idle
+($N-R$ redundant) without harming retention.}
+\label{fig:popsize_ex}
+\end{figure}
 
 \bibliographystyle{plain}
 \bibliography{references}
