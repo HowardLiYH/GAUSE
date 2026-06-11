@@ -66,6 +66,16 @@ htmlcov/
 data/traffic_real/*.parquet
 data/bybit/*.csv
 
+# Downloaded datasets (fetched on demand, never committed)
+data/gas_sensor/
+data/cifar/
+
+# Stray experiment output artifacts (canonical copies live in results/)
+experiments/*.json
+experiments/fig_*.png
+experiments/fig_*.pdf
+.write_probe
+
 # Temporary folders
 overleaf_upload/
 

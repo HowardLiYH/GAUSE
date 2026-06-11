@@ -3,9 +3,175 @@
 ## Research Journey: Emergent Specialization in Learner Populations
 
 This document chronicles the complete research journey from initial conception
-through v4.1.0 (the reward-independence reframe). The project
+through v4.3.0. The project
 was originally framed as "Multi-Agent Systems"; this framing was retired in
 v3.0.0 in favor of "Learner Populations" for academic clarity.
+
+---
+
+## v4.3.0 -- Real Data (UCI Gas Sensor Array Drift): The Honest Split
+
+**Date**: 2026-06-11
+**Scope**: Replace the synthetic-only validation with a real recurring-regime
+stream and settle the three open concerns left by v4.2.0. Downloaded the real UCI
+data (`experiments/download_gas_data.py` -> `data/gas_sensor/batch1..10.dat`,
+13,910 samples, 128-d, 6 gas classes, 10 batches over 36 months), ran the retention
++ label-free + CL experiments and a real-data robustness sweep, and integrated the
+outcome into both papers. **Bottom line: the real data move the contribution off the
+performance axis and onto the mechanism/lens axis.** All numbers below are real UCI,
+12 trials, fixed-seed stream (deterministic arms -> SEM 0).
+
+### Real-data results (`experiments/gas_real.json`, `robustness_sweep_real.json`)
+
+| arm | post-react acc | overall acc | SI | cov | type |
+|---|---|---|---|---|---|
+| gause_lf (ours) | **0.000** | 0.365 | 0.53 | 0.83 | label-free |
+| monolith_lf | **0.000** | 0.324 | - | - | label-free |
+| learned_div_lf | 0.000 | 0.387 | 0.58 | 0.67 | label-free |
+| oracle_fixed | 0.597 | 0.749 | - | - | skyline (labels) |
+| cl_naive | **0.681** | 0.928 | - | - | supervised CL |
+| cl_ewc | 0.444 | 0.870 | - | - | supervised CL |
+| cl_replay | **0.681** | 0.928 | - | - | supervised CL |
+
+Robustness sweep on real drift: replay flat 0.68 (any buffer); **EWC degrades
+monotonically with its anchor** (0.68 at lambda=0 -> 0.44 at lambda=20 -> numerical
+divergence/NaN at lambda=300); learned-div flat 0.00; GAUSE-LF flat 0.00. On the
+benign surrogate EWC/replay sat flat at 1.00 (uninformative) -- the real sweep is the
+honest one. Figure: `paper/figures/fig_real_data_gas.pdf` (built by
+`experiments/plot_real_data_gas.py`).
+
+### Verdict on the three concerns (honest, not spun)
+
+1. **CL forgetting on feature streams -- REFUTED for linear-on-features, RELOCATED to
+   the neural regime.** A full-capacity online linear classifier does NOT
+   catastrophically forget on real gas features (naive 0.681 post-react / 0.928
+   overall; replay identical). EWC is *worse* than naive because its Fisher anchor
+   fights real drift. So "CL methods forget, we don't" is false on linearly-separable
+   features. The dissociation we *do* own is in representation-sharing experts:
+   re-ran the permuted-digits neural experiment (`exp_function_approx_cl.py`) --
+   reward-driven MoE router post-react error 0.576 vs GAUSE 0.218 at E=R (+62%,
+   p~2e-9). The forgetting claim is a property of capacity-bounded representation
+   sharing, not of arbitrary streams.
+
+2. **Label-free coverage under real overlap -- REFUTED on real overlapping drift;
+   the class-incremental claim is BOUNDED to separable-signal regimes.** GAUSE-LF
+   post-react 0.000, SI 0.53, coverage 0.83. The label-free *monolith* also 0.000 --
+   the "GAUSE retains, monolith forgets" dissociation **vanishes**. Mechanism (traced
+   directly): at reactivation a dormant class's drifted features are nearest a
+   currently-active class's prototype, so the implicit class estimate is wrong. The
+   synthetic 1:1 method<->regime signature was load-bearing after all. The
+   class-incremental result is now a proof of concept for separable-signal regimes,
+   not a validated capability.
+
+3. **Framing -- this is a MECHANISM/PARSIMONY/LENS paper, confirmed.** On real data a
+   one-line online classifier *with labels* beats label-free GAUSE outright, and
+   full-capacity CL doesn't forget; the parsimony-as-performance reading does not hold
+   on real data. EWC does not beat naive (anchoring hurts under drift), so the "EWC
+   clearly wins" framing-trigger did not fire. What survives real data: the
+   reward-independence principle + its neural router-forgetting prediction, and the
+   honest map of where competition helps (bounded capacity, representation
+   interference, separable signals) and where it does not.
+
+### Papers (`paper/gause_explainer.tex`, `paper/main.tex`)
+
+- New real-data subsection in both (`sec:realdata`) reporting the three-way split
+  (holds / bounded / refuted) with `figures/fig_real_data_gas.pdf`.
+- Abstracts updated to state the real-data bound up front (forgetting claim relocated
+  to the representation-sharing regime; label-free claim bounded to separable signals;
+  "mechanism and lens, not a performance win" on real data).
+- `main.tex` task-incremental Limitations item updated: the label-free recovery is
+  now reported as tested-and-collapsed on real overlap, downgraded to proof-of-concept.
+
+### E5 -- Split-CIFAR-100 (standard CL benchmark, real images, neural experts)
+
+To put the *one surviving* claim (neural router forgetting) on a citable benchmark, we
+ran Split-CIFAR-100 with small CNN experts on Apple MPS (`exp_split_cifar_cl.py`,
+R=5 disjoint 10-way tasks, sliding-window recurrence, 4 trials). The dissociation
+**reproduces**: at E=R, GAUSE post-react test error **0.581** vs reward-driven MoE
+router **0.748** (**+22%**, p~1e-3), monolith 0.802. GAUSE lowers error monotonically
+with capacity (0.793 -> 0.581 from E=1 to E=R); the router barely improves
+(0.807 -> 0.748); the monolith is flat. **Honestly attenuated** vs permuted-digits
+(+22% here vs +62% there) -- harder real images + a small CNN + short per-visit budget
+leave less retention for anyone to dissociate -- but the mechanism transfers intact to
+a standard benchmark. Figure `paper/figures/fig_split_cifar_cl.pdf`. This is external
+authority for the surviving claim, NOT a synthetic->real swap of the controlled
+ablations (those stay synthetic by design -- they isolate the mechanism, which real
+data cannot do cleanly).
+
+### Experiments
+
+- `experiments/download_gas_data.py` -- ran successfully via the zip route (10 batch
+  files). Real data live in `data/gas_sensor/`.
+- `experiments/exp_robustness_sweep.py` -- added a `--data` flag so the sweep runs on
+  the real stream (was surrogate-only); writes `robustness_sweep_{real,surrogate}.json`
+  and `fig_robustness_sweep_{real,surrogate}.pdf`.
+- `experiments/plot_real_data_gas.py` -- new; renders `fig_real_data_gas.pdf` from the
+  two real-data JSONs.
+- `experiments/exp_split_cifar_cl.py` -- new; E5 Split-CIFAR-100 with CNN experts
+  (torch + torchvision, MPS/CUDA/CPU), reusing the digits experiment's stream/EG/metrics.
+  Writes `results/split_cifar_cl/results.json` + `fig_split_cifar_cl.pdf`.
+
+---
+
+## v4.2.0 -- Oracle Skyline, Class-Incremental Variant, and Real-Data Scaffolding
+
+**Date**: 2026-06-10
+**Scope**: Address three reviewer concerns (regime-label scope, principle
+near-tautology, honest competitor); demonstrate the retention claim survives
+dropping the regime label; add real-data validation tooling and a robustness
+sweep; tighten the explainer.
+
+### Papers (`paper/gause_explainer.tex`, `paper/main.tex`, `paper/method_deep_dive.tex`)
+
+- **Reviewer Concern 1 (regime label).** Made the *task-incremental* scope explicit
+  in all three documents ("what each arm observes"): every arm receives the same
+  regime label `r_t`, so the comparison is information-symmetric.
+- **Reviewer Concern 2 (principle near-tautology).** Added a probabilistic dormancy
+  model with `Proposition (Reallocation rate)`: a proved negative-binomial bound,
+  reallocation probability -> 1 (reward-driven) vs. == 0 (reward-independent), plus a
+  note that the i.i.d. bound is conservative vs. the deterministic sliding window.
+- **Reviewer Concern 3 (honest competitor).** Added the **oracle fixed-assignment
+  skyline** (given labels + a perfect covering permutation). GAUSE matches it without
+  the assignment: within 0.030 at K=1, indistinguishable for K>=3 (hard LRU), and
+  indistinguishable at *every* K under the soft model. Folded into fig7 as a sixth
+  line. `experiments/exp_oracle_fixed.py`.
+- **Class-incremental (label-free) variant.** Drop the regime label; each agent
+  specializes over the observable method space. Self-organizes against the hidden
+  regimes (SI 0.75, coverage 0.86) and retains (0.38 post-reactivation vs. 1.07 for a
+  label-free monolith). Added the caveat that the method<->regime proxy is exact only
+  by construction. `experiments/exp_latent_regime.py`, fig14.
+- **Explainer tightened.** Compressed the six-domain SI result; moved the soft-memory
+  ablation, population-sizing sweep, and per-domain SI figure to a new Appendix; fixed
+  the title page (breakable abstract box); trimmed the abstract.
+- **Build:** added local `algorithm.sty` / `algorithmic.sty` stubs and `lmodern` so
+  all three documents compile in minimal TeX installs (explainer 26 pp, main 39 pp,
+  deep dive 92 pp; no undefined references).
+
+### Experiments
+
+- `experiments/exp_oracle_fixed.py` -- oracle fixed-assignment skyline (hard + soft).
+- `experiments/exp_latent_regime.py` -- class-incremental (label-free) GAUSE.
+- `experiments/exp_real_data_gas.py` -- **real-data** retention test on the UCI Gas
+  Sensor Array Drift dataset (`--data PATH`) or a faithful offline surrogate; arms:
+  GAUSE-LF, capacity-bounded monolith, learned-diversity, oracle-fixed, plus
+  supervised CL baselines (naive / EWC / replay).
+- `experiments/exp_robustness_sweep.py` -- hyperparameter-robustness sweep: GAUSE
+  (no knob) vs. competitors across their knob.
+
+### Findings (offline surrogate; real UCI run still pending)
+
+- Label-free GAUSE recovers **88% of the oracle skyline without labels** on 128-d
+  overlapping drifting features with no 1:1 signature (post-react 0.875, SI 0.86,
+  coverage 1.00); capacity-bounded monolith 0.319.
+- Robustness: learned-diversity spans 0.875 -> 0.0 across its repulsion knob; GAUSE
+  flat at 0.875.
+- **Open (needs real data):** (i) a *full-capacity* online linear CL baseline does
+  NOT catastrophically forget on these feature streams even at severe drift -- so the
+  CL-forgetting head-to-head must use representation-sharing neural experts (cf. the
+  permuted-digits experiment) or genuinely long dormancy on real data, not
+  linear-on-features. (ii) GAUSE-LF post-reactivation accuracy degrades under heavy
+  overlap (0.83 -> 0.49) while SI/coverage hold -- the class-incremental claim
+  narrows to separable-signal regimes, to be quantified on the real UCI data.
 
 ---
 

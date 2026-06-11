@@ -40,7 +40,36 @@
 
 ---
 
-## 🎯 Key Results (All Real Data, v4.0.0)
+## 🎯 Key Results (v4.3 — real-data validated)
+
+> **Changelog (v4.2.0, June 2026):** Addressed three reviewer concerns and added the
+> **oracle fixed-assignment skyline** (GAUSE matches it without the assignment:
+> within 0.030 at K=1, indistinguishable for K≥3 and at every K under the soft model),
+> a proved **reallocation-rate proposition** (replacing the hand-wave necessity
+> claim), and a **class-incremental (label-free)** variant — the retention result
+> survives dropping the regime label (SI 0.75, post-react 0.38 vs. 1.07 for a
+> label-free monolith). New tooling: `experiments/exp_oracle_fixed.py`,
+> `exp_latent_regime.py`, `exp_real_data_gas.py` (UCI Gas Sensor Array Drift, real
+> data, `--data PATH`), `exp_robustness_sweep.py`. Explainer tightened (soft-model,
+> population-sizing, and per-domain SI moved to an appendix). Full detail in
+> [`CHANGELOG.md`](CHANGELOG.md).
+>
+> **Changelog (v4.3.0, June 2026) — REAL DATA, the honest split.** Ran the full
+> retention + label-free + CL pipeline on the real UCI Gas Sensor Array Drift stream
+> (13,910 samples, 128-d, 6 classes, 10 batches / 36 months). The result moves the
+> contribution **off the performance axis and onto the mechanism/lens axis**, and we
+> report it straight: **(1)** a full-capacity online linear classifier does *not*
+> catastrophically forget on real gas features (naive/replay 0.68 post-react, 0.93
+> overall; EWC *worse* at 0.44 because its anchor fights drift) — so the
+> forgetting dissociation is *relocated* to representation-sharing **neural** experts
+> (permuted-digits: router 0.576 vs GAUSE 0.218, +62%), not arbitrary streams;
+> **(2)** label-free recovery **collapses** under real overlap (GAUSE-LF post-react
+> 0.00, SI 0.53, coverage 0.83; the label-free monolith is *also* 0.00, so the
+> dissociation vanishes) — the synthetic 1:1 method↔regime signature was load-bearing,
+> bounding the class-incremental claim to *separable-signal regimes*; **(3)** framing
+> confirmed: on real data this is a mechanism/parsimony/lens paper, not a performance
+> paper. Full numbers, figure (`paper/figures/fig_real_data_gas.pdf`), and per-concern
+> verdict in [`CHANGELOG.md`](CHANGELOG.md) (v4.3.0).
 
 > **Note (v4.0.0):** As of June 2026, the niche affinity update has been
 > upgraded from the V3 additive heuristic to the canonical
@@ -309,6 +338,11 @@ GAUSE/
 │   ├── exp_oracle_fixed.py           # Oracle fixed-assignment skyline
 │   ├── exp_latent_regime.py          # Class-incremental (label-free) GAUSE
 │   ├── exp_population_sizing.py      # Off-diagonal N≠R coverage/retention sweep
+│   ├── download_gas_data.py          # ⭐ Fetch UCI Gas Sensor Array Drift (v4.3)
+│   ├── exp_real_data_gas.py          # ⭐ Real-data retention + label-free + CL baselines (v4.3)
+│   ├── exp_robustness_sweep.py       # Robustness sweep (--data for real gas) (v4.3)
+│   ├── exp_split_cifar_cl.py         # ⭐ Split-CIFAR-100 CNN experts (v4.3)
+│   ├── plot_real_data_gas.py         # Render fig_real_data_gas.pdf
 │   ├── exp_method_specialization.py  # Method specialization (V4)
 │   ├── exp_marl_comparison.py        # MARL head-to-head (V4)
 │   ├── exp_lambda_ablation.py        # λ ablation (V4)
@@ -317,24 +351,29 @@ GAUSE/
 │   └── exp_task_performance.py       # (synthetic / illustrative)
 ├── 📁 tests/                         # Unit tests
 │   └── test_eg_update.py             # 19 tests for V4 EG properties
-├── 📁 data/                          # Real-world datasets (145K records)
+├── 📁 data/                          # Datasets (committed: 6 domains; downloaded: gas, cifar)
 │   ├── bybit/         commodities/   weather/
 │   ├── solar/         traffic/       air_quality/
+│   ├── gas_sensor/                   # UCI Gas Sensor Array Drift (download_gas_data.py; gitignored)
+│   └── cifar/                        # CIFAR-100 (auto-downloaded by exp_split_cifar_cl.py; gitignored)
 ├── 📁 results/                       # Experiment outputs
 │   ├── unified_pipeline/             # Main pipeline outputs (V4)
 │   ├── capacity_division/            # Coverage results (results.json + overlap sweep)
 │   ├── nonstationary_capacity/       # Retention results (+ oracle-fixed, latent-regime JSON)
-│   ├── function_approx_cl/           # Gradient-trained MLP experts (CL benchmark)
+│   ├── function_approx_cl/           # Gradient-trained MLP experts (permuted-digits)
+│   ├── split_cifar_cl/               # ⭐ Split-CIFAR-100 CNN experts (v4.3)
+│   ├── real_data/                    # ⭐ Real gas retention + robustness JSONs (v4.3)
 │   ├── hybrid_router/                # Reward-driven router + reservation term
 │   ├── intra_regime_drift/           # Drift + staleness trigger
 │   ├── population_sizing/            # Off-diagonal N≠R sweep
 │   ├── v4_v3_comparison_matched_rate/  # V3 vs V4 ablation
 │   ├── real_marl_comparison/         # MARL head-to-head outputs
 │   └── method_specialization/        # Method specialization outputs
-├── 📁 paper/                         # LaTeX paper sources
-│   ├── main.tex                      # Canonical paper (35 pages, v4.1 reframed)
-│   ├── method_deep_dive.tex          # Deep-dive companion (76 pages)
-│   ├── gause_explainer.tex           # System explainer (17 pages, AutoAgent-style)
+├── 📁 paper/                         # LaTeX paper sources (build: latexmk -pdf in paper/)
+│   ├── main.tex                      # Canonical paper (42 pages, v4.3)
+│   ├── method_deep_dive.tex          # Deep-dive companion (93 pages)
+│   ├── gause_explainer.tex           # System explainer (29 pages)
+│   ├── figures/                      # All paper figures (committed PDFs)
 │   └── references.bib
 ├── 📁 docs/                          # Reports + research docs
 │   ├── V4_FINAL_REPORT.md            # Comprehensive V4 renovation report
@@ -399,6 +438,13 @@ python experiments/exp_intra_regime_drift.py   # stale specialists + staleness t
 python experiments/exp_oracle_fixed.py         # oracle fixed-assignment skyline
 python experiments/exp_latent_regime.py        # class-incremental (label-free) GAUSE
 python experiments/exp_population_sizing.py    # off-diagonal N≠R sizing
+
+# Real-data validation (v4.3) — data is downloaded on demand, not committed:
+python experiments/download_gas_data.py                          # -> data/gas_sensor/batch1..10.dat (UCI, ~5s)
+python experiments/exp_real_data_gas.py --data data/gas_sensor   # retention + label-free + CL baselines on real gas
+python experiments/exp_robustness_sweep.py --data data/gas_sensor # robustness sweep on the real stream
+python experiments/plot_real_data_gas.py                         # -> paper/figures/fig_real_data_gas.pdf
+python experiments/exp_split_cifar_cl.py                          # Split-CIFAR-100 CNN experts (needs torch+torchvision; auto-downloads CIFAR)
 
 # Method specialization (Table 2 in the paper, V4)
 python experiments/exp_method_specialization.py
@@ -497,6 +543,25 @@ Five publication-quality figures in `results/figures/`:
 ---
 
 ## 📋 Changelog
+
+### v4.3.0 (2026-06-11) — Real Data: The Honest Split ⭐⭐⭐
+
+**Major Update: synthetic-only validation replaced with real data; the contribution is reframed as a mechanism/lens, not a performance win**
+
+- ✅ **Real retention test on UCI Gas Sensor Array Drift** (13,910 samples, 128-d, 6 classes, 10 batches / 36 months; `exp_real_data_gas.py --data`). The honest three-way split:
+  1. **CL forgetting — refuted for linear-on-features, relocated to the neural regime.** A full-capacity online linear classifier does *not* catastrophically forget on real gas features (naive/replay 0.68 post-react, 0.93 overall; EWC *worse* at 0.44 — its anchor fights drift). The dissociation lives in representation-sharing neural experts.
+  2. **Label-free recovery — collapses under real overlap.** GAUSE-LF post-react 0.00 (SI 0.53, cov 0.83); the label-free monolith is *also* 0.00, so the dissociation vanishes. The synthetic 1:1 method↔regime signature was load-bearing → class-incremental claim bounded to *separable-signal* regimes.
+  3. **Framing.** On real data the contribution is a *mechanism and lens*, not a performance win.
+- ✅ **Split-CIFAR-100 with CNN experts** (`exp_split_cifar_cl.py`, MPS/CUDA/CPU): the neural router-forgetting dissociation reproduces on a standard benchmark — GAUSE 0.581 vs router 0.748 post-react at E=R (+22%, p~10⁻³); honestly attenuated vs permuted-digits (+62%).
+- ✅ **Robustness sweep on real drift** (`--data` flag): EWC degrades monotonically with its anchor (0.68→0.44→diverges); GAUSE has no knob.
+- ✅ **Papers + figures updated**, abstracts/limitations aligned to the real outcome; reviewer math fixes (reallocation tail-bound factor *K*; soft-model decay exponent). All three PDFs recompiled (explainer 29pp, main 42pp, deep-dive 93pp).
+
+### v4.2.0 (2026-06-10) — Oracle Skyline, Class-Incremental Variant, Real-Data Scaffolding ⭐⭐
+
+- ✅ **Oracle fixed-assignment skyline** (`exp_oracle_fixed.py`): GAUSE recovers the hand-assigned partition without being given it (within 0.030 at K=1, indistinguishable for K≥3).
+- ✅ **Class-incremental (label-free) variant** (`exp_latent_regime.py`): the retention result survives dropping the regime label on synthetic streams (SI 0.75, post-react 0.38 vs 1.07).
+- ✅ **Reallocation-rate proposition** replacing the hand-wave necessity claim; scope made explicitly task-incremental in all three papers.
+- ✅ **Real-data tooling scaffolded** (validated on a faithful surrogate; run for real in v4.3).
 
 ### v4.1.0 (2026-06-09) — Reward-Independence Reframe + Purpose-Built Baselines ⭐⭐⭐
 
