@@ -1,0 +1,65 @@
+{
+  "source": "UCI gas-sensor (data/gas_sensor)",
+  "n": 13910,
+  "d": 128,
+  "R": 6,
+  "trials": 12,
+  "rows": {
+    "gause_lf": {
+      "post_react_acc": 0.0,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.364931506849315,
+      "si": 0.5274997706802147,
+      "coverage": 0.8333333333333335,
+      "kind": "label-free (ours)"
+    },
+    "monolith_lf": {
+      "post_react_acc": 0.0,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.3235616438356165,
+      "si": null,
+      "coverage": null,
+      "kind": "label-free"
+    },
+    "learned_div_lf": {
+      "post_react_acc": 0.0,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.38657534246575337,
+      "si": 0.5766533739295425,
+      "coverage": 0.6666666666666666,
+      "kind": "label-free"
+    },
+    "oracle_fixed": {
+      "post_react_acc": 0.5972222222222222,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.7487671232876713,
+      "si": null,
+      "coverage": null,
+      "kind": "skyline (labels)"
+    },
+    "cl_naive": {
+      "post_react_acc": 0.6805555555555555,
+      "post_react_sem": 3.347448369359225e-17,
+      "overall_acc": 0.9275342465753426,
+      "si": null,
+      "coverage": null,
+      "kind": "supervised CL"
+    },
+    "cl_ewc": {
+      "post_react_acc": 0.4444444444444445,
+      "post_react_sem": 1.6737241846796126e-17,
+      "overall_acc": 0.8698630136986302,
+      "si": null,
+      "coverage": null,
+      "kind": "supervised CL"
+    },
+    "cl_replay": {
+      "post_react_acc": 0.6805555555555555,
+      "post_react_sem": 3.347448369359225e-17,
+      "overall_acc": 0.9275342465753426,
+      "si": null,
+      "coverage": null,
+      "kind": "supervised CL"
+    }
+  }
+}
