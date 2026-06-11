@@ -95,61 +95,50 @@ University of Pennsylvania}
 {\color{headblue}\large\bfseries Abstract}
 \end{center}
 \noindent
-Learning systems that must serve many distinct environmental regimes with
-capacity-limited learners face a persistent allocation problem: which learner
-handles which regime, and---when the environment is non-stationary---who
-\emph{keeps} a regime that falls dormant? In practice this gap appears as three
-recurring failure modes: homogenization (every learner converges to the same
-behavior), coverage gaps (no learner masters rare regimes), and catastrophic
-forgetting (dormant-regime knowledge is overwritten to serve active ones). To
-address these failures, we present \textbf{GAUSE} (Generalist-averse Affinity
-Update for Specialist Emergence), a deliberately
-minimal population-learning framework built on three tightly coupled components:
-\emph{per-regime belief learning} (Thompson sampling over a shared method
-inventory), \emph{niche-affinity tracking} (a canonical exponentiated-gradient
-update on the regime simplex), and \emph{winner-take-all competitive exclusion}
-(only the per-step winner reinforces its niche). At the core of the framework is
-a single emergent property with outsized consequences: the converged
-regime-to-agent assignment is \emph{structural}---independent of current task
-reward---so a specialist simply idles while its niche is dormant and retains its
-expertise. We show that this property, not specialization per se, is what
-separates mechanisms that survive non-stationarity from mechanisms that do not:
-across five capacity-allocation arms (capacity-bounded monolith, learned
-Mixture-of-Experts router, fixed random niches, an EOI/CDS-style intrinsic
-diversity objective, and emergent competition), every reward-chasing allocation
-forgets dormant regimes, while every reward-independent assignment retains the
-regimes it covers---and competition is the cheapest arm to secure both
-reward-independence and guaranteed coverage at once ($+71\%$ lower
-post-reactivation error versus the reward-driven router, robust to swapping hard
-eviction for soft interference). We are careful about scope and rigor: the
-comparison is \emph{task-incremental} (every arm, GAUSE included, sees the regime
-label, so it is information-symmetric); we benchmark against the honest ceiling---an
-\emph{oracle fixed assignment} given both the labels and a perfect covering
-permutation---which GAUSE recovers without being handed the assignment (within
-$0.030$ at $K{=}1$, indistinguishable for $K\ge3$). Crucially,
-the central retention result survives \emph{dropping the label}: a class-incremental
-variant that infers the active regime from competence alone self-organizes against
-the hidden regimes and retains ($0.38$ post-reactivation vs.\ $1.07$ for a
-label-free forgetting monolith), detecting reactivation from input similarity with
-no regime identity supplied. Empirical results across six real-world
-domains (145{,}294 records) and controlled synthetic tasks show that the
-framework reliably self-organizes into one-per-regime specialists (mean SI
-$=0.65$ from competition alone) and matches purpose-built diversity and routing
-baselines on spatial coverage with none of their machinery. Four further
-experiments close the design space: the router's forgetting reappears with
-\emph{gradient-trained neural experts} on a standard continual-learning benchmark
-($+62\%$ lower post-reactivation test error for GAUSE, confirming the failure is
-architecture-agnostic); a \emph{hybrid} router with an explicit reservation term
-recovers retention only when spare capacity exists, isolating
-reward-independence of \emph{protection} as the operative property; an
-\emph{intra-regime drift} experiment quantifies the converse risk---stale
-specialists---and a lightweight staleness trigger that recovers most of it; and a
-population-sizing sweep shows surplus agents idle harmlessly while scarce agents
-under-cover. We close with an evidence-tiered survey of application
-domains---regime-switching finance and edge sensing (validated data families),
-elastic memory for agentic AI and mixture-of-experts systems (mechanism-level
-evidence), and further candidates---where the mechanism's parsimony and retention
-guarantee are most valuable. Code and data:
+Learning systems that serve many environmental regimes with capacity-limited
+learners face a persistent allocation problem: which learner handles which regime,
+and---when the environment is non-stationary---who \emph{keeps} a regime that falls
+dormant? We present \textbf{GAUSE} (Generalist-averse Affinity Update for Specialist
+Emergence), a deliberately minimal population-learning framework with three tightly
+coupled components: \emph{per-regime belief learning} (Thompson sampling over a
+shared method inventory), \emph{niche-affinity tracking} (a canonical
+exponentiated-gradient update on the regime simplex), and \emph{winner-take-all
+competitive exclusion} (only the per-step winner reinforces its niche). At its core
+is one emergent property: the converged regime-to-agent assignment is
+\emph{reward-independent}, so a specialist idles while its niche is dormant and
+retains its expertise. This property, not specialization per se, is what separates
+mechanisms that survive non-stationarity from those that do not. Across five
+capacity-allocation arms (capacity-bounded monolith, learned Mixture-of-Experts
+router, fixed random niches, an EOI/CDS-style diversity objective, and emergent
+competition), every reward-chasing allocation forgets dormant regimes while every
+reward-independent one retains the regimes it covers---and competition secures both
+at once ($\sim$70\% lower post-reactivation error than the reward-driven router,
+robust to swapping hard eviction for soft interference), recovering an \emph{oracle
+fixed-assignment} skyline without being handed the assignment.
+
+The comparison above is \emph{task-incremental} (every arm sees the regime label).
+Dropping the label, a class-incremental variant that infers the regime from
+competence alone still retains on synthetic streams ($0.38$ post-reactivation vs.\
+$1.07$ for a label-free forgetting monolith). We then test it on \emph{real} data
+(UCI Gas Sensor Array Drift) and report the outcome honestly: the label-free recovery
+\emph{collapses} under real feature overlap, bounding the class-incremental claim to
+\emph{separable-signal} regimes; and a full-capacity online classifier does
+\emph{not} catastrophically forget on these features---relocating the forgetting
+story to the representation-sharing \emph{neural} regime. On real data, accordingly,
+the contribution is a \emph{mechanism and lens}, not a performance win.
+
+The remaining evidence supports exactly that reading. Across six real-world domains
+($145{,}294$ records) and synthetic tasks, the framework self-organizes into
+one-per-regime specialists (mean SI $=0.65$ from competition alone) and matches
+purpose-built diversity and routing baselines on spatial coverage with none of their
+machinery. Four further experiments close the design space: the router's forgetting
+reappears with \emph{gradient-trained neural experts} on two standard
+continual-learning benchmarks (permuted-digits $+62\%$, Split-CIFAR-100 $+22\%$);
+a \emph{hybrid} reservation router isolates reward-independence of \emph{protection}
+as the operative property; and intra-regime-drift and population-sizing sweeps map
+the mechanism's own failure modes. We close with an evidence-tiered survey of
+applications---regime-switching finance and edge sensing, elastic memory for
+agentic-AI and mixture-of-experts systems, and further candidates. Code and data:
 \url{https://github.com/HowardLiYH/GAUSE}.
 \end{abstractbox}
 
@@ -253,10 +242,14 @@ into a scoped \textbf{reward-independence principle}
 the assignment itself, reward-independence is \emph{necessary} for retention, and
 reward-independence \emph{plus persistent coverage} is \emph{sufficient}. We verify
 the prediction across five allocation mechanisms, confirm it transfers to
-\emph{gradient-trained neural experts} on a standard continual-learning benchmark
-(the failure is architecture-agnostic), and stress-test it with a \emph{hybrid}
-reward-driven router carrying an explicit reservation term, which retains exactly
-when its protection becomes reward-independent. The GAUSE algorithm is then one
+\emph{gradient-trained neural experts} on two standard continual-learning benchmarks
+(permuted-digits and Split-CIFAR-100; the failure is architecture-agnostic and
+benchmark-portable), bound it with a real-data reality check
+(Section~\ref{sec:realdata}: on near-separable real features a full-capacity learner
+does \emph{not} forget, localizing the forgetting claim to the representation-sharing
+regime), and stress-test it with a \emph{hybrid} reward-driven router carrying an
+explicit reservation term, which retains exactly when its protection becomes
+reward-independent. The GAUSE algorithm is then one
 instantiation that reaches a reward-independent, fully-covering assignment
 \emph{for free}, where prior art needs a hand-tuned freeze schedule or an auxiliary
 diversity reward.
@@ -299,8 +292,13 @@ All of the above is task-incremental (the regime label is given). We then remove
 a variant that infers the active regime from competence alone still self-organizes
 against the \emph{hidden} regimes (SI $0.75$, coverage $0.86$) and retains
 ($0.38$ post-reactivation vs.\ $1.07$ for a label-free forgetting monolith),
-detecting reactivation purely from input similarity---turning the hardest open
-question from a promissory note into a demonstrated, if still imperfect, result.
+detecting reactivation purely from input similarity. On \emph{real}, feature-rich
+data with genuine overlap (UCI gas sensor; Section~\ref{sec:realdata}), however,
+this label-free recovery \emph{collapses} (post-reactivation $\to 0$, and the
+dissociation against the label-free monolith vanishes). We therefore report the
+class-incremental result honestly as a proof of concept bounded to
+\emph{separable-signal} regimes---demonstrated where a separating signal exists, not
+a general capability.
 
 %==============================================================================
 \section{Related Work}
@@ -987,9 +985,9 @@ not rest the contribution on the definition. Its force is twofold and empirical:
 (i) the necessity direction is a quantitative claim about a \emph{rate}, which we
 make precise and prove below (Proposition~\ref{prop:realloc}) rather than assert,
 and (ii) real mechanisms that \emph{could} behave otherwise line up with the
-prediction six-for-six (Table~\ref{tab:fivearm}), including the hybrid router, which
-sits \emph{outside} the class and partially retains exactly when its protection
-becomes reward-independent. The principle is best read as an organizing observation
+prediction five-for-five (Table~\ref{tab:fivearm}); and the hybrid router---which
+sits \emph{outside} the five-arm class---independently corroborates it, partially
+retaining exactly when its protection becomes reward-independent. The principle is best read as an organizing observation
 whose content is carried by the dissociation and the rate bound, not by the
 taxonomy.
 
@@ -1020,9 +1018,12 @@ a distinct not-yet-held active regime, and let $T$ be the dormancy length.
 \item \textbf{(Reward-driven)} Under LRU eviction, $r$ is evicted as soon as $K$
 distinct other regimes are learned, i.e.\ once $U_T\ge K$. Since $U_T$ is
 non-decreasing with independent positive increments, $\Pr[r\text{ retained}]
-=\Pr[U_T<K]\le (1-p)^{\,T-K+1}\!\cdot\binom{T}{K-1}\to 0$ as $T\to\infty$; under the
-soft model the retained strength decays as $(1-\rho)^{U_T}\to 0$ with $\rho$ the
-per-update interference rate. In both cases $\Pr[\text{reallocation}]\to 1$.
+=\Pr[U_T<K]\le K\,(1-p)^{\,T-K+1}\binom{T}{K-1}\to 0$ as $T\to\infty$ (a sum of $K$
+binomial terms, each bounded by $\binom{T}{K-1}(1-p)^{T-K+1}$); under the
+soft model the retained strength decays as $(1-\rho)^{D}\to 0$, where $D$ is the
+number of foreign updates applied to $r$'s store during dormancy
+(Observation~\ref{obs}; $D\ge U_T$, since each distinct regime contributes at least
+one update) and $\rho$ the per-update interference rate. In both cases $\Pr[\text{reallocation}]\to 1$.
 \item \textbf{(Reward-independent)} If the assignment of $r$ does not depend on the
 active stream---the learner owning $r$ applies $D=0$ foreign updates to its own
 store while $r$ is dormant---then $\Pr[\text{reallocation}]=0$ for all $T$, and the
@@ -1388,6 +1389,24 @@ with more experts (its still-learning gate keeps reallocating capacity to active
 The forgetting is thus a property of reward-driven assignment, not of the tabular
 substrate---the evidence the agentic-AI / MoE application narrative needs.
 
+\textbf{The dissociation survives on a standard image benchmark
+(Figure~\ref{fig:splitcifar}).} Because the gas-sensor reality check
+(Section~\ref{sec:realdata}) showed the forgetting story belongs to the
+representation-sharing regime rather than to linear-on-features, we put exactly that
+surviving claim on a benchmark the continual-learning community recognizes:
+\emph{Split-CIFAR-100} with small convolutional experts trained by SGD ($R{=}5$ disjoint
+$10$-way tasks streamed through the same sliding-window recurrence schedule, so dormant
+tasks genuinely reactivate). The dissociation reproduces: at $E{=}R$ GAUSE's
+post-reactivation test error is $0.581$ versus the reward-driven router's $0.748$
+($+22\%$ lower, $p\sim10^{-3}$), and---the diagnostic signature---GAUSE closes the gap
+monotonically as capacity grows ($0.793\!\to\!0.581$ from $E{=}1$ to $E{=}R$) while the
+router barely moves ($0.807\!\to\!0.748$) and the monolith is flat ($0.802$). The edge
+is \emph{smaller} than on permuted-digits ($+22\%$ vs $+62\%$): on harder real images
+with a small CNN and a short per-visit training budget, less is retained by anyone, so
+there is less retention to dissociate---we report the attenuation rather than the
+headline. The mechanism, however, transfers intact to a standard benchmark, which is
+what the claim needed.
+
 \textbf{A hybrid router with a reservation term
 (Figure~\ref{fig:hybrid_ex}).} Keeping the reward-driven gate but adding an explicit
 reservation---once the gate commits a regime to an expert, that expert pins the
@@ -1426,6 +1445,20 @@ post-reactivation error at $E{=}R$). The router's failure is architecture-agnost
 
 \begin{figure}[t]
 \centering
+\includegraphics[width=\textwidth]{figures/fig_split_cifar_cl.pdf}
+\caption{Split-CIFAR-100 with gradient-trained CNN experts ($R{=}5$ disjoint $10$-way
+tasks, sliding-window recurrence, $4$ trials, $95\%$ CIs)---the surviving
+representation-sharing claim on a standard benchmark. GAUSE (blue) lowers both overall
+and post-reactivation test error monotonically as capacity $E$ grows; the reward-driven
+router (purple) barely improves and the monolith (red) is flat. At $E{=}R$ GAUSE retains
+$+22\%$ better than the router ($0.581$ vs $0.748$, $p\sim10^{-3}$)---a smaller but
+significant edge than on the easier permuted-digits, honestly attenuated by the harder
+images and short training budget.}
+\label{fig:splitcifar}
+\end{figure}
+
+\begin{figure}[t]
+\centering
 \includegraphics[width=\textwidth]{figures/fig9_hybrid_router.pdf}
 \caption{Hybrid arm: reward-driven routing \emph{plus} a reservation term. It recovers
 most retention with spare capacity ($+48\%$ at $K{=}3$) but cannot help at $K{=}1$;
@@ -1452,6 +1485,92 @@ agents ($N<R$) coverage is governed by $N$, not by total capacity $N\!\cdot\!K$
 rescue coverage); with \emph{abundant} agents ($N\gg R$) coverage saturates and
 exactly $N-R$ agents idle harmlessly. The rule is therefore \emph{provision
 $N\gtrsim R$}---surplus is harmless, deficit forgets.
+
+\subsection{Real Data: The Class-Incremental Claim, Tested and Bounded
+(UCI Gas Sensor Array Drift)}
+\label{sec:realdata}
+
+The class-incremental subsection above flagged the one assumption its synthetic
+result could not shed: that a low-dimensional, observable signature separates the
+regimes. We now test that assumption on real data---the UCI Gas Sensor Array Drift
+dataset (13{,}910 samples, $128$ real sensor features, $6$ gas classes, $10$ batches
+collected over $36$ months of genuine sensor drift, with \emph{no} method$\leftrightarrow$regime
+bijection). We stream the batches in time order under the same sliding-window
+dormancy schedule and measure post-reactivation accuracy
+(Figure~\ref{fig:realdata}). The outcome is a clean, honest split---one claim holds,
+one is bounded, one is refuted in this regime---and we report all three, because the
+split is more informative than any single headline.
+
+\textbf{(1) Full-capacity linear continual learning does \emph{not} forget here.}
+A plain online multinomial-logistic classifier trained by naive SGD reaches
+post-reactivation accuracy $0.68$ and overall accuracy $0.93$; experience replay is
+identical; EWC is \emph{worse} ($0.44$), because its Fisher anchor fights the real
+drift it should be adapting to. On these real, near-linearly-separable sensor
+features there is simply nothing to catastrophically forget, so there is no
+linear-on-features retention win to claim. The forgetting dissociation the framework
+\emph{does} own lives one level up, in the representation-sharing regime: the
+permuted-digits experiment (Figure~\ref{fig:funcapprox_ex}) shows the reward-driven
+router forgetting ($+62\%$) with \emph{gradient-trained} experts, where learned
+representations genuinely interfere, and the same dissociation reproduces on
+\emph{Split-CIFAR-100} with convolutional experts ($+22\%$ at $E{=}R$,
+$p\sim10^{-3}$; Figure~\ref{fig:splitcifar})---a standard benchmark, so the claim is
+not an artifact of one toy dataset. Real data thus relocate---rather than
+refute---the catastrophic-forgetting claim: it is a property of capacity-bounded
+\emph{representation sharing}, not of arbitrary feature streams.
+
+\textbf{(2) Label-free recovery collapses under real overlap.} Strip the label and
+let each agent infer the class from the $128$-d vector: GAUSE-LF post-reactivation
+accuracy falls to $0.00$, with specialization index $0.53$ and coverage $0.83$
+(five of six classes ever owned). Critically, the label-free \emph{monolith} also
+scores $0.00$---the ``GAUSE retains, monolith forgets'' dissociation that the
+synthetic $1{:}1$ signature produced \emph{vanishes}. The mechanism is visible in
+the traces: when a dormant class returns, its drifted features are nearest to a
+\emph{currently active} class's prototype, so the implicit class estimate is simply
+wrong. The method$\leftrightarrow$regime proxy was load-bearing after all. This
+refutes the strong reading of the label-free headline on real overlapping drift and
+confirms---rather than weakens---the scope we stated in
+Section~\ref{sec:latent}: class-incremental GAUSE is a proof of concept for
+\emph{separable-signal} regimes, not for arbitrary high-dimensional inputs.
+
+\textbf{(3) Robustness, honestly inverted.} On the benign synthetic surrogate the
+supervised baselines sit flat at $1.00$ (nothing to forget), so that sweep is
+uninformative. On real drift the sweep \emph{is} informative, but not in GAUSE's
+favor: replay is flat at $0.68$ across buffer sizes; EWC degrades monotonically as
+its anchor tightens ($0.68$ at $\lambda{=}0$, through $0.44$ at $\lambda{=}20$, into
+numerical divergence by $\lambda{=}300$); and GAUSE-LF is flat at $0.00$. The only
+robustness point that survives is narrow and real---EWC's single knob can actively
+hurt and must be kept near zero on a drifting stream, whereas competition has no
+such knob---but here GAUSE's flat line sits \emph{below} the competitors, not above.
+
+\textbf{What this does to the contribution.} Taken together the real data move the
+paper off the performance axis. On a genuine recurring-regime stream the
+parsimony-\emph{as-performance} reading does not hold: a one-line classifier with
+labels beats label-free GAUSE outright, and full-capacity continual learning does
+not forget. What survives contact with real data is the \emph{mechanism}: (i) the
+reward-independence principle and its router-forgetting prediction, confirmed with
+gradient-trained experts where representations actually interfere; and (ii) the
+honest map of \emph{where} competition helps---bounded capacity, representation
+interference, and separable regime signals---and where it does not. We therefore
+read GAUSE as a mechanism/lens contribution rather than a benchmark winner, and have
+aligned the abstract and the limitations accordingly.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_real_data_gas.pdf}
+\caption{Real data (UCI Gas Sensor Array Drift). \textbf{(A)} Post-reactivation
+accuracy by arm. All label-free arms---GAUSE included---collapse to $0$: a dormant
+class's drifted features are routed to an active class's prototype, so the
+dissociation against the label-free monolith \emph{disappears}. A full-capacity
+supervised linear classifier (naive/replay) does not forget ($0.68$); EWC's anchor
+hurts under drift ($0.44$). \textbf{(B)} The EWC $\lambda$ sweep on real drift:
+anchoring monotonically degrades retention and eventually diverges---the opposite of
+its flat $1.00$ on the benign surrogate. The honest reading: on real
+near-linearly-separable features there is nothing to forget, so the
+catastrophic-forgetting claim belongs to the representation-sharing neural regime
+(Figure~\ref{fig:funcapprox_ex}), and the label-free claim is bounded to
+separable-signal regimes.}
+\label{fig:realdata}
+\end{figure}
 
 %==============================================================================
 \section{Potential Applications}
@@ -1571,8 +1690,8 @@ quarter} because it emits no usage signal \emph{today}; letting experts compete
 and then pinning the converged assignment realizes the gate-freezing
 prescription of MoE continual-learning theory \cite{li2024moecl} without a
 freeze schedule. This case is backed by our function-approximation
-continual-learning experiment (Section~\ref{sec:closing}), which is the one
-piece of evidence here that goes beyond analogy. \textbf{Multi-robot fleets}
+continual-learning experiments on two standard benchmarks (permuted-digits and
+Split-CIFAR-100; Section~\ref{sec:closing}), the evidence here that goes beyond analogy. \textbf{Multi-robot fleets}
 (zones/task-types as regimes; battery, gripper, and local-map budgets as
 capacity) could partition a floor through win-driven affinity with no message
 passing, keeping seldom-used skills warm. \textbf{Cloud serving} maps cleanly
@@ -1661,17 +1780,18 @@ ceiling: GAUSE recovers it to within $0.030$ at $K{=}1$ and indistinguishably fo
 $K\ge3$ without being given the assignment. Across six real-world domains
 and controlled synthetic tasks, competition matches purpose-built diversity and
 routing baselines on spatial coverage with none of their machinery, and
-separates from them decisively on retention ($+71\%$ post-reactivation,
-$p\sim10^{-35}$, robust to the memory model). An honest audit bounds the claim:
+separates from them decisively on retention ($0.283$ vs.\ the router's $0.928$ at
+$K{=}1$, $\sim$70\% lower, $p\sim10^{-35}$, robust to the memory model). An honest audit bounds the claim:
 with slack capacity and stationary regimes, a regime-conditioned monolith
 suffices; division of labor pays specifically when capacity binds and the world
 shifts.
 
 Section~\ref{sec:closing} closes four of the gaps this document is explicit about.
 \textbf{(i)} A function-approximation demonstration confirms the router's failure is
-architecture-agnostic: with gradient-trained MLP experts on permuted-digits, the
-reward-driven router forgets while GAUSE retains ($+62\%$ lower post-reactivation error
-at $E{=}R$), converting the central prediction---and the agentic-AI/MoE application
+architecture-agnostic on \emph{two} standard benchmarks: with gradient-trained MLP
+experts on permuted-digits ($+62\%$) and convolutional experts on Split-CIFAR-100
+($+22\%$, $p\sim10^{-3}$), the reward-driven router forgets while GAUSE retains at
+$E{=}R$, converting the central prediction---and the agentic-AI/MoE application
 story---from analogy into evidence. \textbf{(ii)} A hybrid allocator (a reward-driven
 router \emph{plus} a reservation term) recovers most of the lost retention when spare
 capacity exists but not at $K{=}1$, confirming that reward-\emph{independence of
@@ -1682,6 +1802,15 @@ staleness trigger recovers most of it. \textbf{(iv)} A population-sizing sweep
 characterizes both sides of the $N\approx R$ diagonal: surplus agents idle harmlessly,
 while scarce agents under-cover in proportion to $N$ (not $N\!\cdot\!K$), yielding the
 deployment rule \emph{provision $N\gtrsim R$}.
+
+A real-data test on the UCI Gas Sensor Array Drift stream
+(Section~\ref{sec:realdata}) bounds the headline honestly: on near-linearly-separable
+real features a full-capacity online classifier does \emph{not} catastrophically
+forget, so the retention dissociation is a property of the representation-sharing
+regime---confirmed by the two neural benchmarks above---rather than of arbitrary
+feature streams, and the label-free recovery collapses under real overlap. On real
+data, accordingly, the contribution is a \emph{mechanism and lens}, not a performance
+win---which we regard as the more durable claim.
 
 Several directions remain. \textbf{First}, drift handling beyond our trigger:
 characterizing drift rate, detection threshold, and the dormancy--drift interaction,
@@ -1697,11 +1826,15 @@ affinity over the observable method space (a proxy for the latent regime) makes
 GAUSE class-incremental: it self-organizes against the hidden regimes (SI $0.75$,
 coverage $0.86$) and retains ($0.38$ post-reactivation at $K{=}1$ versus $1.07$ for
 a label-free forgetting monolith), detecting reactivation purely from input
-similarity. What remains open is scaling label-free recovery to many overlapping
-regimes and to real, feature-rich observations, and closing the modest
-inference gap to the label-given ceiling ($0.38$ vs.\ $0.283$); the correspondence
-between emergent win-clusters and a stable latent labeling (online
-competitive-clustering / EM) is the theoretical core of that program.
+similarity. Tested on \emph{real}, feature-rich data with genuine overlap (UCI gas
+sensor, Section~\ref{sec:realdata}), however, this label-free recovery
+\emph{collapses} (post-reactivation $\to 0$): the synthetic
+method$\leftrightarrow$regime signature was load-bearing, and the class-incremental
+result is bounded to \emph{separable-signal} regimes. What remains open is therefore
+the genuinely hard case the gas data expose---recovering latent regimes under
+\emph{non-separable} real overlap---for which the correspondence between emergent
+win-clusters and a stable latent labeling (online competitive-clustering / EM) is the
+theoretical core.
 \textbf{Finally}, deployment in the application domains of
 Section~\ref{sec:applications}---trading-strategy pools, sensor networks, and expert
 pools inside large models---where the parsimony of competition (an automatic,

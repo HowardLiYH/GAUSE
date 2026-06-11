@@ -1,0 +1,65 @@
+{
+  "source": "FAITHFUL SURROGATE (offline; use --data for real UCI files)",
+  "n": 8400,
+  "d": 128,
+  "R": 6,
+  "trials": 12,
+  "rows": {
+    "gause_lf": {
+      "post_react_acc": 0.875,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.7971428571428572,
+      "si": 0.8573782683962429,
+      "coverage": 1.0,
+      "kind": "label-free (ours)"
+    },
+    "monolith_lf": {
+      "post_react_acc": 0.3194444444444445,
+      "post_react_sem": 1.6737241846796126e-17,
+      "overall_acc": 0.4226190476190476,
+      "si": null,
+      "coverage": null,
+      "kind": "label-free"
+    },
+    "learned_div_lf": {
+      "post_react_acc": 0.3194444444444445,
+      "post_react_sem": 1.6737241846796126e-17,
+      "overall_acc": 0.4323809523809523,
+      "si": 0.7998949528478151,
+      "coverage": 0.6666666666666666,
+      "kind": "label-free"
+    },
+    "oracle_fixed": {
+      "post_react_acc": 1.0,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.9985714285714287,
+      "si": null,
+      "coverage": null,
+      "kind": "skyline (labels)"
+    },
+    "cl_naive": {
+      "post_react_acc": 1.0,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.9988095238095237,
+      "si": null,
+      "coverage": null,
+      "kind": "supervised CL"
+    },
+    "cl_ewc": {
+      "post_react_acc": 1.0,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.9988095238095237,
+      "si": null,
+      "coverage": null,
+      "kind": "supervised CL"
+    },
+    "cl_replay": {
+      "post_react_acc": 1.0,
+      "post_react_sem": 0.0,
+      "overall_acc": 0.9988095238095237,
+      "si": null,
+      "coverage": null,
+      "kind": "supervised CL"
+    }
+  }
+}

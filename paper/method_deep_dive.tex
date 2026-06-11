@@ -1407,8 +1407,8 @@ corresponding arm in our experiments.
 \toprule
 CL family & Familiar analogue & In our five-arm comparison \\
 \midrule
-Regularization (EWC) & A ``don't-touch'' lock on important variables & (not tested---needs per-parameter importance) \\[4pt]
-Replay / rehearsal & Keeping a log and re-running old jobs & (not tested---needs stored data) \\[4pt]
+Regularization (EWC) & A ``don't-touch'' lock on important variables & tested on real gas data (Sec.~\ref{ddsec:realdata}): \emph{worse} than naive SGD---its anchor fights real drift \\[4pt]
+Replay / rehearsal & Keeping a log and re-running old jobs & tested on real gas data: does \emph{not} forget on near-separable real features \\[4pt]
 Architectural isolation & Separate microservices per job type & \textbf{GAUSE}, random niches, EOI diversity \\[4pt]
 \emph{No protection} & One shared box doing everything & monolith, MoE router \\
 \bottomrule
@@ -2719,6 +2719,41 @@ All domains achieve:
 \end{itemize}
 This validates that emergent specialization is not an artifact of synthetic data.
 \end{keypoint}
+
+\subsection{Real-Data Retention Test: The Honest Split}
+\label{ddsec:realdata}
+
+The SI validation above concerns \emph{organization}. The v4 reframe's central claim
+is \emph{retention}, and it too must face real data. We stream the UCI Gas Sensor
+Array Drift dataset (13{,}910 samples, $128$ real sensor features, $6$ gas classes,
+$10$ batches over $36$ months of genuine drift, \emph{no} method$\leftrightarrow$regime
+bijection) under a sliding-window dormancy schedule and measure post-reactivation
+accuracy. The outcome splits three ways, and we record all three because the split
+bounds the claim more usefully than any single number.
+
+\begin{enumerate}
+\item \textbf{Full-capacity linear continual learning does \emph{not} forget here.}
+A plain online softmax (naive SGD) reaches $0.68$ post-reactivation / $0.93$ overall
+accuracy; experience replay is identical; EWC is \emph{worse} ($0.44$) because its
+Fisher anchor resists the real drift. On near-linearly-separable real features there
+is nothing to catastrophically forget---so the forgetting dissociation is a property
+of the \emph{representation-sharing} regime, which we confirm with gradient-trained
+neural experts on permuted-digits ($+62\%$) and Split-CIFAR-100 ($+22\%$,
+$p\sim10^{-3}$), not of arbitrary feature streams. Proposition~\ref{prop:realloc_rate}
+is unaffected: it is stated for a capacity-bounded holder forced into reuse, exactly
+the representation-sharing condition; a linearly-separable stream where one learner
+holds all classes simply falls outside its capacity hypothesis $K<R$.
+\item \textbf{Label-free recovery collapses under real overlap.} With the label
+removed, the label-free population's post-reactivation accuracy falls to $0.00$
+(SI $0.53$, coverage $0.83$), and the label-free \emph{monolith} also scores $0.00$:
+the synthetic dissociation vanishes because a dormant class's drifted features are
+nearest a currently-active class's prototype. The class-incremental claim is thus
+bounded to \emph{separable-signal} regimes.
+\item \textbf{Framing.} On real data a labelled one-line classifier beats label-free
+GAUSE, and full-capacity CL does not forget; the contribution on real data is a
+\emph{mechanism and lens}, not a performance win. What survives real data is the
+reward-independence principle and its neural router-forgetting prediction.
+\end{enumerate}
 
 \section{Are the Niches Meaningful? Controls and Ablations}
 \label{ddsec:meaningfulness}
@@ -4130,10 +4165,13 @@ time to $U_T\ge K$ is a sum of $K$ geometric$(p)$ waiting times (negative-binomi
 a.s.\ finite; hence
 \[
   \Pr[r\text{ retained}] \;=\; \Pr[U_T<K]
-  \;\le\; \binom{T}{K-1}(1-p)^{\,T-K+1} \;\xrightarrow[T\to\infty]{}\; 0,
+  \;\le\; K\,\binom{T}{K-1}(1-p)^{\,T-K+1} \;\xrightarrow[T\to\infty]{}\; 0,
 \]
-and $\Pr[\text{reallocation}]\to 1$ (under the soft model the retained strength is
-$\le s_0\,\kappa^{\,U_T}\to0$). For a reward-independent allocator $A_t[r]$ does not
+where the factor $K$ bounds the sum of the $K$ binomial terms $\Pr[U_T=j]$,
+$j<K$, each of which is at most $\binom{T}{K-1}(1-p)^{T-K+1}$; and
+$\Pr[\text{reallocation}]\to 1$ (under the soft model the retained strength is
+$\le s_0\,\kappa^{\,U_T}\to0$, since the holder of $r$ absorbs at least $U_T$
+interfering updates and $\kappa<1$). For a reward-independent allocator $A_t[r]$ does not
 depend on the active stream, so $U_T\equiv 0$ for $r$'s owner and
 $\Pr[\text{reallocation}]=0$ for every $T$.
 \end{proposition}
@@ -4594,6 +4632,8 @@ Metric & Formula & Range & Interpretation \\
     \item \textbf{Proposition 2 (SI Lower Bound)}: Even at $\lambda = 0$, competition alone produces $\SI > 1/(eR)$.
 
     \item \textbf{Proposition 3 (Mono-Regime Collapse)}: If one regime dominates ($\pi(r) > 1 - \epsilon$), specialization fails ($\SI \to 0$).
+
+    \item \textbf{Proposition 4 (Reward-Independence and Retention)}: Within the assignment-only class, retention of a dormant regime \emph{requires} the assignment to be reward-independent and covering; a reward-driven allocator forgets every regime that goes dormant, at a reallocation rate $\Pr[\text{retained}] \le K\binom{T}{K-1}(1-p)^{T-K+1} \to 0$. This is the central claim of the v4 reframe.
 \end{enumerate}
 
 \subsection{What We Demonstrated Empirically}
@@ -4610,6 +4650,9 @@ $\lambda = 0$ still works & Mean SI $\approx 0.65$ at $\lambda = 0$ & 5.1x above
 Cross-domain generalization & SI $> 0.98$ in all domains ($\lambda=0.3$) & All $p < 10^{-80}$ \\
 Coverage near 100\% & 97\% average coverage & --- \\
 Outperforms MARL & Niche SI $=1.000$ vs MARL SI $\le 0.02$ & $\ge 100\times$ SI gap \\
+Retention dissociation (synthetic) & GAUSE vs reward-driven router, $K{=}1$ & $\sim$70\% lower post-react error \\
+Router forgetting (neural) & permuted-digits / Split-CIFAR-100 & $+62\%$ / $+22\%$, $p\le10^{-3}$ \\
+Real-data bound (gas) & full-capacity CL does not forget; label-free collapses & mechanism/lens, not perf. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -4679,9 +4722,17 @@ characterization itself is no longer a gap.
 
 \subsection{Q4: Does this work with real data?}
 
-\textbf{A:} Yes. All 6 domains use real data, and under the canonical V4 (EG)
-update at $\lambda=0.3$ every domain reaches SI $>0.98$, with Cohen's
-$d>50$ and $p<10^{-80}$ throughout.
+\textbf{A:} For \emph{organization}, unambiguously yes: all 6 domains use real data,
+and under the canonical V4 (EG) update at $\lambda=0.3$ every domain reaches SI
+$>0.98$, with Cohen's $d>50$ and $p<10^{-80}$ throughout. For \emph{retention}, the
+honest answer is bounded (Sec.~\ref{ddsec:realdata}). On the real UCI Gas Sensor
+Array Drift stream, a full-capacity online classifier does \emph{not} catastrophically
+forget on the near-separable features, so the forgetting dissociation belongs to the
+representation-sharing regime---confirmed with neural experts on permuted-digits
+($+62\%$) and Split-CIFAR-100 ($+22\%$)---and the label-free recovery \emph{collapses}
+under real overlap, bounding the class-incremental claim to separable-signal regimes.
+On real data, accordingly, the contribution is a \emph{mechanism and lens} rather than
+a performance win.
 
 \subsection{Q5: How does this compare to MARL?}
 
