@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GAUSE — Interactive Explainer</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2430; --line:#30363d;
+    --txt:#e6edf3; --mut:#9da7b3; --accent:#3fb950; --accent2:#58a6ff;
+    --warn:#f0883e; --bad:#f85149;
+    --r0:#58a6ff; --r1:#3fb950; --r2:#f0883e; --r3:#bc8cff; --r4:#39c5cf; --r5:#f778ba;
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.55}
+  a{color:var(--accent2);text-decoration:none}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:#222b36;padding:.1em .35em;border-radius:4px;font-size:.9em;color:#cdd9e5}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  header.hero{padding:54px 0 30px;border-bottom:1px solid var(--line)}
+  .hero h1{margin:0;font-size:34px;letter-spacing:-.4px}
+  .hero h1 .glyph{color:var(--accent)}
+  .hero .sub{color:var(--mut);font-size:17px;margin-top:6px}
+  .thesis{margin-top:20px;background:var(--panel);border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:14px 18px;font-size:15px}
+  .thesis b{color:var(--accent)}
+  h2.section{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut);
+    margin:54px 0 4px;font-weight:600}
+  h3.title{font-size:25px;margin:.1em 0 .2em;letter-spacing:-.3px}
+  .lead{color:var(--mut);font-size:15.5px;max-width:760px}
+
+  /* ---------- Walkthrough ---------- */
+  .walk{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:26px;align-items:start}
+  @media(max-width:860px){.walk{grid-template-columns:1fr}}
+  .walk-canvaswrap{position:sticky;top:18px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:10px}
+  #walkCanvas{width:100%;height:auto;display:block;border-radius:8px;background:#0a0e14}
+  .walk-text .stepno{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:1px}
+  .walk-text h4{font-size:21px;margin:4px 0 8px}
+  .walk-text p{color:var(--mut);font-size:15px}
+  .walk-text .formula{background:#0a0e14;border:1px solid var(--line);border-radius:8px;
+    padding:10px 14px;margin:14px 0;font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#cdd9e5;overflow-x:auto}
+  .walk-nav{display:flex;align-items:center;gap:12px;margin-top:18px}
+  .dots{display:flex;gap:7px;margin-left:auto}
+  .dots i{width:9px;height:9px;border-radius:50%;background:#30363d;cursor:pointer;transition:.2s}
+  .dots i.on{background:var(--accent);transform:scale(1.15)}
+  button.btn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    border-radius:7px;padding:8px 14px;font-size:14px;cursor:pointer;transition:.15s}
+  button.btn:hover{border-color:var(--accent);color:#fff}
+  button.btn:disabled{opacity:.4;cursor:default}
+  button.btn.primary{background:var(--accent);color:#06210f;border-color:var(--accent);font-weight:600}
+
+  /* ---------- Sandbox ---------- */
+  .sandbox{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .toolbar{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;padding:16px 18px;
+    border-bottom:1px solid var(--line);background:var(--panel2)}
+  .ctrl{display:flex;flex-direction:column;gap:3px;min-width:120px}
+  .ctrl label{font-size:11px;color:var(--mut);letter-spacing:.4px;text-transform:uppercase}
+  .ctrl .val{color:var(--accent);font-weight:600}
+  input[type=range]{width:140px;accent-color:var(--accent);cursor:pointer}
+  select{background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13px}
+  .runbtns{display:flex;gap:8px;margin-left:auto}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:0}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  .cell{padding:16px 18px;border-bottom:1px solid var(--line)}
+  .cell.r{border-left:1px solid var(--line)}
+  .cell h5{margin:0 0 4px;font-size:13px;letter-spacing:.4px;color:var(--txt);text-transform:uppercase;font-weight:600}
+  .cell .hint{font-size:12px;color:var(--mut);margin:0 0 12px}
+  .streamrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+  .chip{padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid transparent}
+  .chip.dormant{opacity:.32;filter:saturate(.4)}
+  .chip.active{box-shadow:0 0 0 2px rgba(63,185,80,.0)}
+  .nowchip{padding:4px 12px;border-radius:20px;font-weight:700;font-size:13px;color:#06210f}
+  table.agents{width:100%;border-collapse:collapse;font-size:12px}
+  table.agents th,table.agents td{padding:3px 5px;text-align:center}
+  table.agents th{color:var(--mut);font-weight:500;font-size:11px}
+  table.agents td.aid{text-align:left;color:var(--mut);font-family:ui-monospace,monospace}
+  .bar{height:15px;border-radius:3px;position:relative;background:#0a0e14;overflow:hidden}
+  .bar > i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
+  .statline{display:flex;gap:22px;flex-wrap:wrap;margin-top:4px}
+  .stat{display:flex;flex-direction:column}
+  .stat .n{font-size:24px;font-weight:700;line-height:1}
+  .stat .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+  canvas.chart{width:100%;height:150px;display:block;background:#0a0e14;border-radius:8px;border:1px solid var(--line)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:8px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .retain{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .retbox{background:#0a0e14;border:1px solid var(--line);border-radius:8px;padding:12px}
+  .retbox .who{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
+  .retbox .err{font-size:30px;font-weight:700;line-height:1.1}
+  .retbox .desc{font-size:11.5px;color:var(--mut);margin-top:2px}
+  /* ---------- Concepts / reference ---------- */
+  .concepts{margin-top:26px;display:flex;flex-direction:column;gap:12px}
+  details.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  details.card[open]{border-color:#3d4654}
+  details.card > summary{cursor:pointer;list-style:none;padding:15px 20px;font-size:16px;font-weight:600;
+    display:flex;align-items:center;gap:12px;user-select:none}
+  details.card > summary::-webkit-details-marker{display:none}
+  details.card > summary .tag{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);
+    border:1px solid var(--accent);border-radius:20px;padding:2px 9px;font-weight:700}
+  details.card > summary .tag.rl{color:var(--accent2);border-color:var(--accent2)}
+  details.card > summary .tag.mem{color:var(--warn);border-color:var(--warn)}
+  details.card > summary .chev{margin-left:auto;color:var(--mut);transition:.2s}
+  details.card[open] > summary .chev{transform:rotate(90deg)}
+  .card-body{padding:2px 22px 20px;color:#c3ccd6;font-size:14.5px}
+  .card-body p{margin:.5em 0}
+  .card-body ul{margin:.4em 0;padding-left:20px}
+  .card-body li{margin:.3em 0}
+  .card-body b{color:var(--txt)}
+  .math{background:#0a0e14;border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:12px 0;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;color:#cdd9e5;overflow-x:auto;line-height:1.7}
+  .math .cm{color:#6e7a89}
+  .pseudo{counter-reset:ln}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  .kv{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--panel2)}
+  .kv .k{color:var(--accent2);font-family:ui-monospace,monospace;font-size:13px;font-weight:600}
+  .kv .v{color:var(--mut);font-size:13.5px;margin-top:2px}
+  .note{border-left:3px solid var(--accent2);background:#0e1a2b;border-radius:0 8px 8px 0;padding:8px 14px;margin:12px 0;font-size:13.5px;color:#b9d2ee}
+  footer{color:var(--mut);font-size:13px;padding:40px 0 60px;border-top:1px solid var(--line);margin-top:60px}
+  .pill{display:inline-block;font-size:11px;color:var(--warn);border:1px solid var(--warn);
+    border-radius:20px;padding:1px 9px;margin-left:8px;vertical-align:middle}
+  .caveat{background:#21130a;border:1px solid var(--warn);border-radius:8px;padding:12px 16px;
+    font-size:13.5px;color:#f0c9a8;margin-top:18px}
+  .caveat b{color:var(--warn)}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+  <h1><span class="glyph">🧬</span> GAUSE <span style="color:var(--mut);font-weight:400">— Interactive Explainer</span></h1>
+  <div class="sub"><b>G</b>eneralist-averse <b>A</b>ffinity <b>U</b>pdate for <b>S</b>pecialist <b>E</b>mergence · niche partitioning without explicit coordination</div>
+  <div class="thesis">
+    <b>Core thesis.</b> Under bounded per-agent capacity and non-stationarity, retention of dormant-regime knowledge tracks a single property:
+    <b>whether capacity assignment is independent of current task reward.</b> Competition is the most <i>parsimonious</i> route to a reward-independent
+    assignment — no gate to train, no diversity objective to tune. The assignment is simply the equilibrium the dynamics converge to.
+  </div>
+</div></header>
+
+<div class="wrap">
+
+<!-- ============== WALKTHROUGH ============== -->
+<h2 class="section">Part 1 · How the algorithm works</h2>
+<h3 class="title">A guided walkthrough of one GAUSE step</h3>
+<p class="lead">Six stages, animated. Each panel draws the actual state the algorithm manipulates — a population of learners, their niche affinities, and the Beta beliefs they hold over prediction methods.</p>
+
+<div class="walk">
+  <div class="walk-canvaswrap">
+    <canvas id="walkCanvas" width="900" height="640"></canvas>
+  </div>
+  <div class="walk-text" id="walkText"><!-- filled by JS --></div>
+</div>
+<div class="walk-nav wrap" style="padding:0;max-width:none">
+  <button class="btn" id="wPrev">‹ Prev</button>
+  <button class="btn primary" id="wNext">Next ›</button>
+  <div class="dots" id="wDots"></div>
+</div>
+
+<!-- ============== SANDBOX ============== -->
+<h2 class="section">Part 2 · Live sandbox</h2>
+<h3 class="title">Run GAUSE in your browser <span class="pill">faithful port of the real update rules</span></h3>
+<p class="lead">This is the actual algorithm — exponentiated-gradient affinity update, Thompson sampling over methods, the λ niche-bonus competition, winner-take-all. Turn the knobs and watch specialization emerge. Switch on <b>regime dormancy</b> to see the retention story: a capacity-bounded monolith forgets dormant regimes; the population retains them structurally.</p>
+
+<div class="sandbox">
+  <div class="toolbar">
+    <div class="ctrl"><label>λ &nbsp;competition <span class="val" id="vLam">0.30</span></label>
+      <input type="range" id="cLam" min="0" max="1.2" step="0.05" value="0.3"></div>
+    <div class="ctrl"><label>η &nbsp;EG rate <span class="val" id="vEta">0.15</span></label>
+      <input type="range" id="cEta" min="0.02" max="0.5" step="0.01" value="0.15"></div>
+    <div class="ctrl"><label>learners <span class="val" id="vN">6</span></label>
+      <input type="range" id="cN" min="2" max="10" step="1" value="6"></div>
+    <div class="ctrl"><label>regimes <span class="val" id="vR">4</span></label>
+      <input type="range" id="cR" min="2" max="6" step="1" value="4"></div>
+    <div class="ctrl"><label>memory model</label>
+      <select id="cMem"><option value="lru">hard · LRU eviction</option><option value="soft">soft · interference decay</option></select></div>
+    <div class="ctrl"><label>regime stream</label>
+      <select id="cStream"><option value="stationary">stationary (all active)</option><option value="dormancy">dormancy + reactivation</option></select></div>
+    <div class="ctrl"><label>capacity K <span class="val" id="vK">2</span></label>
+      <input type="range" id="cK" min="1" max="4" step="1" value="2"></div>
+    <div class="ctrl"><label>speed <span class="val" id="vSpd">8×</span></label>
+      <input type="range" id="cSpd" min="1" max="30" step="1" value="8"></div>
+    <div class="runbtns">
+      <button class="btn primary" id="bPlay">▶ Play</button>
+      <button class="btn" id="bStep">Step</button>
+      <button class="btn" id="bReset">Reset</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: stream + agents -->
+    <div>
+      <div class="cell">
+        <h5>Regime stream <span style="color:var(--mut);font-weight:400;text-transform:none">· step <span id="tStep">0</span></span></h5>
+        <p class="hint">The environment emits one regime per step. In dormancy mode a sliding window is active; the rest go dormant and later reactivate.</p>
+        <div class="streamrow" id="streamChips"></div>
+        <div style="margin-top:10px">now: <span class="nowchip" id="nowChip">—</span></div>
+      </div>
+      <div class="cell">
+        <h5>Population · niche affinity</h5>
+        <p class="hint">Each row is a learner; bars = its affinity per regime (EG-updated). The <b>colored left edge</b> marks its primary niche — watch rows sharpen onto <i>distinct</i> regimes (emergent partitioning). <b>SI</b> = regime specialization (sharpness of these bars); <b>MSI</b> = method specialization. ★ = winner this step.</p>
+        <table class="agents" id="agentTable"></table>
+      </div>
+    </div>
+    <!-- RIGHT: metrics -->
+    <div>
+      <div class="cell r">
+        <h5>Emergent specialization</h5>
+        <div class="statline">
+          <div class="stat"><span class="n" id="sSI" style="color:var(--accent)">0.00</span><span class="l">SI · regime (niche)</span></div>
+          <div class="stat"><span class="n" id="sMSI" style="color:var(--accent2)">0.00</span><span class="l">MSI · method usage</span></div>
+          <div class="stat"><span class="n" id="sCov" style="color:var(--r4)">0/0</span><span class="l">Regimes covered</span></div>
+        </div>
+        <canvas class="chart" id="siChart" width="900" height="300" style="margin-top:14px"></canvas>
+        <div class="legend"><span><i style="background:var(--accent)"></i>SI (regime affinity)</span><span><i style="background:var(--accent2)"></i>MSI (method usage)</span><span><i style="background:var(--mut)"></i>0.65 — published MSI (full-model headline)</span></div>
+      </div>
+      <div class="cell r">
+        <h5>Memory &amp; retention <span style="color:var(--mut);font-weight:400;text-transform:none">· enable dormancy</span></h5>
+        <p class="hint" id="retHint">Post-reactivation error: does each system still know a regime's best method when it returns from dormancy? Lower = better retention.</p>
+        <div class="retain">
+          <div class="retbox" style="border-color:var(--bad)">
+            <div class="who">Capacity-bounded monolith</div>
+            <div class="err" id="errMono" style="color:var(--bad)">—</div>
+            <div class="desc">one learner, K slots, evicts/decays dormant regimes → must relearn</div>
+          </div>
+          <div class="retbox" style="border-color:var(--accent)">
+            <div class="who">GAUSE population</div>
+            <div class="err" id="errPop" style="color:var(--accent)">—</div>
+            <div class="desc">specialist idles through dormancy → retains its niche structurally</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat">
+  <b>Honest scope (v4.3, real-data check).</b> This sandbox illustrates the <i>mechanism</i> on a clean synthetic stream where each regime has a separable best method — that is where the dissociation is sharpest. On the real UCI Gas Sensor stream a full-capacity online linear classifier does <i>not</i> catastrophically forget, and the forgetting story survives only with representation-sharing <i>neural</i> experts. GAUSE is a mechanism / lens result, not a performance claim. See <code>CHANGELOG.md</code> (v4.3.0).
+</div>
+
+<!-- ============== CONCEPTS / MATH / RL ============== -->
+<h2 class="section">Part 3 · Concepts, math &amp; RL background</h2>
+<h3 class="title">Everything under the hood, made explicit</h3>
+<p class="lead">Click to expand. Each card defines a piece of GAUSE — the full algorithm, the exponentiated-gradient math, the reinforcement-learning ideas it borrows, and the two memory models — at a level you can map line-for-line onto the code.</p>
+
+<div class="concepts">
+
+  <details class="card" open>
+    <summary><span class="tag">Algorithm</span> The full GAUSE loop in pseudocode <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>GAUSE is a population of bandit learners under <b>competitive exclusion</b>. One step:</p>
+      <div class="math pseudo">
+<span class="cm"># State per learner i:</span>
+<span class="cm">#   α_i ∈ Δᴿ        niche affinity (a distribution over R regimes)</span>
+<span class="cm">#   B_i[r][m]      Beta(a,b) belief that method m is good in regime r</span>
+
+<b>for</b> each step t:
+    r ← Stream(t)                          <span class="cm"># environment emits the live regime</span>
+    <b>for</b> each learner i:                      <span class="cm"># 1. propose (Thompson sampling)</span>
+        m_i ← argmaxₘ  sample Beta(B_i[r][m])   <span class="cm"># (ε-greedy exploration, ε decays)</span>
+        raw_i ← q(m_i, r)                  <span class="cm"># reward: high iff m_i is r's best method</span>
+        bonus_i ← +λ·α_i[r]   if primary(α_i)=r <span class="cm"># 2. generalist-averse niche bonus</span>
+                  −0.3·λ·(1−α_i[r]) otherwise
+        adj_i ← raw_i + bonus_i
+    w ← argmaxᵢ adj_i                       <span class="cm"># 3. winner-take-all</span>
+    B_w[r][m_w].a += 1                      <span class="cm"># 4a. winner reinforces its method belief</span>
+    α_w[r] ← α_w[r]·exp(η);  normalize α_w  <span class="cm"># 4b. exponentiated-gradient affinity update</span>
+    <span class="cm"># losers do NOT update — that is what makes the assignment converge</span>
+      </div>
+      <p>The only "knobs" are <code>λ</code> (how generalist-averse the competition is) and <code>η</code> (how fast affinity sharpens). There is <b>no gate to train, no router, no diversity loss, no labels.</b> Code: <code>NichePopulation.run_iteration</code> + <code>NicheAgent.update</code> in <code>src/agents/niche_population.py</code>.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag">Math</span> Exponentiated Gradient (Hedge / multiplicative weights) <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>The affinity update is the <b>exponentiated-gradient</b> (EG) rule — also known as <b>Hedge</b>, <b>multiplicative weights</b>, or <b>mirror descent on the simplex</b> with an entropic regularizer. For a binary win signal <code>r_j = 1[j = winning regime]</code>:</p>
+      <div class="math">
+α_j  ←  α_j · exp(η·r_j) / Z ,   Z = Σ_k α_k·exp(η·r_k)
+
+<span class="cm"># only the winning regime has r_j = 1, so in practice:</span>
+α_win ← α_win · e^η          <span class="cm"># multiply winner</span>
+α_j   ← α_j                  <span class="cm"># others unchanged (·e⁰ = 1)</span>
+α     ← α / Σα               <span class="cm"># renormalize back onto the simplex</span>
+      </div>
+      <p><b>Why this rule and not addition?</b></p>
+      <ul>
+        <li><b>Simplex-preserving by construction.</b> <code>exp</code> is always positive and we divide by a positive sum, so <code>α</code> stays a valid probability vector forever — no clamping, no "negative affinity" hacks. (The legacy V3 update added/subtracted and needed a <code>max(0.01,·)</code> clamp; that is kept only for comparison.)</li>
+        <li><b>It is mirror descent.</b> EG is gradient descent in the dual (log) space — the Bregman/KL geometry of the probability simplex — which is the <i>correct</i> geometry for updating a distribution.</li>
+        <li><b>It is replicator dynamics.</b> In the small-<code>η</code> limit, EG is exactly the discrete-time <b>replicator equation</b> from evolutionary game theory: <code>α̇_j ∝ α_j·(f_j − f̄)</code>. That is the formal bridge to the "ecological niche" framing — affinities evolve like population shares under selection.</li>
+      </ul>
+      <div class="note">The repo rescales <code>η</code> by <code>(R²−R+1)/(R−1)</code> so EG matches the V3 specialization timescale (<code>eg_eta_for_regimes</code>). The sandbox exposes the <i>effective</i> η directly so you can see the dynamics move.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag rl">RL</span> Thompson sampling &amp; the Beta–Bernoulli bandit <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>Each learner's choice of <i>method</i> within a regime is a <b>multi-armed bandit</b> problem: arms = methods, reward = did this method work here. GAUSE solves it with <b>Thompson sampling</b> (posterior sampling):</p>
+      <div class="math">
+B[r][m] = Beta(a, b)            <span class="cm"># posterior over P(method m succeeds in regime r)</span>
+sample  sₘ ~ Beta(a, b)  ∀m     <span class="cm"># draw one optimistic sample per arm</span>
+play    m* = argmaxₘ sₘ          <span class="cm"># act greedily on the samples</span>
+update  on success: a ← a + 1   <span class="cm"># Beta is conjugate to Bernoulli</span>
+        on failure: b ← b + 1
+      </div>
+      <ul>
+        <li><b>Exploration–exploitation</b> is automatic: wide posteriors (few data) produce high-variance samples that occasionally win, so under-tried methods still get probed; as <code>a+b</code> grows the posterior concentrates and the best arm dominates. An extra <b>ε-greedy</b> term (ε starts 0.30, decays ×0.999, floor 0.05) adds early random exploration.</li>
+        <li><b>Conjugacy</b> makes the Bayesian update a one-line increment — no gradients, no replay buffer.</li>
+        <li>In GAUSE the <b>winner is always reinforced with success</b> (the winner's reward = 1 by construction), so beliefs sharpen toward whatever methods keep <i>winning</i> the competition — coupling the bandit to the population dynamics.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag rl">RL</span> Competitive exclusion, winner-take-all &amp; reward-independence <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>These three ideas are the conceptual core — the reason GAUSE retains where standard RL allocators forget.</p>
+      <ul>
+        <li><b>Competitive exclusion (Gause, 1934).</b> Two species competing for the identical niche cannot coexist — one is excluded. GAUSE operationalizes this with the <b>generalist-averse bonus</b>: trying to win a regime that another learner already "owns" is penalised, so the population is pushed to <b>partition</b> the regime space. The name honors G. F. Gause.</li>
+        <li><b>Winner-take-all.</b> Only the single highest-adjusted-reward learner updates; losers are frozen this step. This is what lets affinities <b>converge</b> to a stable assignment instead of all drifting together — it is a selection operator, not a gradient on a shared loss.</li>
+        <li><b>Reward-independence — the thesis.</b> A converged specialist's capacity assignment no longer depends on current task reward: it owns its niche <i>structurally</i>. Contrast the failure modes:
+          <div class="two" style="margin-top:10px">
+            <div class="kv"><div class="k">reward-chasing → forgets</div><div class="v">a capacity-bounded monolith, or a learned MoE gate, allocates to whatever pays reward <i>now</i>. A dormant regime emits no reward gradient → no signal to reserve capacity for it → it is overwritten.</div></div>
+            <div class="kv"><div class="k">reward-independent → retains</div><div class="v">fixed random niches, an EOI/CDS diversity objective, or <b>converged competition</b> assign capacity regardless of current reward → dormant regimes survive. GAUSE is the most parsimonious of these.</div></div>
+          </div>
+        </li>
+      </ul>
+      <div class="note">This even corroborates MoE continual-learning theory (ICLR'25, arXiv:2406.16437): their result that the gate must be <i>frozen</i> for CL convergence is, in GAUSE's terms, making the assignment reward-independent — which competition reaches <i>emergently</i>.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag mem">Memory</span> Bounded capacity: hard LRU vs. soft interference <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>"Memory" in GAUSE = each learner can master only <b>K of R</b> regimes. How forgetting happens depends on the model — and the headline dissociation holds under <b>both</b>, which is the point of testing two (it isn't an artifact of one eviction rule). Code: <code>experiments/exp_nonstationary_capacity.py</code>.</p>
+      <div class="two">
+        <div class="kv">
+          <div class="k">hard · LRU eviction (default)</div>
+          <div class="v">A K-slot store. Learning a (K+1)-th regime <b>evicts the least-recently-used</b> one outright (<code>store.popitem(last=False)</code>). Dormant → not refreshed → falls to the back → evicted → must relearn from the prior on reactivation. Discrete, all-or-nothing forgetting.</div>
+        </div>
+        <div class="kv">
+          <div class="k">soft · interference decay</div>
+          <div class="v">No eviction. Once the learned <b>footprint</b> exceeds K, every update <b>bleeds pseudo-counts out of the other held regimes</b> toward the Beta(1,1) prior, ∝ overflow. Dormant regimes decay continuously — the interference account of catastrophic forgetting.</div>
+        </div>
+      </div>
+      <div class="math">
+<span class="cm"># soft interference (per learning update, when footprint &gt; K):</span>
+overflow = max(0, footprint − K)
+keep     = 1 − 0.04 · overflow / footprint
+∀ held regime r ≠ current:  a ← 1 + (a−1)·keep ,  b ← 1 + (b−1)·keep
+      </div>
+      <p>A GAUSE specialist sidesteps both: it only ever holds its <i>one</i> niche, so its footprint never exceeds K and dormancy never touches it. The <b>monolith</b> must hold every active regime alone, so it is permanently over capacity — that is the retention gap you see in the sandbox.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag">Math</span> Information theory: entropy, SI, MSI, coverage &amp; KL <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p><b>Shannon entropy</b> measures how spread-out a distribution is — high when uniform, zero when concentrated on one outcome. <b>Normalized entropy</b> divides by its max so it lands in [0,1]. Specialization = 1 − normalized entropy. The Deep Dive defines <b>two distinct</b> indices — one over <i>regimes</i>, one over <i>methods</i>:</p>
+      <div class="math">
+H(p) = −Σ pₓ·log pₓ           <span class="cm"># Shannon entropy</span>
+H̄  = H / log(support)         <span class="cm"># normalized entropy ∈ [0,1]</span>
+
+SI  = 1 − H(α) / log R         <span class="cm"># regime specialization — over niche affinity α</span>
+MSI = 1 − H(π) / log M         <span class="cm"># method specialization — over method usage π</span>
+
+both: 0 = generalist (uniform) … 1 = perfect specialist (one-hot)
+      </div>
+      <div class="note"><b>Read this carefully — it is a subtle repo detail the sandbox now gets right.</b> <code>SI</code> measures which <i>regimes</i> a learner owns (the bars in Part 2); <code>MSI</code> measures which <i>methods</i> it favours. The published headline <b>"mean SI ≈ 0.65 at λ=0"</b> is computed on <i>method usage</i> in <code>src/analysis/specialization.py</code> — i.e. what the Deep Dive formalizes as <b>MSI</b>. The sandbox plots both lines so you can see them diverge.</div>
+      <ul>
+        <li><b>Effective regime count</b> <code>k_eff = exp(H(π_regime))</code>. If one regime dominates (k_eff → 1) there is nothing to specialize <i>between</i> and SI collapses — the "mono-regime collapse" proposition. (Weather, k_eff ≈ 1.8, shows lower SI for exactly this reason.)</li>
+        <li><b>Coverage</b> = how many distinct regimes are <i>some</i> learner's primary niche. A separate axis from SI: you want both high SI (each learner sharp) <i>and</i> full coverage (no regime orphaned). Competition, diversity, and the router all achieve coverage — it is a commodity; retention is where they split.</li>
+        <li><b>KL divergence</b> <code>D(P‖Q) = Σ P·log(P/Q)</code> — asymmetric "distance" between distributions; used to compare a learner's affinity to uniform or to other learners.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag rl">RL</span> Bayesian inference: Bayes, the Beta distribution &amp; conjugacy <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>The bandit beliefs above are <b>Bayesian posteriors</b>. The machinery:</p>
+      <div class="math">
+Bayes:   P(θ|data) ∝ P(data|θ)·P(θ)        <span class="cm"># posterior ∝ likelihood × prior</span>
+
+Beta(a,b):  mean = a/(a+b)   <span class="cm"># belief that a method succeeds</span>
+            variance ↓ as a+b grows  <span class="cm"># more data ⇒ tighter, more confident</span>
+            Beta(1,1) = uniform prior <span class="cm"># "no idea yet"</span>
+
+Conjugacy (Beta–Bernoulli):
+   prior Beta(a,b) + success → Beta(a+1, b)
+   prior Beta(a,b) + failure → Beta(a, b+1)
+      </div>
+      <ul>
+        <li><b>Conjugacy</b> = the posterior stays in the same family as the prior, so the Bayesian update is a one-line counter increment — no integration, no gradients. This is what makes Thompson sampling cheap.</li>
+        <li>A learner's belief about method <code>m</code> in regime <code>r</code> is a separate <code>Beta(a,b)</code>; early on it is wide (explores), and concentrates as evidence accrues (exploits). The <code>a+b</code> sum is effectively a per-(regime,method) confidence counter — and the thing the memory models decay or evict.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag rl">RL</span> Game theory: Nash, winner-take-all &amp; the pigeonhole argument <span class="chev">›</span></summary>
+    <div class="card-body">
+      <ul>
+        <li><b>Nash equilibrium</b> — a strategy profile where no learner can improve by unilaterally deviating. GAUSE's converged partition (one specialist per niche) <i>is</i> such an equilibrium: given everyone else's niches, your best response is to own an under-contested one.</li>
+        <li><b>Winner-take-all (WTA) game</b> — each round a single value <code>V</code> goes entirely to the top performer; everyone else gets 0. Rewards are <i>never divided</i> — there is always exactly one winner — but your <b>probability</b> of being that winner falls as a niche gets crowded.</li>
+        <li><b>Pigeonhole principle</b> — with <code>N</code> learners and <code>R</code> regimes and <code>N &gt; R</code>, at least one regime is contested by <code>⌈N/R⌉</code> learners. That guaranteed crowding is the pressure that pushes someone to deviate to an emptier niche.</li>
+        <li><b>Competitive exclusion (Gause, 1934)</b> — two species in the identical niche cannot coexist; one is excluded. Darwin's finches evolved different beaks from competition, not coordination. GAUSE imports this: competition alone differentiates the population.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag">Math</span> Why competition alone specializes (λ = 0) &amp; the feedback loop <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>The supporting claim: specialization emerges <b>even with the niche bonus off</b> (λ = 0). The score is then just <code>raw reward + noise</code> — no niche advantage. Yet learners still diverge, via a four-step <b>positive feedback loop</b>:</p>
+      <div class="math">
+   specialize in r  →  higher affinity α_r  →  (with λ&gt;0) higher niche bonus
+        ↑                                                    │
+   only winner updates  ←  more likely to win in r  ←────────┘
+      </div>
+      <ul>
+        <li><b>1 · random divergence</b> — all learners start uniform; early winners are decided by noise, so by chance different learners rack up wins in different regimes.</li>
+        <li><b>2 · winner-take-all path dependence</b> — because only the winner updates, those random early wins compound into stable affinity gaps (e.g. after 50 steps a learner sits at 0.36 on its niche vs 0.21 elsewhere).</li>
+        <li><b>3 · method learning reinforces</b> — a learner that keeps winning regime <code>r</code> learns <i>r</i>'s good methods (its Beta beliefs sharpen), giving it a real skill edge there — independent of any bonus.</li>
+        <li><b>4 · crowding sustains it</b> — in a niche crowded by <code>k</code> similar learners, each wins ≈ <code>1/k</code> of the time, so expected payoff ≈ <code>V/k</code>. Deviating to an empty niche raises your expected wins. Crowding is self-correcting.</li>
+      </ul>
+      <p>λ &gt; 0 doesn't <i>create</i> specialization — it <b>accelerates and sharpens</b> a partition that competition already produces.</p>
+      <div class="note"><b>Sandbox caveat:</b> this minimal in-browser port only weakly reproduces the λ=0 case — with binary rewards and pure argmax tie-breaking, learners herd rather than cleanly partition, so MSI stays near 0 at λ=0. Set λ &gt; 0 to see the crisp partition. The full paper recovers the λ=0 result via the crowding / expected-payoff dynamics above.</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag mem">Memory</span> Mixture-of-Experts: the gate, and why a reward-driven router forgets <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>The strongest baseline. An <b>MoE</b> has experts <code>f₁…f_N</code> and a <b>gate</b> <code>g</code> that routes each regime to an expert (top-1 / hard routing here). The gate is a softmax over learned logits, trained to route toward whoever performs well <i>now</i>:</p>
+      <div class="math">
+route:   e_t = argmax_e gate[r_t][e]     <span class="cm"># (ε-greedy)</span>
+grade:   q = expert e_t's quality on r_t  ∈ [0,1]
+update:  gate[r_t][e_t] += η_g·(q − ½)    <span class="cm"># REWARD-following — the crux</span>
+      </div>
+      <p><b>Why it forgets a dormant regime</b> — walk one through dormancy:</p>
+      <ul>
+        <li><b>During dormancy</b> regime <code>r</code> never fires, so no quality <code>q_r</code> is observed → <code>Δgate[r] = 0</code> → the gate for <code>r</code> is <b>frozen</b>. It gets <i>no signal</i> that would make it reserve an idle expert for <code>r</code>.</li>
+        <li>Meanwhile the expert that owned <code>r</code> is the best available, so it keeps getting routed for the <i>active</i> regimes and — capacity-bounded — <b>evicts</b> its beliefs about <code>r</code>.</li>
+        <li><b>On reactivation</b> the frozen gate dutifully routes <code>r</code> back to that expert — which has forgotten it. The router did everything right by its own objective and still forgot. <b>The failure is structural, not a tuning bug.</b></li>
+      </ul>
+      <div class="note">A gate <i>augmented</i> with a memory-preservation or load-balancing term (a reward-<b>independent</b> pressure) <i>could</i> reserve capacity for dormant regimes — at the cost of the reward-following simplicity that defines a vanilla router. GAUSE gets that reward-independence for free from competition. Sandbox/paper: MoE post-reactivation <b>0.928</b> vs GAUSE <b>0.283</b> at K=1 (p ~ 10⁻³⁵).</div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag mem">Memory</span> Continual learning &amp; catastrophic forgetting — where GAUSE sits <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>The dormancy experiment <i>is</i> a <b>continual-learning</b> (CL) problem; the monolith's failure <i>is</i> <b>catastrophic forgetting</b> — train on task A, then on B, and A's accuracy craters because B's updates overwrote the shared weights that encoded A. A regime going dormant then reactivating is exactly the "re-test task A later" step.</p>
+      <p>Every CL method resolves the <b>stability–plasticity dilemma</b>: learn the new (plastic) without destroying the old (stable). The three standard families, and where GAUSE lands:</p>
+      <div class="two">
+        <div class="kv"><div class="k">1 · Regularization (EWC)</div><div class="v">anchor parameters important to old tasks. <i>Soft</i> protection; needs a per-parameter importance estimate. On real gas data its anchor <b>fights drift</b> → worse than naive.</div></div>
+        <div class="kv"><div class="k">2 · Replay / rehearsal</div><div class="v">store old-task samples and interleave them. Needs memory of the data + continual replay.</div></div>
+        <div class="kv"><div class="k">3 · Architectural isolation</div><div class="v">give different tasks different parameters (experts / masks) so new learning <i>physically cannot</i> overwrite old. ← <b>GAUSE lives here</b></div></div>
+        <div class="kv"><div class="k">no protection</div><div class="v">one shared box for everything → forgets. ← the <b>monolith</b> and the <b>MoE router</b></div></div>
+      </div>
+      <p style="margin-top:12px">GAUSE is parameter-isolation, but an <b>unusual</b> one: where standard isolation <i>assigns</i> experts by an external controller or task label, GAUSE lets the regime→agent assignment <b>emerge</b> from competition — no labels, no controller. The converged assignment is reward-independent, so each specialist idles through dormancy without updating, hence without forgetting.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag">Math</span> Theoretical results — the propositions <span class="chev">›</span></summary>
+    <div class="card-body">
+      <p>The thesis is not just empirical; it is a proposition with a proof. The core objects:</p>
+      <ul>
+        <li><b>Assignment-only class 𝒜</b> — mechanisms whose <i>only</i> protection of a dormant regime is the assignment itself (no rehearsal, no load-balancing acting during dormancy). The monolith, fixed random niches, EOI/CDS diversity, and competition are all in 𝒜.</li>
+        <li><b>Reward-driven</b> assignment: its update for <code>r</code> depends only on quality signals observed while <code>r</code> is active. <b>Reward-independent</b>: it does not depend on current reward for <code>r</code>.</li>
+      </ul>
+      <div class="math"><b>Proposition (Reward-Independence ⇒ Retention).</b>
+Within 𝒜, for a long-enough dormancy window, retaining a dormant
+regime r REQUIRES the assignment for r to be (i) reward-independent
+and (ii) covering. Hence any reward-driven allocator in 𝒜 — the
+capacity-bounded monolith, the learned MoE router — FORGETS every
+regime that goes dormant.</div>
+      <p><b>Proof sketch (the "no-signal lemma").</b> While <code>r</code> is dormant, the active regime is always some <code>r′ ≠ r</code>, so a reward-driven rule observes no <code>q_r</code> and <code>Δ-assignment[r] = 0</code> — the assignment is frozen on the expert <code>e★</code> that owned <code>r</code>. But <code>e★</code> stays in active use, so the memory model erodes its beliefs about <code>r</code>: hard LRU <b>evicts</b> once ≥K other regimes are served; soft interference decays <code>r</code>'s pseudo-counts by <code>κ&lt;1</code> per update → <code>0</code>. At reactivation the frozen assignment routes <code>r</code> back to the now-amnesiac <code>e★</code>. ∎</p>
+      <p>Companion results: <b>mono-regime collapse</b> (as one regime dominates, k_eff → 1 and SI → 0 — nothing to specialize between), and a <b>reallocation-rate</b> proposition replacing the earlier hand-wave necessity claim.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag">Math</span> Notation reference &amp; the method inventory <span class="chev">›</span></summary>
+    <div class="card-body">
+      <div class="math">
+N   number of learners          R   number of regimes
+M   number of methods           𝓡  regime set {r₁…r_R}
+α_i ∈ Δᴿ   learner i's niche affinity (distribution over regimes)
+a,b        Beta params for a (regime, method) belief
+A(r,m)     affinity of method m in regime r  (the reward structure)
+λ          niche-bonus coefficient (generalist-aversion)
+η          EG learning rate for affinity      η_g  MoE gate rate
+H(·)       Shannon entropy   k_eff = exp(H)   effective regime count
+SI / MSI   regime / method specialization index
+K          per-learner capacity (regimes masterable)   i*  winner
+      </div>
+      <p><b>What a "method" concretely is.</b> A method maps recent history → a prediction/action. Each domain ships <code>M = 5</code>: e.g. <b>naive/persistence</b> (ŷ = last value), <b>moving average</b>, <b>momentum</b>, <b>mean-reversion</b>, <b>trend-following</b> (MA crossover). A regime has an <b>affinity matrix</b> <code>A(r,m)</code> saying which methods pay off in it — that is the latent structure GAUSE's learners discover via their Beta beliefs. In the sandbox this is abstracted to a clean 1:1 best-method-per-regime.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="tag rl">RL</span> Glossary — quick reference <span class="chev">›</span></summary>
+    <div class="card-body">
+      <div class="two">
+        <div class="kv"><div class="k">regime</div><div class="v">a distinct environment condition with its own best method; the unit GAUSE specializes <i>to</i>. Non-stationary: active → dormant → reactivate.</div></div>
+        <div class="kv"><div class="k">niche affinity α</div><div class="v">a learner's distribution over regimes — which it "belongs" to. EG-updated. Lives on the simplex Δᴿ.</div></div>
+        <div class="kv"><div class="k">method</div><div class="v">a concrete prediction strategy a learner can play within a regime (the bandit arms).</div></div>
+        <div class="kv"><div class="k">catastrophic forgetting</div><div class="v">a learner overwrites old-task knowledge while learning a new one — the continual-learning failure GAUSE addresses by structural retention.</div></div>
+        <div class="kv"><div class="k">MoE router / gate</div><div class="v">a learned module that assigns inputs to experts. Reward-chasing → forgets dormant regimes (no gradient to protect them).</div></div>
+        <div class="kv"><div class="k">EOI / CDS</div><div class="v">intrinsic-diversity objectives (explicit identity reward). Reward-independent → retain, but need an extra objective to tune; competition gets there for free.</div></div>
+        <div class="kv"><div class="k">replicator dynamics</div><div class="v">evolutionary-game equation for how strategy shares evolve under selection; the small-η limit of EG, bridging to the ecological framing.</div></div>
+        <div class="kv"><div class="k">λ (niche bonus)</div><div class="v">strength of the generalist-averse competition. λ &gt; 0 makes partitioning crisp here; the "competition-alone" λ=0 result (published MSI≈0.65) is a subtler crowding effect this minimal sandbox only weakly reproduces.</div></div>
+      </div>
+    </div>
+  </details>
+
+</div>
+
+<footer><div class="wrap" style="padding:0;max-width:none">
+  GAUSE interactive explainer · self-contained, no dependencies · faithful port of <code>src/agents/niche_population.py</code> and <code>experiments/exp_nonstationary_capacity.py</code>.
+  Affinity update: exponentiated gradient (Hedge). SI = 1 − H(α)/log R (regimes); MSI = 1 − H(π)/log M (methods).
+</div></footer>
+
+</div>
+
+<script>
+"use strict";
+/* ====================================================================
+   GAUSE — faithful in-browser port
+   --------------------------------------------------------------------
+   Per learner:
+     niche_affinity[r]      init uniform + small jitter (symmetry break)
+     beliefs[r][m] = Beta   init (1,1), Thompson sampling
+   Per step:
+     1. emit regime r_t
+     2. each learner picks a method (Thompson + decaying exploration)
+     3. raw reward q(method, r_t): high iff method == best_method[r_t]
+     4. niche bonus:  +λ·aff[r]  if primary niche == r_t
+                      −0.3λ·(1−aff[r])  otherwise
+     5. winner = argmax adjusted reward  (winner-take-all)
+     6. winner: belief α+=1 ; affinity  aff[r] *= exp(η) ; renormalize
+   ==================================================================== */
+const RCOL = ['#58a6ff','#3fb950','#f0883e','#bc8cff','#39c5cf','#f778ba'];
+const RNAME = ['R₀','R₁','R₂','R₃','R₄','R₅'];
+
+/* ---- tiny seeded RNG so runs are reproducible per reset ---- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gammaSample(rng,k){ // Marsaglia-Tsang, k>=1 region via boosting
+  if(k<1){const u=rng();return gammaSample(rng,k+1)*Math.pow(u,1/k);}
+  const d=k-1/3, c=1/Math.sqrt(9*d);
+  for(;;){let x,v;do{const u1=rng(),u2=rng();x=Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);v=1+c*x;}while(v<=0);
+    v=v*v*v;const u=rng();if(u<1-0.0331*x*x*x*x)return d*v;if(Math.log(u)<0.5*x*x+d*(1-v+Math.log(v)))return d*v;}
+}
+function betaSample(rng,a,b){const x=gammaSample(rng,a),y=gammaSample(rng,b);return x/(x+y);}
+
+/* ============================ MODEL ============================ */
+class Learner{
+  constructor(id,R,M,rng){
+    this.id=id; this.R=R; this.M=M; this.rng=rng;
+    this.aff=Array.from({length:R},()=>1/R + 0.04*rng()); this._renorm();
+    this.alpha=Array.from({length:R},()=>Array(M).fill(1));
+    this.beta =Array.from({length:R},()=>Array(M).fill(1));
+    this.methodUsage=Array(M).fill(0);
+    this.expl=0.30;
+  }
+  _renorm(){const s=this.aff.reduce((a,b)=>a+b,0);for(let i=0;i<this.R;i++)this.aff[i]/=s;}
+  primary(){let bi=0;for(let i=1;i<this.R;i++)if(this.aff[i]>this.aff[bi])bi=i;return bi;}
+  select(r){
+    this.expl=Math.max(0.05,this.expl*0.999);
+    let m;
+    if(this.rng()<this.expl){m=Math.floor(this.rng()*this.M);}
+    else{let best=-1,bm=0;for(let j=0;j<this.M;j++){const s=betaSample(this.rng,this.alpha[r][j],this.beta[r][j]);if(s>best){best=s;bm=j;}}m=bm;}
+    return m;
+  }
+  win(r,m,eta){
+    this.alpha[r][m]+=1;                 // winner always reinforced (paper: winner reward=1)
+    this.methodUsage[m]++;               // MSI counts the method a learner DEPLOYS when it serves
+    this.aff[r]*=Math.exp(eta);          // exponentiated-gradient update
+    this._renorm();
+  }
+  SI(){ // regime specialization: 1 - H(affinity)/log R   (Deep Dive: SI over niches)
+    let H=0; for(const a of this.aff){if(a>0)H-=a*Math.log(a);}
+    const Hmax=Math.log(this.R); return Hmax>0?1-H/Hmax:0;
+  }
+  MSI(){ // method specialization: 1 - H(method usage)/log M  (Deep Dive: MSI; the published 0.65@λ=0)
+    const tot=this.methodUsage.reduce((a,b)=>a+b,0); if(tot===0)return 0;
+    let H=0; for(const c of this.methodUsage){if(c>0){const p=c/tot;H-=p*Math.log(p);}}
+    const Hmax=Math.log(this.M); return Hmax>0?1-H/Hmax:0;
+  }
+}
+
+/* capacity-bounded monolith for the retention comparison */
+class Monolith{
+  constructor(M,K,rng,mem){this.M=M;this.K=K;this.rng=rng;this.mem=mem;
+    this.store=new Map();} // regime -> {alpha:[],beta:[],t:lastTouch}
+  _strength(s){let v=0;for(let j=0;j<this.M;j++)v+=s.alpha[j]+s.beta[j]-2;return v;}
+  ensure(r,t){
+    if(this.store.has(r)){this.store.get(r).t=t;return;}
+    const s={alpha:Array(this.M).fill(1),beta:Array(this.M).fill(1),t};
+    this.store.set(r,s);
+    if(this.mem==='lru' && this.store.size>this.K){ // evict least-recently-used
+      let lru=null,lt=Infinity;for(const[k,v]of this.store){if(v.t<lt){lt=v.t;lru=k;}}
+      this.store.delete(lru);
+    }
+  }
+  step(r,bestM,t){
+    this.ensure(r,t);const s=this.store.get(r);
+    // pick method by Thompson; "win" trivially (alone) and reinforce
+    let best=-1,bm=0;for(let j=0;j<this.M;j++){const v=betaSample(this.rng,s.alpha[j],s.beta[j]);if(v>best){best=v;bm=j;}}
+    s.alpha[bm]+=1;
+    if(this.mem==='soft'){ // interference: overflow bleeds OTHER regimes toward prior
+      const foot=[...this.store.values()].filter(x=>this._strength(x)>0.5).length;
+      const overflow=Math.max(0,foot-this.K);
+      if(overflow>0){const keep=1-0.04*overflow/Math.max(foot,1);
+        for(const[k,v]of this.store){if(k===r)continue;for(let j=0;j<this.M;j++){v.alpha[j]=1+(v.alpha[j]-1)*keep;v.beta[j]=1+(v.beta[j]-1)*keep;}}}
+    }
+    return bm===bestM?0:1; // 1 = wrong method (error)
+  }
+  knows(r,bestM){ // expected error if r queried right now (no learning) — argmax of mean
+    if(!this.store.has(r))return 1;const s=this.store.get(r);
+    let best=-1,bm=0;for(let j=0;j<this.M;j++){const mean=s.alpha[j]/(s.alpha[j]+s.beta[j]);if(mean>best){best=mean;bm=j;}}
+    return bm===bestM?0:1;
+  }
+}
+
+class Sim{
+  constructor(cfg){this.reset(cfg);}
+  reset(cfg){
+    this.cfg=cfg; this.rng=mulberry32(0xC0FFEE);
+    this.R=cfg.R; this.M=cfg.R;                 // 1:1 best method per regime
+    this.bestM=Array.from({length:this.R},(_,i)=>i);
+    this.pop=Array.from({length:cfg.N},(_,i)=>new Learner(i,this.R,this.M,this.rng));
+    this.mono=new Monolith(this.M,cfg.K,mulberry32(0xBEEF),cfg.mem);
+    this.t=0; this.epoch=0; this.lastWinner=-1;
+    this.siHist=[]; this.msiHist=[];
+    this.dormPrev=new Set(); // regimes dormant last epoch
+    this.popErr=[]; this.monoErr=[]; // recent post-reactivation errors
+  }
+  activeSet(){
+    if(this.cfg.stream==='stationary')return new Set(Array.from({length:this.R},(_,i)=>i));
+    const W=Math.max(1,this.R-2);               // sliding window of active regimes
+    const start=this.epoch%this.R;const s=new Set();
+    for(let k=0;k<W;k++)s.add((start+k)%this.R);
+    return s;
+  }
+  step(){
+    const EPLEN=14;
+    if(this.t>0 && this.t%EPLEN===0){this.epoch++;}
+    const active=this.activeSet();
+    const dorm=new Set(Array.from({length:this.R},(_,i)=>i).filter(i=>!active.has(i)));
+    // detect reactivations (active now, dormant last epoch)
+    const reactivated=[...active].filter(r=>this.dormPrev.has(r));
+    const actArr=[...active];
+    const r=actArr[Math.floor(this.rng()*actArr.length)];
+
+    // --- population step ---
+    const lam=this.cfg.lam, eta=this.cfg.eta;
+    let bestAdj=-Infinity,winner=0,winMethod=0;
+    const picks=[];
+    for(let a=0;a<this.pop.length;a++){
+      const L=this.pop[a]; const m=L.select(r);
+      const q=(m===this.bestM[r])?0.9:0.1; const raw=q+(this.rng()-0.5)*0.1;
+      let bonus; if(L.primary()===r)bonus=lam*L.aff[r]; else bonus=-lam*0.3*(1-L.aff[r]);
+      const adj=raw+bonus; picks.push(m);
+      if(adj>bestAdj){bestAdj=adj;winner=a;winMethod=m;}
+    }
+    this.pop[winner].win(r,winMethod,eta);
+    this.lastWinner=winner;
+
+    // --- monolith step (same regime stream) ---
+    this.mono.step(r,this.bestM[r],this.t);
+
+    // --- retention scoring on reactivation ---
+    if(reactivated.length){
+      for(const rr of reactivated){
+        this.monoErr.push(this.mono.knows(rr,this.bestM[rr]));
+        // population: does the specialist for rr know its best method?
+        let champ=0;for(let a=1;a<this.pop.length;a++)if(this.pop[a].aff[rr]>this.pop[champ].aff[rr])champ=a;
+        const L=this.pop[champ];let bi=0;for(let j=1;j<this.M;j++)if(L.alpha[rr][j]/(L.alpha[rr][j]+L.beta[rr][j])>L.alpha[rr][bi]/(L.alpha[rr][bi]+L.beta[rr][bi]))bi=j;
+        this.popErr.push(bi===this.bestM[rr]?0:1);
+      }
+      if(this.monoErr.length>40)this.monoErr=this.monoErr.slice(-40);
+      if(this.popErr.length>40)this.popErr=this.popErr.slice(-40);
+    }
+    this.dormPrev=dorm;
+
+    // --- metrics ---
+    const si=this.pop.reduce((s,L)=>s+L.SI(),0)/this.pop.length;
+    const msi=this.pop.reduce((s,L)=>s+L.MSI(),0)/this.pop.length;
+    this.siHist.push(si); if(this.siHist.length>400)this.siHist.shift();
+    this.msiHist.push(msi); if(this.msiHist.length>400)this.msiHist.shift();
+    this.t++;
+    return {r,active,dorm,winner,si,msi};
+  }
+  coverage(){const occ=new Set();for(const L of this.pop)occ.add(L.primary());return occ.size;}
+  retentionErr(arr){if(!arr.length)return null;return arr.reduce((a,b)=>a+b,0)/arr.length;}
+}
+
+/* ============================ SANDBOX UI ============================ */
+const $=id=>document.getElementById(id);
+let sim=null, playing=false, raf=null, acc=0;
+
+function cfgFromUI(){return{
+  lam:+$('cLam').value, eta:+$('cEta').value, N:+$('cN').value, R:+$('cR').value,
+  mem:$('cMem').value, stream:$('cStream').value, K:+$('cK').value
+};}
+function syncLabels(){
+  $('vLam').textContent=(+$('cLam').value).toFixed(2);
+  $('vEta').textContent=(+$('cEta').value).toFixed(2);
+  $('vN').textContent=$('cN').value; $('vR').textContent=$('cR').value;
+  $('vK').textContent=$('cK').value; $('vSpd').textContent=$('cSpd').value+'×';
+}
+function rebuild(){sim=new Sim(cfgFromUI());render();}
+
+function render(){
+  const R=sim.R;
+  // stream chips
+  const act=sim.activeSet();
+  const sc=$('streamChips');sc.innerHTML='';
+  for(let i=0;i<R;i++){
+    const c=document.createElement('span');
+    c.className='chip '+(act.has(i)?'active':'dormant');
+    c.style.background=RCOL[i]+'22';c.style.borderColor=RCOL[i];c.style.color=RCOL[i];
+    c.textContent=RNAME[i]+(act.has(i)?'':' · dormant');
+    sc.appendChild(c);
+  }
+  $('tStep').textContent=sim.t;
+  const cur=sim._lastR;
+  if(cur!=null){$('nowChip').textContent=RNAME[cur];$('nowChip').style.background=RCOL[cur];}
+
+  // agent table
+  const tb=$('agentTable');
+  let h='<tr><th></th>';for(let i=0;i<R;i++)h+=`<th style="color:${RCOL[i]}">${RNAME[i]}</th>`;
+  h+='<th title="regime specialization 1−H(α)/log R">SI</th><th title="method specialization 1−H(π)/log M">MSI</th></tr>';
+  for(let a=0;a<sim.pop.length;a++){
+    const L=sim.pop[a];const star=(a===sim.lastWinner)?'★ ':'';const pr=L.primary();
+    h+=`<tr${a===sim.lastWinner?' style="background:#13251a"':''}><td class="aid" style="border-left:3px solid ${RCOL[pr]};padding-left:7px">${star}L${a}</td>`;
+    for(let i=0;i<R;i++){
+      const w=Math.round(L.aff[i]*100);const isP=(i===pr);
+      h+=`<td><div class="bar"><i style="width:${w}%;background:${RCOL[i]};opacity:${isP?1:.5}"></i></div></td>`;
+    }
+    const si=L.SI(),msi=L.MSI();
+    h+=`<td style="font-family:ui-monospace,monospace;color:${si>0.4?'#3fb950':'#9da7b3'};font-weight:600">${si.toFixed(2)}</td>`;
+    h+=`<td style="font-family:ui-monospace,monospace;color:${msi>0.4?'#58a6ff':'#9da7b3'};font-weight:600">${msi.toFixed(2)}</td>`;
+    h+='</tr>';
+  }
+  tb.innerHTML=h;
+
+  // stats
+  const si=sim.siHist.length?sim.siHist[sim.siHist.length-1]:0;
+  const msi=sim.msiHist.length?sim.msiHist[sim.msiHist.length-1]:0;
+  $('sSI').textContent=si.toFixed(2);
+  $('sMSI').textContent=msi.toFixed(2);
+  $('sCov').textContent=sim.coverage()+'/'+R;
+
+  drawSI();
+
+  // retention
+  const me=sim.retentionErr(sim.monoErr), pe=sim.retentionErr(sim.popErr);
+  $('errMono').textContent=me==null?'—':me.toFixed(2);
+  $('errPop').textContent=pe==null?'—':pe.toFixed(2);
+  const rb=document.querySelector('.retain');if(rb)rb.style.opacity=(sim.cfg.stream==='stationary')?'0.4':'1';
+  if(sim.cfg.stream==='stationary'){
+    $('retHint').innerHTML='Enable <b>regime stream → dormancy + reactivation</b> to score retention. With everything always active there is nothing to forget.';
+  }else{
+    $('retHint').innerHTML='Post-reactivation error: when a dormant regime returns, does the system still know its best method? Lower = better retention. Averaged over recent reactivations.';
+  }
+}
+
+function drawSI(){
+  const cv=$('siChart');
+  const dpr=Math.min(window.devicePixelRatio||1,2.5);
+  const W=cv.clientWidth||500, H=cv.clientHeight||150;   // draw in CSS-pixel space (crisp + correct aspect)
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const L=30;  // left gutter for axis labels
+  ctx.strokeStyle='#1c2430';ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){const y=8+(H-16)*g/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-6,y);ctx.stroke();
+    ctx.fillStyle='#6e7a89';ctx.font='11px ui-monospace,monospace';ctx.fillText((1-g/4).toFixed(2),2,y+4);}
+  // 0.65 reference (published MSI headline, full model)
+  const yref=8+(H-16)*(1-0.65);ctx.strokeStyle='#5a6573';ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(L,yref);ctx.lineTo(W-6,yref);ctx.stroke();ctx.setLineDash([]);
+  const line=(hist,col)=>{
+    if(hist.length<2)return;ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+    const n=hist.length;
+    for(let i=0;i<n;i++){const x=L+(W-L-6)*i/(Math.max(n-1,1));const y=8+(H-16)*(1-Math.max(0,Math.min(1,hist[i])));if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+    ctx.stroke();
+  };
+  line(sim.msiHist,'#58a6ff');   // method specialization
+  line(sim.siHist,'#3fb950');    // regime specialization (drawn on top)
+}
+
+function loop(){
+  if(!playing)return;
+  acc+=+$('cSpd').value;
+  let steps=0;
+  while(acc>=8 && steps<+$('cSpd').value){const s=sim.step();sim._lastR=s.r;acc-=8;steps++;}
+  render();
+  raf=requestAnimationFrame(loop);
+}
+function setPlay(p){playing=p;$('bPlay').textContent=p?'⏸ Pause':'▶ Play';$('bPlay').classList.toggle('primary',!p);
+  if(p){acc=0;raf=requestAnimationFrame(loop);}else if(raf)cancelAnimationFrame(raf);}
+
+['cLam','cEta','cN','cR','cMem','cStream','cK','cSpd'].forEach(id=>{
+  $(id).addEventListener('input',()=>{syncLabels();
+    if(['cN','cR','cMem','cStream','cK'].includes(id)){const wasPlaying=playing;setPlay(false);rebuild();if(wasPlaying)setPlay(true);}
+  });
+});
+$('bPlay').onclick=()=>setPlay(!playing);
+$('bStep').onclick=()=>{setPlay(false);const s=sim.step();sim._lastR=s.r;render();};
+$('bReset').onclick=()=>{setPlay(false);rebuild();};
+
+/* ============================ WALKTHROUGH ============================ */
+const STEPS=[
+  {no:'STEP 1',h:'The environment: a non-stationary regime stream',
+   p:'A stream emits one <b>regime</b> per step — distinct conditions, each with its own best prediction method. Regimes go <b>active → dormant → reactivate</b>. No regime is labelled for the learners; they only see which one is live now.',
+   f:'rₜ ~ Stream(t)   ·   regimes drift: active … dormant … reactivate'},
+  {no:'STEP 2',h:'A population of learners, each with two internal states',
+   p:'Every learner holds a <b>niche affinity</b> — a probability distribution over regimes (which one it "belongs" to) — and a set of <b>Beta beliefs</b>, one per (regime, method), driving Thompson sampling. Affinities start near-uniform with a tiny random jitter that breaks symmetry.',
+   f:'affinity αⱼ ∈ Δᴿ   ·   beliefs Beta(a,b) per (regime, method)'},
+  {no:'STEP 3',h:'Each learner proposes a method (Thompson sampling)',
+   p:'For the live regime, every learner samples its Beta beliefs and plays the method with the highest draw (with a small, decaying ε for exploration). Learners that have figured out the regime\'s good method propose it more reliably.',
+   f:'sₘ ~ Beta(aₘ,bₘ)   ·   play  m* = argmaxₘ sₘ'},
+  {no:'STEP 4',h:'Competitive exclusion: the generalist-averse bonus',
+   p:'Each proposal earns a raw reward, then a <b>niche bonus</b> tilts the contest: a learner whose primary niche matches the live regime gets <b>+λ·affinity</b>; one reaching outside its niche is penalised. The single highest adjusted reward <b>wins</b> — winner-take-all. Crowding a niche is costly, so learners are pushed apart.',
+   f:'in-niche: +λ·aff[r]    out-of-niche: −0.3λ·(1−aff[r])\nwinner = argmax (raw + bonus)'},
+  {no:'STEP 5',h:'The winner sharpens — emergent niche partitioning',
+   p:'Only the winner updates: it reinforces the method belief it just used, and applies the <b>exponentiated-gradient</b> (Hedge) update to its affinity, multiplying the winning regime by e^η and renormalising. Repeated over the stream, learners slide onto <b>distinct</b> regimes with no gate, no labels, no coordinator. The Specialization Index rises.',
+   f:'affinity[r] ← affinity[r]·e^η ⁄ Z     (mirror descent on Δᴿ)'},
+  {no:'STEP 6',h:'Bounded memory: why competition retains and a monolith forgets',
+   p:'Give each learner capacity for only K regimes. A capacity-bounded <b>monolith</b> chasing current reward must <b>evict</b> (hard LRU) or let <b>interference</b> decay (soft) the dormant regimes — a dormant regime emits no reward gradient, so a reward-driven allocator gets no signal to protect it. A converged GAUSE <b>specialist simply idles</b> through dormancy and keeps its niche <b>structurally</b>. That is the whole thesis: retention tracks reward-independence.',
+   f:'dormant ⇒ no reward gradient ⇒ monolith forgets · specialist retains'}
+];
+let wStep=0;
+function renderWalk(){
+  const s=STEPS[wStep];
+  $('walkText').innerHTML=`<div class="stepno">${s.no} · ${wStep+1} of ${STEPS.length}</div>
+    <h4>${s.h}</h4><p>${s.p}</p><div class="formula">${s.f}</div>`;
+  const dots=$('wDots');dots.innerHTML='';STEPS.forEach((_,i)=>{const d=document.createElement('i');if(i===wStep)d.className='on';d.onclick=()=>{wStep=i;renderWalk();};dots.appendChild(d);});
+  $('wPrev').disabled=wStep===0;$('wNext').disabled=wStep===STEPS.length-1;
+  drawWalk(wStep);
+}
+$('wPrev').onclick=()=>{if(wStep>0){wStep--;renderWalk();}};
+$('wNext').onclick=()=>{if(wStep<STEPS.length-1){wStep++;renderWalk();}};
+
+/* ---- animated diagrams for the walkthrough ----
+   Design space is 900×640 logical units, rendered into a device-pixel-ratio
+   backing store sized to the canvas's real CSS width so text stays crisp and
+   large regardless of column width. Fonts are sized for the on-screen result. */
+let walkT=0, walkRAF=null, walkStep=0;
+function drawWalk(step){
+  if(walkRAF)cancelAnimationFrame(walkRAF);walkT=0;walkStep=step;
+  const cv=$('walkCanvas');
+  const dpr=Math.min(window.devicePixelRatio||1,2.5);
+  const cssW=cv.clientWidth||cv.parentElement.clientWidth||520;
+  cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssW*dpr*640/900);
+  const ctx=cv.getContext('2d');
+  const sc=cv.width/900;                 // map 900-wide design space onto backing store
+  const anim=()=>{walkT=Math.min(1,walkT+0.022);
+    ctx.setTransform(sc,0,0,sc,0,0);paintWalk(ctx,step,walkT);
+    if(walkT<1)walkRAF=requestAnimationFrame(anim);};
+  anim();
+}
+// redraw current step crisply on resize (keeps it readable on any width)
+let _wrz;window.addEventListener('resize',()=>{clearTimeout(_wrz);_wrz=setTimeout(()=>{walkT=1;drawWalk(walkStep);},150);});
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function paintWalk(ctx,step,t){
+  const W=900,H=640;
+  ctx.fillStyle='#0a0e14';ctx.fillRect(0,0,W,H);
+  ctx.textBaseline='alphabetic';
+  const ease=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+  const R=4;
+  const SANS='-apple-system,Segoe UI,Roboto,sans-serif', MONO='ui-monospace,Menlo,monospace';
+  if(step===0){ // regime stream timeline
+    ctx.fillStyle='#9da7b3';ctx.font='24px '+SANS;ctx.fillText('time →',W-120,52);
+    const cols=9, cellW=84, x0=70, y0=120, cellH=66;
+    for(let c=0;c<cols;c++){
+      const reveal=(c+1)/cols;if(ease<reveal-0.05)continue;
+      const start=Math.floor(c/2)%R;
+      for(let i=0;i<R;i++){
+        const active=((i-start+R)%R)<2;
+        const x=x0+c*cellW, y=y0+i*(cellH+12);
+        ctx.globalAlpha=active?1:0.16;
+        ctx.fillStyle=RCOL[i];rr(ctx,x,y,cellW-9,cellH,8);ctx.fill();
+        ctx.globalAlpha=1;
+      }
+    }
+    for(let i=0;i<R;i++){ctx.fillStyle=RCOL[i];ctx.font='bold 26px '+MONO;ctx.fillText(RNAME[i],14,y0+i*(cellH+12)+42);}
+    ctx.fillStyle='#9da7b3';ctx.font='23px '+SANS;
+    ctx.fillText('bright = active   ·   faded = dormant   ·   regimes reactivate later',x0,y0+R*(cellH+12)+34);
+  }
+  else if(step===1){ // population: affinity dist + beliefs
+    const cards=4, cw=200, ch=300, gap=18, x0=34, y0=70;
+    for(let a=0;a<cards;a++){
+      const reveal=(a+1)/cards;if(ease<reveal-0.1)continue;
+      const x=x0+a*(cw+gap), y=y0;
+      ctx.fillStyle='#161b22';ctx.strokeStyle='#30363d';ctx.lineWidth=1.5;rr(ctx,x,y,cw,ch,12);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#e6edf3';ctx.font='bold 26px '+MONO;ctx.fillText('L'+a,x+16,y+38);
+      ctx.fillStyle='#9da7b3';ctx.font='20px '+SANS;ctx.fillText('niche affinity',x+16,y+70);
+      for(let i=0;i<R;i++){
+        const base=0.25+(((a*7+i*13)%10)/10-0.5)*0.12;
+        const bw=(cw-58)*base*ease;
+        ctx.fillStyle=RCOL[i];rr(ctx,x+16,y+86+i*30,bw,20,4);ctx.fill();
+        ctx.fillStyle='#8b95a3';ctx.font='17px '+MONO;ctx.fillText(RNAME[i],x+cw-34,y+102+i*30);
+      }
+      ctx.fillStyle='#9da7b3';ctx.font='20px '+SANS;ctx.fillText('Beta beliefs / method',x+16,y+232);
+      for(let j=0;j<4;j++){const bx=x+18+j*44;ctx.strokeStyle='#4a5563';ctx.lineWidth=2;ctx.beginPath();
+        for(let k=0;k<=20;k++){const u=k/20;const v=Math.exp(-Math.pow((u-0.5),2)*8);ctx.lineTo(bx+u*36,y+288-v*40*ease);}ctx.stroke();}
+    }
+    ctx.lineWidth=1;ctx.fillStyle='#9da7b3';ctx.font='22px '+SANS;
+    ctx.fillText('Affinities start ~uniform (jitter breaks symmetry); beliefs start flat.',x0,y0+ch+44);
+  }
+  else if(step===2){ // thompson sampling proposals
+    const liveR=1;
+    ctx.fillStyle='#9da7b3';ctx.font='24px '+SANS;ctx.fillText('live regime:',34,56);
+    ctx.fillStyle=RCOL[liveR];rr(ctx,205,30,70,36,16);ctx.fill();ctx.fillStyle='#06210f';ctx.font='bold 24px '+MONO;ctx.fillText(RNAME[liveR],222,57);
+    const cards=4,cw=200,gap=18,x0=34,y0=110;
+    for(let a=0;a<cards;a++){
+      const x=x0+a*(cw+gap),y=y0;
+      ctx.fillStyle='#161b22';ctx.strokeStyle='#30363d';ctx.lineWidth=1.5;rr(ctx,x,y,cw,250,12);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#e6edf3';ctx.font='bold 26px '+MONO;ctx.fillText('L'+a,x+16,y+38);
+      const peak=a%4;
+      if(ease>0.7){ctx.fillStyle=RCOL[liveR];ctx.font='bold 20px '+SANS;ctx.fillText('▶ plays m'+peak,x+72,y+34);}
+      for(let j=0;j<4;j++){
+        const bx=x+20+j*44, prog=Math.min(1,ease*1.4);
+        ctx.strokeStyle=j===peak?RCOL[liveR]:'#4a5563';ctx.lineWidth=j===peak?3.5:2;ctx.beginPath();
+        const sharp=j===peak?16:6;
+        for(let k=0;k<=24;k++){const u=k/24;const v=Math.exp(-Math.pow(u-(j===peak?0.7:0.5),2)*sharp);ctx.lineTo(bx+u*38,y+210-v*120*prog);}
+        ctx.stroke();ctx.lineWidth=1;
+        ctx.fillStyle=j===peak?RCOL[liveR]:'#8b95a3';ctx.font='17px '+MONO;ctx.fillText('m'+j,bx+11,y+236);
+      }
+    }
+    ctx.fillStyle='#9da7b3';ctx.font='22px '+SANS;ctx.fillText('Each learner samples its beliefs and plays its best draw.',x0,y0+292);
+  }
+  else if(step===3){ // competition + winner
+    const liveR=1;const N=4;const cx=W/2,cy=300,Rr=190;
+    ctx.fillStyle='#9da7b3';ctx.font='24px '+SANS;ctx.fillText('live regime '+RNAME[liveR]+' — who wins the niche?',34,46);
+    const raws=[0.55,0.62,0.40,0.58], aff=[0.2,0.7,0.25,0.3], prim=[0,1,2,3];
+    const lam=0.6;let adj=[],best=-1,wi=0;
+    for(let a=0;a<N;a++){const b=prim[a]===liveR?lam*aff[a]:-lam*0.3*(1-aff[a]);adj[a]=raws[a]+b;if(adj[a]>best){best=adj[a];wi=a;}}
+    for(let a=0;a<N;a++){
+      const ang=-Math.PI/2+a/N*2*Math.PI;const x=cx+Math.cos(ang)*Rr,y=cy+Math.sin(ang)*Rr;
+      const isW=a===wi&&ease>0.6;const bw=74,bh=92;
+      ctx.fillStyle=isW?RCOL[liveR]:'#161b22';ctx.strokeStyle=prim[a]===liveR?RCOL[liveR]:'#30363d';ctx.lineWidth=isW?4:2;
+      rr(ctx,x-bw,y-bh/2,bw*2,bh,12);ctx.fill();ctx.stroke();ctx.lineWidth=1;
+      ctx.fillStyle=isW?'#06210f':'#e6edf3';ctx.font='bold 25px '+MONO;ctx.fillText('L'+a,x-bw+14,y-bh/2+34);
+      ctx.fillStyle=isW?'#06210f':'#9da7b3';ctx.font='18px '+SANS;
+      ctx.fillText('niche '+RNAME[prim[a]],x-bw+14,y-bh/2+58);
+      ctx.fillText('adj '+(adj[a]).toFixed(2),x-bw+14,y-bh/2+80);
+    }
+    ctx.beginPath();ctx.fillStyle=RCOL[liveR]+'22';ctx.strokeStyle=RCOL[liveR];ctx.lineWidth=2;ctx.arc(cx,cy,54,0,2*Math.PI);ctx.fill();ctx.stroke();ctx.lineWidth=1;
+    ctx.fillStyle=RCOL[liveR];ctx.font='bold 28px '+MONO;ctx.textAlign='center';ctx.fillText(RNAME[liveR],cx,cy+10);ctx.textAlign='left';
+    if(ease>0.6){ctx.fillStyle='#3fb950';ctx.font='bold 27px '+SANS;ctx.textAlign='center';ctx.fillText('★ L'+wi+' wins — winner-take-all',cx,cy+Rr+96);ctx.textAlign='left';}
+  }
+  else if(step===4){ // EG sharpening over time
+    ctx.fillStyle='#9da7b3';ctx.font='24px '+SANS;ctx.fillText('affinities sharpen as winners apply  α[r] ← α[r]·eᶯ',34,46);
+    const N=4,cw=200,gap=18,x0=34,y0=84,ch=268;
+    for(let a=0;a<N;a++){
+      const x=x0+a*(cw+gap),y=y0;
+      ctx.fillStyle='#161b22';ctx.strokeStyle='#30363d';ctx.lineWidth=1.5;rr(ctx,x,y,cw,ch,12);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#e6edf3';ctx.font='bold 24px '+MONO;ctx.fillText('L'+a+' → '+RNAME[a],x+16,y+38);
+      let aff=[0.25,0.25,0.25,0.25];
+      const nsteps=Math.floor(ease*18);
+      for(let s=0;s<nsteps;s++){aff[a]*=Math.exp(0.25);const z=aff.reduce((p,q)=>p+q,0);aff=aff.map(v=>v/z);}
+      for(let i=0;i<R;i++){
+        const bw=(cw-32)*aff[i];
+        ctx.fillStyle=RCOL[i];ctx.globalAlpha=i===a?1:0.45;rr(ctx,x+16,y+58+i*48,bw,32,5);ctx.fill();ctx.globalAlpha=1;
+        ctx.fillStyle='#e6edf3';ctx.font='17px '+MONO;ctx.fillText(RNAME[i]+' '+(aff[i]*100|0)+'%',x+22,y+80+i*48);
+      }
+    }
+    ctx.lineWidth=1;ctx.fillStyle='#3fb950';ctx.font='22px '+SANS;ctx.fillText('No coordinator, no labels — each learner converges onto a distinct niche.',x0,y0+ch+38);
+  }
+  else if(step===5){ // memory: monolith forgets vs specialist retains
+    ctx.fillStyle='#9da7b3';ctx.font='24px '+SANS;ctx.fillText('A regime goes dormant, then reactivates. Who still knows it?',34,44);
+    const x0=70,y1=130,y2=360,cellW=96,cols=8,barH=120;
+    const labels=['active','active','dormant','dormant','dormant','dormant','REACTIVATE','—'];
+    ctx.fillStyle='#f85149';ctx.font='bold 22px '+SANS;ctx.fillText('Capacity-bounded monolith',x0,y1-18);
+    ctx.fillStyle='#3fb950';ctx.fillText('GAUSE specialist (idles through dormancy)',x0,y2-18);
+    for(let c=0;c<cols;c++){
+      if(ease<(c+1)/cols-0.05)continue;
+      const dormant=c>=2&&c<=5, react=c===6;
+      let mk = c<2?1 : dormant?Math.max(0.05,1-(c-1)*0.3) : 0.08;
+      let sk = c<2?1 : 0.95;
+      const mx=x0+c*cellW;
+      ctx.fillStyle='#161b22';ctx.strokeStyle='#30363d';ctx.lineWidth=1.5;
+      rr(ctx,mx,y1,cellW-10,barH,8);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#f85149';rr(ctx,mx+7,y1+barH-6-(barH-12)*mk,cellW-24,(barH-12)*mk,4);ctx.fill();
+      rr(ctx,mx,y2,cellW-10,barH,8);ctx.fillStyle='#161b22';ctx.strokeStyle='#30363d';ctx.fill();ctx.stroke();
+      ctx.fillStyle='#3fb950';rr(ctx,mx+7,y2+barH-6-(barH-12)*sk,cellW-24,(barH-12)*sk,4);ctx.fill();
+      ctx.fillStyle=react?'#f0883e':(dormant?'#6e7a89':'#9da7b3');ctx.font=(react?'bold ':'')+'15px '+SANS;
+      ctx.save();ctx.translate(mx+(cellW-10)/2,y2+barH+26);ctx.textAlign='center';ctx.fillText(labels[c],0,0);ctx.restore();ctx.textAlign='left';
+    }
+    ctx.lineWidth=1;ctx.fillStyle='#f0883e';ctx.font='bold 21px '+SANS;
+    ctx.fillText('On reactivation the monolith relearns; the specialist is ready instantly.',x0,y2+barH+62);
+  }
+}
+
+/* ============================ INIT ============================ */
+syncLabels();rebuild();renderWalk();
+// gentle auto-run on load so the sandbox is alive
+setPlay(true);
+</script>
+</body>
+</html>
