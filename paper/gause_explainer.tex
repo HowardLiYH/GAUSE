@@ -89,12 +89,14 @@ University of Pennsylvania}
 \begin{document}
 
 \maketitle
+\vspace{-0.45cm}
 
 \begin{abstractbox}
 \begin{center}
-{\color{headblue}\large\bfseries Abstract}
+{\color{headblue}\bfseries Abstract}
 \end{center}
-\noindent
+\vspace{-0.1cm}
+\noindent\small
 Learning systems that serve many environmental regimes with capacity-limited
 learners face a persistent allocation problem: which learner handles which regime,
 and---when the environment is non-stationary---who \emph{keeps} a regime that falls
@@ -127,19 +129,18 @@ $1.07$ for a label-free forgetting monolith). We then test it on \emph{real} dat
 story to the representation-sharing \emph{neural} regime. On real data, accordingly,
 the contribution is a \emph{mechanism and lens}, not a performance win.
 
-The remaining evidence supports exactly that reading. Across six real-world domains
-($145{,}294$ records) and synthetic tasks, the framework self-organizes into
+The remaining evidence supports that reading. Across six real-world domains
+($145{,}294$ records) and synthetic tasks the framework self-organizes into
 one-per-regime specialists (mean SI $=0.65$ from competition alone) and matches
-purpose-built diversity and routing baselines on spatial coverage with none of their
+purpose-built diversity and routing baselines on coverage with none of their
 machinery. Four further experiments close the design space: the router's forgetting
-reappears with \emph{gradient-trained neural experts} on two standard
-continual-learning benchmarks (permuted-digits $+62\%$, Split-CIFAR-100 $+22\%$);
-a \emph{hybrid} reservation router isolates reward-independence of \emph{protection}
-as the operative property; and intra-regime-drift and population-sizing sweeps map
-the mechanism's own failure modes. We close with an evidence-tiered survey of
-applications---regime-switching finance and edge sensing, elastic memory for
-agentic-AI and mixture-of-experts systems, and further candidates. Code and data:
-\url{https://github.com/HowardLiYH/GAUSE}.
+reappears with \emph{neural experts} on two standard benchmarks (permuted-digits
+$+62\%$, Split-CIFAR-100 $+22\%$); a \emph{hybrid} reservation router isolates
+reward-independence of \emph{protection} as the operative property; and drift and
+population-sizing sweeps map the mechanism's failure modes. We close with an
+evidence-tiered survey of applications (regime-switching finance, edge sensing, and
+elastic memory for agentic-AI / mixture-of-experts systems).
+Code and data: \url{https://github.com/HowardLiYH/GAUSE}.
 \end{abstractbox}
 
 \vspace{0.25cm}
